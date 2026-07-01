@@ -18,18 +18,21 @@ import {
   deleteUser,
 } from "@/app/admin/users/actions";
 
-type Row = {
+export type UserRow = {
   id: string;
   name: string | null;
   email: string;
   role: "admin" | "member";
   active: boolean;
-  createdAt: Date;
+  recordings: number;
+  timeLabel: string;
+  storageLabel: string;
+  lastActiveLabel: string;
 };
 
 type Flash = { kind: "ok" | "err"; text: string; secret?: string } | null;
 
-export function UsersAdmin({ users, meId }: { users: Row[]; meId: string }) {
+export function UsersAdmin({ users, meId }: { users: UserRow[]; meId: string }) {
   const [pending, startTransition] = useTransition();
   const [flash, setFlash] = useState<Flash>(null);
 
@@ -160,6 +163,15 @@ export function UsersAdmin({ users, meId }: { users: Row[]; meId: string }) {
                   )}
                 </div>
                 {u.name && <p className="truncate text-[12.5px] text-muted">{u.email}</p>}
+                <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5 font-mono text-[11px] text-faint">
+                  <span>{u.recordings} rec</span>
+                  <span>·</span>
+                  <span>{u.timeLabel}</span>
+                  <span>·</span>
+                  <span>{u.storageLabel}</span>
+                  <span>·</span>
+                  <span>active {u.lastActiveLabel}</span>
+                </p>
               </div>
 
               <div className="flex flex-wrap items-center gap-1.5">

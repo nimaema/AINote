@@ -11,6 +11,7 @@ import { AudioPlayer } from "@/components/note/audio-player";
 import { QAPanel } from "@/components/note/qa-panel";
 import { ProcessingView } from "@/components/note/processing-view";
 import { ExportMenu } from "@/components/note/export-menu";
+import { NoteActions } from "@/components/note/note-actions";
 import {
   ArrowLeft,
   CheckCircle,
@@ -75,9 +76,12 @@ export default async function NotePage({
               <span>· {rec.source === "record" ? "Recorded" : "Uploaded"}</span>
             </div>
           </div>
-          {rec.status === "done" && (
-            <ExportMenu recordingId={rec.id} connections={await exportConnections(session.user.id)} />
-          )}
+          <div className="flex items-center gap-2">
+            {rec.status === "done" && (
+              <ExportMenu recordingId={rec.id} connections={await exportConnections(session.user.id)} />
+            )}
+            <NoteActions id={rec.id} title={rec.title ?? "Untitled recording"} />
+          </div>
         </div>
 
         {rec.status !== "done" ? (

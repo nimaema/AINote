@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { CircleNotch, Check, WarningCircle } from "@phosphor-icons/react";
+import { CircleNotch, Check, WarningCircle, ArrowClockwise } from "@phosphor-icons/react";
 import { Waveform } from "@/components/waveform";
 
 const STEPS = [
@@ -59,8 +59,18 @@ export function ProcessingView({
           Processing failed
         </h2>
         <p className="mt-1.5 text-sm text-muted">
-          Something went wrong transcribing this recording. Try uploading it again.
+          Something went wrong with this recording. You can try running it again.
         </p>
+        <button
+          onClick={async () => {
+            await fetch(`/api/recordings/${recordingId}/retry`, { method: "POST" });
+            setStatus("uploaded");
+            router.refresh();
+          }}
+          className="mx-auto mt-5 inline-flex h-10 items-center gap-2 rounded-btn bg-ink px-5 text-[14px] font-medium text-white transition-transform duration-150 [transition-timing-function:var(--ease-out)] hover:-translate-y-0.5 active:scale-[0.98] cursor-pointer"
+        >
+          <ArrowClockwise size={16} weight="bold" /> Try again
+        </button>
       </div>
     );
   }
