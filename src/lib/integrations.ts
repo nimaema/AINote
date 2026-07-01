@@ -2,6 +2,7 @@ import { and, eq } from "drizzle-orm";
 import { db } from "../db";
 import { integrations } from "../db/schema";
 import { refreshAccessToken } from "./google";
+import { refreshAccessToken as refreshMsToken } from "./microsoft";
 
 type Provider = "google" | "teams";
 
@@ -53,6 +54,24 @@ export async function getValidGoogleToken(userId: string): Promise<string | null
   await upsertIntegration(userId, "google", {
     accessToken: refreshed.access_token,
     expiresAt,
+  });
+  return refreshed.access_token;
+}
+
+// Returns a valid Microsoft Graph access token, refreshing if it's near expiry.
+export async function getValidMicrosoftToken(userId: string): Promise<string | null> {
+  const it = await getIntegration(userId, "teams");
+  if (!it?.accessToken) return null;
+
+  const soon = Date.now() + 60_000;
+  if (it.expiresAt && it.expiresAt.getTime() > soon) return it.accessToken;
+  if (!it.refreshToken) return it.accessToken;
+
+  const refreshed = await refreshMsToken(it.refreshToken);
+  await upsertIntegration(userId, "teams", {
+    accessToken: refreshed.access_token,
+    expiresAt: new Date(Date.now() + refreshed.expires_in * 1000),
+    ...(refreshed.refresh_token ? { refreshToken: refreshed.refresh_token } : {}),
   });
   return refreshed.access_token;
 }

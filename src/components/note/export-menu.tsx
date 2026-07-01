@@ -7,7 +7,7 @@ import {
   FileArrowDown,
   Copy,
   GoogleLogo,
-  Chats,
+  MicrosoftTeamsLogo,
   CaretDown,
   ArrowSquareOut,
   CheckCircle,
@@ -108,13 +108,13 @@ export function ExportMenu({
             )}
             {connections.teams ? (
               <MenuItem
-                icon={<Chats size={17} />}
+                icon={<MicrosoftTeamsLogo size={17} />}
                 label="Send to Teams"
                 busy={busy === "teams"}
                 onClick={() => exportTo("teams", "Teams")}
               />
             ) : (
-              <ConnectItem icon={<Chats size={17} />} label="Microsoft Teams" />
+              <ConnectItem icon={<MicrosoftTeamsLogo size={17} />} label="Microsoft Teams" />
             )}
           </div>
         </>

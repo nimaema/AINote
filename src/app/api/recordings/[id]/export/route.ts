@@ -4,9 +4,10 @@ import { z } from "zod";
 import { auth } from "@/lib/auth";
 import { db } from "@/db";
 import { recordings, exports } from "@/db/schema";
-import { loadNoteExport, toPlainText, toTeamsCard } from "@/lib/export-content";
+import { loadNoteExport, toPlainText, toMarkdown, toTeamsHtml, safeFilename } from "@/lib/export-content";
 import { createGoogleDoc } from "@/lib/google";
-import { getValidGoogleToken, getIntegration } from "@/lib/integrations";
+import { uploadTranscript, postChannelMessage } from "@/lib/microsoft";
+import { getValidGoogleToken, getValidMicrosoftToken, getIntegration } from "@/lib/integrations";
 
 export const runtime = "nodejs";
 
@@ -57,20 +58,27 @@ export async function POST(
       return NextResponse.json({ url: doc.url });
     }
 
-    // Teams
+    // Teams (Microsoft Graph): upload the transcript as a .md file into the
+    // channel's Files, then post the summary with a link to it.
+    const token = await getValidMicrosoftToken(session.user.id);
+    if (!token) return fail("Connect Microsoft Teams in Settings first.");
     const it = await getIntegration(session.user.id, "teams");
-    const webhookUrl = it?.config?.webhookUrl;
-    if (!webhookUrl) return fail("Add a Teams webhook in Settings first.");
+    const teamId = it?.config?.teamId;
+    const channelId = it?.config?.channelId;
+    if (!teamId || !channelId) return fail("Pick a Teams channel in Settings first.");
 
     const noteUrl = `${(process.env.APP_URL ?? "").replace(/\/$/, "")}/note/${id}`;
-    const res = await fetch(webhookUrl, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(toTeamsCard(note, noteUrl)),
-    });
-    if (!res.ok) throw new Error(`Teams responded ${res.status}`);
-    await db.update(exports).set({ status: "done" }).where(eq(exports.id, row.id));
-    return NextResponse.json({ ok: true });
+    const { webUrl } = await uploadTranscript(
+      token,
+      teamId,
+      channelId,
+      `${safeFilename(note.title)}.md`,
+      toMarkdown(note)
+    );
+    await postChannelMessage(token, teamId, channelId, toTeamsHtml(note, webUrl, noteUrl));
+
+    await db.update(exports).set({ status: "done", externalUrl: webUrl }).where(eq(exports.id, row.id));
+    return NextResponse.json({ url: webUrl });
   } catch (err) {
     console.error("export failed", err);
     return fail(

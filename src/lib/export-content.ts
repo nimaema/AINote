@@ -109,42 +109,35 @@ export function toPlainText(n: NoteExport): string {
     .replace(/\*\*(.*?)\*\*/g, "$1");
 }
 
-// Adaptive Card for a Teams incoming-webhook / workflow post.
-export function toTeamsCard(n: NoteExport, noteUrl: string) {
-  const body: unknown[] = [
-    { type: "TextBlock", size: "Large", weight: "Bolder", text: n.title, wrap: true },
-    { type: "TextBlock", spacing: "None", isSubtle: true, text: metaLine(n), wrap: true },
+function esc(s: string) {
+  return s
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+}
+
+// HTML body for a Teams channel message (posted via Graph). Includes the summary
+// and action items, plus a link to the uploaded transcript file.
+export function toTeamsHtml(n: NoteExport, fileUrl: string, noteUrl: string): string {
+  const parts: string[] = [
+    `<h3>${esc(n.title)}</h3>`,
+    `<p><i>${esc(metaLine(n))}</i></p>`,
   ];
-  if (n.summary)
-    body.push({ type: "TextBlock", text: n.summary, wrap: true, spacing: "Medium" });
+  if (n.summary) parts.push(`<p>${esc(n.summary)}</p>`);
   if (n.actionItems.length) {
-    body.push({ type: "TextBlock", weight: "Bolder", text: "Action items", spacing: "Medium" });
-    body.push({
-      type: "TextBlock",
-      wrap: true,
-      text: n.actionItems.map((a) => `• ${actionItemLine(a)}`).join("\n"),
-    });
+    parts.push("<p><b>Action items</b></p><ul>");
+    for (const a of n.actionItems) parts.push(`<li>${esc(actionItemLine(a))}</li>`);
+    parts.push("</ul>");
   }
   if (n.decisions.length) {
-    body.push({ type: "TextBlock", weight: "Bolder", text: "Decisions", spacing: "Medium" });
-    body.push({ type: "TextBlock", wrap: true, text: n.decisions.map((d) => `• ${d}`).join("\n") });
+    parts.push("<p><b>Decisions</b></p><ul>");
+    for (const d of n.decisions) parts.push(`<li>${esc(d)}</li>`);
+    parts.push("</ul>");
   }
-
-  return {
-    type: "message",
-    attachments: [
-      {
-        contentType: "application/vnd.microsoft.card.adaptive",
-        content: {
-          $schema: "http://adaptivecards.io/schemas/adaptive-card.json",
-          type: "AdaptiveCard",
-          version: "1.4",
-          body,
-          actions: [{ type: "Action.OpenUrl", title: "Open in GlaciaNav", url: noteUrl }],
-        },
-      },
-    ],
-  };
+  parts.push(
+    `<p>📄 <a href="${esc(fileUrl)}">Full transcript (.md)</a> &nbsp;·&nbsp; <a href="${esc(noteUrl)}">Open in GlaciaNav</a></p>`
+  );
+  return parts.join("");
 }
 
 export function safeFilename(title: string) {

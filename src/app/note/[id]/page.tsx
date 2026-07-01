@@ -261,7 +261,10 @@ async function exportConnections(userId: string) {
     getIntegration(userId, "google"),
     getIntegration(userId, "teams"),
   ]);
-  return { google: !!g?.accessToken, teams: !!t?.config?.webhookUrl };
+  return {
+    google: !!g?.accessToken,
+    teams: !!(t?.accessToken && t?.config?.channelId),
+  };
 }
 
 function PanelHeading({

@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { getIntegration } from "@/lib/integrations";
 import { googleConfigured } from "@/lib/google";
+import { microsoftConfigured } from "@/lib/microsoft";
 import { AppHeader } from "@/components/app-header";
 import { IntegrationsPanel } from "@/components/settings/integrations-panel";
 
@@ -33,11 +34,17 @@ export default async function SettingsPage({
         {connected === "google" && (
           <Banner ok>Google connected. You can now export notes to Docs.</Banner>
         )}
-        {error === "google_oauth" && (
-          <Banner>Google connection didn&apos;t complete. Please try again.</Banner>
+        {connected === "teams" && (
+          <Banner ok>Microsoft connected. Pick a team and channel below.</Banner>
+        )}
+        {(error === "google_oauth" || error === "ms_oauth") && (
+          <Banner>Connection didn&apos;t complete. Please try again.</Banner>
         )}
         {error === "google_not_configured" && (
           <Banner>Google export isn&apos;t configured on this server yet.</Banner>
+        )}
+        {error === "ms_not_configured" && (
+          <Banner>Teams export isn&apos;t configured on this server yet.</Banner>
         )}
 
         <IntegrationsPanel
@@ -46,7 +53,13 @@ export default async function SettingsPage({
             connected: !!g?.accessToken,
             email: g?.accountLabel,
           }}
-          teams={{ connected: !!t?.config?.webhookUrl }}
+          teams={{
+            configured: microsoftConfigured(),
+            connected: !!t?.accessToken,
+            account: t?.accountLabel,
+            teamName: t?.config?.teamName,
+            channelName: t?.config?.channelName,
+          }}
         />
       </main>
     </div>
