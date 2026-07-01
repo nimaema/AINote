@@ -21,15 +21,33 @@ export async function transcribeAudio(
   if (useMock()) return mockTranscript();
 
   const client = new AssemblyAI({ apiKey: process.env.ASSEMBLYAI_API_KEY! });
-  const { body } = await getObjectStream(storageKey);
 
-  // The SDK uploads the stream, then transcribes with speaker diarization.
+  // Buffer the audio from storage before handing it to AssemblyAI. Passing a raw
+  // S3 stream can upload with no content-length and land as an empty file (which
+  // AssemblyAI then "transcribes" to nothing). A Buffer uploads reliably.
+  const { body } = await getObjectStream(storageKey);
+  const chunks: Buffer[] = [];
+  for await (const chunk of body) {
+    chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+  }
+  const audio = Buffer.concat(chunks);
+  if (audio.length === 0) {
+    throw new Error("Audio file is empty in storage");
+  }
+
   const t = await client.transcripts.transcribe({
-    audio: body,
+    audio,
     speaker_labels: true,
   });
   if (t.status === "error") {
     throw new Error(t.error ?? "AssemblyAI transcription failed");
+  }
+
+  const text = (t.text ?? "").trim();
+  if (!text) {
+    throw new Error(
+      "AssemblyAI returned an empty transcript — the audio may have no clear speech."
+    );
   }
 
   const utterances: Utterance[] = (t.utterances ?? []).map((u) => ({
@@ -41,7 +59,7 @@ export async function transcribeAudio(
 
   return {
     assemblyaiId: t.id,
-    text: t.text ?? "",
+    text,
     language: t.language_code ?? null,
     utterances,
   };
