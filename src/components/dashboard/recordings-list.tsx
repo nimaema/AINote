@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useRef, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   MagnifyingGlass,
@@ -8,8 +9,8 @@ import {
   PencilSimple,
   Trash,
   ArrowClockwise,
-  ArrowRight,
   WaveSawtooth,
+  ListChecks,
   Check,
   X,
 } from "@phosphor-icons/react";
@@ -21,6 +22,9 @@ export type RecItem = {
   source: "record" | "upload";
   dateLabel: string;
   durationLabel: string;
+  summary: string | null;
+  topics: string[];
+  actionCount: number;
 };
 
 const FILTERS = [
@@ -30,12 +34,12 @@ const FILTERS = [
   { key: "failed", label: "Failed" },
 ] as const;
 
-const STATUS: Record<string, { label: string; dot: string; text: string }> = {
-  uploaded: { label: "Queued", dot: "bg-faint", text: "text-muted" },
-  transcribing: { label: "Transcribing", dot: "bg-accent", text: "text-accent-deep" },
-  processing: { label: "Summarizing", dot: "bg-accent", text: "text-accent-deep" },
-  done: { label: "Ready", dot: "bg-ok", text: "text-ok" },
-  failed: { label: "Failed", dot: "bg-err", text: "text-err" },
+const STATUS: Record<string, { label: string; dot: string; text: string; note: string }> = {
+  uploaded: { label: "Queued", dot: "bg-faint", text: "text-muted", note: "Queued for transcription…" },
+  transcribing: { label: "Transcribing", dot: "bg-accent", text: "text-accent-deep", note: "Transcribing the audio…" },
+  processing: { label: "Summarizing", dot: "bg-accent", text: "text-accent-deep", note: "Writing the summary…" },
+  done: { label: "Ready", dot: "bg-ok", text: "text-ok", note: "" },
+  failed: { label: "Failed", dot: "bg-err", text: "text-err", note: "Processing failed — retry from the menu." },
 };
 
 export function RecordingsList({ items }: { items: RecItem[] }) {
@@ -44,17 +48,22 @@ export function RecordingsList({ items }: { items: RecItem[] }) {
   const [filter, setFilter] = useState<(typeof FILTERS)[number]["key"]>("all");
   const [busy, setBusy] = useState<string | null>(null);
 
+  const matchesFilter = (status: string, key: string) =>
+    key === "all" ||
+    (key === "done" && status === "done") ||
+    (key === "failed" && status === "failed") ||
+    (key === "active" && ["uploaded", "transcribing", "processing"].includes(status));
+
   const filtered = useMemo(() => {
     const needle = q.trim().toLowerCase();
-    return items.filter((r) => {
-      if (needle && !r.title.toLowerCase().includes(needle)) return false;
-      if (filter === "all") return true;
-      if (filter === "done") return r.status === "done";
-      if (filter === "failed") return r.status === "failed";
-      if (filter === "active")
-        return ["uploaded", "transcribing", "processing"].includes(r.status);
-      return true;
-    });
+    return items.filter(
+      (r) =>
+        matchesFilter(r.status, filter) &&
+        (!needle ||
+          r.title.toLowerCase().includes(needle) ||
+          (r.summary ?? "").toLowerCase().includes(needle) ||
+          r.topics.some((t) => t.toLowerCase().includes(needle)))
+    );
   }, [items, q, filter]);
 
   async function act(id: string, fn: () => Promise<Response>) {
@@ -66,7 +75,6 @@ export function RecordingsList({ items }: { items: RecItem[] }) {
       setBusy(null);
     }
   }
-
   const rename = (id: string, title: string) =>
     act(id, () =>
       fetch(`/api/recordings/${id}`, {
@@ -75,10 +83,8 @@ export function RecordingsList({ items }: { items: RecItem[] }) {
         body: JSON.stringify({ title }),
       })
     );
-  const remove = (id: string) =>
-    act(id, () => fetch(`/api/recordings/${id}`, { method: "DELETE" }));
-  const retry = (id: string) =>
-    act(id, () => fetch(`/api/recordings/${id}/retry`, { method: "POST" }));
+  const remove = (id: string) => act(id, () => fetch(`/api/recordings/${id}`, { method: "DELETE" }));
+  const retry = (id: string) => act(id, () => fetch(`/api/recordings/${id}/retry`, { method: "POST" }));
 
   return (
     <section aria-labelledby="recent-heading" className="mt-10">
@@ -87,46 +93,30 @@ export function RecordingsList({ items }: { items: RecItem[] }) {
           Your captures
         </h2>
         <div className="relative">
-          <MagnifyingGlass
-            size={15}
-            className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-faint"
-          />
+          <MagnifyingGlass size={15} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-faint" />
           <input
             value={q}
             onChange={(e) => setQ(e.target.value)}
-            placeholder="Search"
-            className="h-9 w-44 rounded-btn border border-hairline bg-white/70 pl-8 pr-3 text-[13px] text-ink placeholder:text-faint focus:w-56 focus:border-accent focus:outline-none focus:shadow-[0_0_0_4px_var(--color-accent-wash)] transition-[width,border-color,box-shadow] duration-200 [transition-timing-function:var(--ease-out)]"
+            placeholder="Search notes"
+            className="h-9 w-full min-w-0 rounded-btn border border-hairline bg-white/70 pl-8 pr-3 text-[13px] text-ink placeholder:text-faint focus:border-accent focus:outline-none focus:shadow-[0_0_0_4px_var(--color-accent-wash)] transition-[border-color,box-shadow] duration-200 [transition-timing-function:var(--ease-out)] sm:w-52"
           />
         </div>
       </div>
 
       <div className="mb-4 flex flex-wrap gap-1.5 px-1">
         {FILTERS.map((f) => {
-          const count =
-            f.key === "all"
-              ? items.length
-              : f.key === "done"
-                ? items.filter((r) => r.status === "done").length
-                : f.key === "failed"
-                  ? items.filter((r) => r.status === "failed").length
-                  : items.filter((r) =>
-                      ["uploaded", "transcribing", "processing"].includes(r.status)
-                    ).length;
+          const count = items.filter((r) => matchesFilter(r.status, f.key)).length;
           const active = filter === f.key;
           return (
             <button
               key={f.key}
               onClick={() => setFilter(f.key)}
               className={`inline-flex items-center gap-1.5 rounded-btn border px-3 py-1.5 text-[12.5px] font-medium transition-colors duration-150 [transition-timing-function:var(--ease-out)] cursor-pointer ${
-                active
-                  ? "border-transparent bg-ink text-white"
-                  : "border-hairline text-muted hover:text-ink hover:bg-white/60"
+                active ? "border-transparent bg-ink text-white" : "border-hairline text-muted hover:bg-white/60 hover:text-ink"
               }`}
             >
               {f.label}
-              <span className={`tabular font-mono text-[11px] ${active ? "text-white/70" : "text-faint"}`}>
-                {count}
-              </span>
+              <span className={`tabular font-mono text-[11px] ${active ? "text-white/70" : "text-faint"}`}>{count}</span>
             </button>
           );
         })}
@@ -135,13 +125,12 @@ export function RecordingsList({ items }: { items: RecItem[] }) {
       {filtered.length === 0 ? (
         <EmptyState hasAny={items.length > 0} />
       ) : (
-        <ul className="grid gap-2.5">
+        <ul className="grid gap-3 sm:grid-cols-2">
           {filtered.map((r) => (
             <RecordingCard
               key={r.id}
               rec={r}
               busy={busy === r.id}
-              onOpen={() => router.push(`/note/${r.id}`)}
               onRename={(t) => rename(r.id, t)}
               onDelete={() => remove(r.id)}
               onRetry={() => retry(r.id)}
@@ -156,14 +145,12 @@ export function RecordingsList({ items }: { items: RecItem[] }) {
 function RecordingCard({
   rec,
   busy,
-  onOpen,
   onRename,
   onDelete,
   onRetry,
 }: {
   rec: RecItem;
   busy: boolean;
-  onOpen: () => void;
   onRename: (title: string) => void;
   onDelete: () => void;
   onRetry: () => void;
@@ -173,6 +160,7 @@ function RecordingCard({
   const [title, setTitle] = useState(rec.title);
   const inputRef = useRef<HTMLInputElement>(null);
   const s = STATUS[rec.status] ?? STATUS.uploaded;
+  const extraTopics = Math.max(0, rec.topics.length - 3);
 
   function saveRename() {
     const t = title.trim();
@@ -182,72 +170,58 @@ function RecordingCard({
   }
 
   return (
-    <li className="group glass-soft relative flex items-center gap-4 rounded-card bg-white/50 px-4 py-3.5 transition-[transform,background-color] duration-150 [transition-timing-function:var(--ease-out)] hover:-translate-y-0.5 hover:bg-white/80">
-      <span className="grid h-10 w-10 shrink-0 place-items-center rounded-input bg-accent-wash text-accent-deep">
-        <WaveSawtooth size={18} weight="duotone" />
-      </span>
-
-      <button
-        onClick={editing ? undefined : onOpen}
-        className="min-w-0 flex-1 text-left cursor-pointer"
-        disabled={editing}
-      >
-        {editing ? (
-          <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
-            <input
-              ref={inputRef}
-              autoFocus
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") saveRename();
-                if (e.key === "Escape") {
-                  setTitle(rec.title);
-                  setEditing(false);
-                }
-              }}
-              className="h-8 w-full max-w-sm rounded-input border border-accent bg-white px-2.5 text-[14.5px] text-ink focus:outline-none focus:shadow-[0_0_0_4px_var(--color-accent-wash)]"
-            />
-            <button onClick={saveRename} className="grid h-8 w-8 place-items-center rounded-input text-ok hover:bg-white cursor-pointer" aria-label="Save name">
-              <Check size={16} weight="bold" />
-            </button>
-            <button
-              onClick={() => {
-                setTitle(rec.title);
-                setEditing(false);
-              }}
-              className="grid h-8 w-8 place-items-center rounded-input text-muted hover:bg-white cursor-pointer"
-              aria-label="Cancel"
-            >
-              <X size={16} />
-            </button>
-          </div>
-        ) : (
-          <>
-            <span className="block truncate text-[14.5px] font-medium text-ink">{rec.title}</span>
-            <span className="mt-0.5 flex items-center gap-2 font-mono text-[11.5px] text-faint">
-              <span>{rec.dateLabel}</span>
-              <span>·</span>
-              <span>{rec.durationLabel}</span>
-              <span>·</span>
-              <span>{rec.source === "record" ? "Recorded" : "Uploaded"}</span>
-            </span>
-          </>
-        )}
-      </button>
-
+    <li className="group glass-soft relative flex min-h-[150px] flex-col gap-3 rounded-card bg-white/55 p-4 transition-[transform,background-color,box-shadow] duration-150 [transition-timing-function:var(--ease-out)] hover:-translate-y-0.5 hover:bg-white/85">
+      {/* Whole-card click target (disabled while renaming) */}
       {!editing && (
-        <>
-          <span className={`hidden items-center gap-1.5 sm:inline-flex ${s.text}`}>
-            <span className={`h-1.5 w-1.5 rounded-full ${s.dot} ${["transcribing", "processing"].includes(rec.status) ? "animate-pulse" : ""}`} />
-            <span className="font-mono text-[11px] uppercase tracking-[0.1em]">{s.label}</span>
-          </span>
+        <Link href={`/note/${rec.id}`} className="absolute inset-0 z-0 rounded-card" aria-label={`Open ${rec.title}`} />
+      )}
 
-          <div className="relative">
+      {/* Header */}
+      <div className="pointer-events-none relative z-10 flex items-start gap-3">
+        <span className="grid h-10 w-10 shrink-0 place-items-center rounded-input bg-accent-wash text-accent-deep">
+          <WaveSawtooth size={18} weight="duotone" />
+        </span>
+        <div className="min-w-0 flex-1">
+          {editing ? (
+            <div className="pointer-events-auto flex items-center gap-1.5">
+              <input
+                ref={inputRef}
+                autoFocus
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") saveRename();
+                  if (e.key === "Escape") { setTitle(rec.title); setEditing(false); }
+                }}
+                className="h-8 w-full rounded-input border border-accent bg-white px-2.5 text-[14px] text-ink focus:outline-none focus:shadow-[0_0_0_4px_var(--color-accent-wash)]"
+              />
+              <button onClick={saveRename} className="grid h-8 w-8 shrink-0 place-items-center rounded-input text-ok hover:bg-white cursor-pointer" aria-label="Save name">
+                <Check size={16} weight="bold" />
+              </button>
+              <button onClick={() => { setTitle(rec.title); setEditing(false); }} className="grid h-8 w-8 shrink-0 place-items-center rounded-input text-muted hover:bg-white cursor-pointer" aria-label="Cancel">
+                <X size={16} />
+              </button>
+            </div>
+          ) : (
+            <>
+              <p className="truncate pr-6 text-[15px] font-semibold text-ink">{rec.title}</p>
+              <p className="mt-0.5 flex flex-wrap items-center gap-x-2 font-mono text-[11px] text-faint">
+                <span>{rec.dateLabel}</span>
+                <span>·</span>
+                <span>{rec.durationLabel}</span>
+                <span>·</span>
+                <span>{rec.source === "record" ? "Recorded" : "Uploaded"}</span>
+              </p>
+            </>
+          )}
+        </div>
+
+        {!editing && (
+          <div className="pointer-events-auto relative shrink-0">
             <button
               onClick={() => setMenu((m) => !m)}
               disabled={busy}
-              className="grid h-8 w-8 place-items-center rounded-input text-muted opacity-0 transition-opacity duration-150 hover:bg-white group-hover:opacity-100 focus-visible:opacity-100 disabled:opacity-50 cursor-pointer"
+              className="grid h-8 w-8 place-items-center rounded-input text-muted transition-colors duration-150 hover:bg-white disabled:opacity-50 cursor-pointer"
               aria-label="More actions"
             >
               <DotsThreeVertical size={18} weight="bold" />
@@ -264,33 +238,45 @@ function RecordingCard({
                     icon={<Trash size={15} />}
                     label="Delete"
                     danger
-                    onClick={() => {
-                      setMenu(false);
-                      if (confirm(`Delete "${rec.title}"? This can't be undone.`)) onDelete();
-                    }}
+                    onClick={() => { setMenu(false); if (confirm(`Delete "${rec.title}"? This can't be undone.`)) onDelete(); }}
                   />
                 </div>
               </>
             )}
           </div>
-          <ArrowRight size={15} className="hidden text-faint transition-transform duration-150 [transition-timing-function:var(--ease-out)] group-hover:translate-x-0.5 md:block" />
-        </>
-      )}
+        )}
+      </div>
+
+      {/* Body: summary preview or status note */}
+      <p className={`pointer-events-none relative z-10 line-clamp-2 flex-1 text-[13.5px] leading-relaxed ${rec.summary ? "text-ink-soft" : "text-muted"}`}>
+        {rec.summary || s.note}
+      </p>
+
+      {/* Footer: topics + action count + status */}
+      <div className="pointer-events-none relative z-10 flex items-center justify-between gap-2">
+        <div className="flex min-w-0 flex-wrap items-center gap-1.5">
+          {rec.topics.slice(0, 3).map((t, i) => (
+            <span key={i} className="max-w-[9rem] truncate rounded-btn bg-accent-wash px-2 py-0.5 text-[11px] font-medium text-accent-deep">
+              {t}
+            </span>
+          ))}
+          {extraTopics > 0 && <span className="text-[11px] text-faint">+{extraTopics}</span>}
+          {rec.actionCount > 0 && (
+            <span className="inline-flex items-center gap-1 text-[11px] font-medium text-muted">
+              <ListChecks size={13} /> {rec.actionCount}
+            </span>
+          )}
+        </div>
+        <span className={`flex shrink-0 items-center gap-1.5 ${s.text}`}>
+          <span className={`h-1.5 w-1.5 rounded-full ${s.dot} ${["transcribing", "processing"].includes(rec.status) ? "animate-pulse" : ""}`} />
+          <span className="font-mono text-[10.5px] uppercase tracking-[0.1em]">{s.label}</span>
+        </span>
+      </div>
     </li>
   );
 }
 
-function MenuItem({
-  icon,
-  label,
-  onClick,
-  danger,
-}: {
-  icon: React.ReactNode;
-  label: string;
-  onClick: () => void;
-  danger?: boolean;
-}) {
+function MenuItem({ icon, label, onClick, danger }: { icon: React.ReactNode; label: string; onClick: () => void; danger?: boolean }) {
   return (
     <button
       onClick={onClick}
@@ -308,9 +294,7 @@ function EmptyState({ hasAny }: { hasAny: boolean }) {
   return (
     <div className="glass-soft grid place-items-center rounded-panel px-6 py-14 text-center">
       <WaveSawtooth size={26} className="text-faint" />
-      <p className="mt-3 text-[14px] font-medium text-ink">
-        {hasAny ? "No matches" : "Nothing captured yet"}
-      </p>
+      <p className="mt-3 text-[14px] font-medium text-ink">{hasAny ? "No matches" : "Nothing captured yet"}</p>
       <p className="mt-1 text-[13px] text-muted">
         {hasAny ? "Try a different search or filter." : "Record or upload audio to get started."}
       </p>

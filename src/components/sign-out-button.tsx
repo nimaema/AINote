@@ -7,11 +7,11 @@ export function SignOutButton() {
   return (
     <button
       onClick={() => signOut({ redirectTo: "/login" })}
-      className="inline-flex h-9 items-center gap-1.5 rounded-btn px-3 text-[13px] text-muted transition-colors duration-150 [transition-timing-function:var(--ease-out)] hover:bg-[rgba(20,22,28,0.05)] hover:text-ink cursor-pointer"
+      className="inline-flex h-9 items-center gap-1.5 rounded-btn px-2.5 text-[13px] text-muted transition-colors duration-150 [transition-timing-function:var(--ease-out)] hover:bg-[rgba(20,22,28,0.05)] hover:text-ink cursor-pointer"
       aria-label="Sign out"
     >
       <SignOut size={16} />
-      Sign out
+      <span className="hidden sm:inline">Sign out</span>
     </button>
   );
 }

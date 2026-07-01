@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { desc, eq, sql } from "drizzle-orm";
 import { auth } from "@/lib/auth";
 import { db } from "@/db";
-import { recordings } from "@/db/schema";
+import { recordings, results } from "@/db/schema";
 import { relativeTime, humanDuration, humanTotalTime } from "@/lib/format";
 import { AppHeader } from "@/components/app-header";
 import { Waveform } from "@/components/waveform";
@@ -25,11 +25,23 @@ export default async function DashboardPage() {
     .from(recordings)
     .where(eq(recordings.userId, userId));
 
-  const rows = await db.query.recordings.findMany({
-    where: eq(recordings.userId, userId),
-    orderBy: [desc(recordings.createdAt)],
-    limit: 200,
-  });
+  const rows = await db
+    .select({
+      id: recordings.id,
+      title: recordings.title,
+      status: recordings.status,
+      source: recordings.source,
+      createdAt: recordings.createdAt,
+      durationSec: recordings.durationSec,
+      summary: results.summary,
+      topics: results.topics,
+      actionCount: sql<number>`coalesce(jsonb_array_length(${results.actionItems}), 0)::int`,
+    })
+    .from(recordings)
+    .leftJoin(results, eq(results.recordingId, recordings.id))
+    .where(eq(recordings.userId, userId))
+    .orderBy(desc(recordings.createdAt))
+    .limit(200);
 
   const now = new Date();
   const items: RecItem[] = rows.map((r) => ({
@@ -39,6 +51,9 @@ export default async function DashboardPage() {
     source: r.source,
     dateLabel: relativeTime(r.createdAt, now),
     durationLabel: humanDuration(r.durationSec),
+    summary: r.summary,
+    topics: r.topics ?? [],
+    actionCount: r.actionCount,
   }));
 
   const firstName = (session.user.name ?? session.user.email ?? "there").split(/[@ ]/)[0];
@@ -47,7 +62,7 @@ export default async function DashboardPage() {
     <div className="min-h-[100dvh]">
       <AppHeader user={session.user} />
 
-      <main className="mx-auto max-w-6xl px-4 pb-20 pt-8 sm:px-6">
+      <main className="mx-auto max-w-6xl px-4 pb-28 md:pb-20 pt-8 sm:px-6">
         {/* Hero */}
         <section className="glass rise relative overflow-hidden rounded-panel p-7 sm:p-9">
           <div className="relative z-10 max-w-xl">

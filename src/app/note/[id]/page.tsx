@@ -57,7 +57,7 @@ export default async function NotePage({
   return (
     <div className="min-h-[100dvh]">
       <AppHeader user={session.user} />
-      <main className="mx-auto max-w-6xl px-4 pb-20 pt-8 sm:px-6">
+      <main className="mx-auto max-w-6xl px-4 pb-28 md:pb-20 pt-8 sm:px-6">
         <Link
           href="/"
           className="inline-flex items-center gap-1.5 text-[13px] text-muted transition-colors duration-150 [transition-timing-function:var(--ease-out)] hover:text-ink"

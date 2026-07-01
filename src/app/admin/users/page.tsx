@@ -57,7 +57,7 @@ export default async function AdminUsersPage() {
   return (
     <div className="min-h-[100dvh]">
       <AppHeader user={session.user} />
-      <main className="mx-auto max-w-4xl px-4 pb-20 pt-10 sm:px-6">
+      <main className="mx-auto max-w-4xl px-4 pb-28 md:pb-20 pt-10 sm:px-6">
         <h1 className="font-display text-[26px] font-bold tracking-tight text-ink">Users</h1>
         <p className="mt-1 mb-6 text-sm text-muted">
           Manage access and see how the workspace is being used.
