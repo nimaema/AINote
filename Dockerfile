@@ -17,7 +17,8 @@ RUN npm ci
 FROM base AS builder
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
-RUN npm run build
+# `public` may be absent (Git doesn't track empty dirs); the runner stage copies it.
+RUN mkdir -p public && npm run build
 
 # ---- Runner: the web app ----
 FROM base AS web
