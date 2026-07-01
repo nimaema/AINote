@@ -1,0 +1,121 @@
+"use client";
+
+import { useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
+import { CircleNotch, Check, WarningCircle } from "@phosphor-icons/react";
+import { Waveform } from "@/components/waveform";
+
+const STEPS = [
+  { key: "uploaded", label: "Uploaded" },
+  { key: "transcribing", label: "Transcribing" },
+  { key: "processing", label: "Summarizing" },
+  { key: "done", label: "Ready" },
+];
+
+export function ProcessingView({
+  recordingId,
+  initialStatus,
+}: {
+  recordingId: string;
+  initialStatus: string;
+}) {
+  const router = useRouter();
+  const [status, setStatus] = useState(initialStatus);
+  const timer = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  useEffect(() => {
+    if (status === "done" || status === "failed") {
+      router.refresh();
+      return;
+    }
+    timer.current = setInterval(async () => {
+      try {
+        const res = await fetch(`/api/recordings/${recordingId}/status`, {
+          cache: "no-store",
+        });
+        if (!res.ok) return;
+        const data = await res.json();
+        setStatus(data.status);
+        if (data.status === "done" || data.status === "failed") {
+          if (timer.current) clearInterval(timer.current);
+          router.refresh();
+        }
+      } catch {
+        /* keep polling */
+      }
+    }, 2000);
+    return () => {
+      if (timer.current) clearInterval(timer.current);
+    };
+  }, [recordingId, status, router]);
+
+  if (status === "failed") {
+    return (
+      <div className="glass rounded-panel p-10 text-center">
+        <span className="mx-auto grid h-12 w-12 place-items-center rounded-full bg-[rgba(229,72,77,0.12)] text-err">
+          <WarningCircle size={24} weight="fill" />
+        </span>
+        <h2 className="mt-4 font-display text-[20px] font-bold text-ink">
+          Processing failed
+        </h2>
+        <p className="mt-1.5 text-sm text-muted">
+          Something went wrong transcribing this recording. Try uploading it again.
+        </p>
+      </div>
+    );
+  }
+
+  const activeIdx = Math.max(
+    0,
+    STEPS.findIndex((s) => s.key === status)
+  );
+
+  return (
+    <div className="glass rounded-panel p-8 sm:p-10">
+      <div className="mx-auto mb-8 w-full max-w-md rounded-card border border-hairline bg-white/50 px-5 py-4">
+        <Waveform bars={52} height={56} />
+      </div>
+      <h2 className="text-center font-display text-[20px] font-bold text-ink">
+        Working on your notes
+      </h2>
+      <p className="mt-1.5 text-center text-sm text-muted">
+        Transcribing and summarizing. This page updates itself when it&apos;s ready.
+      </p>
+
+      <ol className="mx-auto mt-8 flex max-w-md flex-col gap-3">
+        {STEPS.map((step, i) => {
+          const state =
+            i < activeIdx ? "done" : i === activeIdx ? "active" : "pending";
+          return (
+            <li key={step.key} className="flex items-center gap-3">
+              <span
+                className={`grid h-7 w-7 shrink-0 place-items-center rounded-full ${
+                  state === "done"
+                    ? "bg-accent-wash text-accent-deep"
+                    : state === "active"
+                      ? "bg-ink text-white"
+                      : "border border-hairline text-faint"
+                }`}
+              >
+                {state === "done" ? (
+                  <Check size={14} weight="bold" />
+                ) : state === "active" ? (
+                  <CircleNotch size={14} weight="bold" className="animate-spin" />
+                ) : (
+                  <span className="h-1.5 w-1.5 rounded-full bg-faint" />
+                )}
+              </span>
+              <span
+                className={`text-sm ${
+                  state === "pending" ? "text-faint" : "text-ink"
+                }`}
+              >
+                {step.label}
+              </span>
+            </li>
+          );
+        })}
+      </ol>
+    </div>
+  );
+}

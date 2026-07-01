@@ -1,0 +1,186 @@
+@import "tailwindcss";
+
+/*
+  GlaciaNav Notes — "Aurora Glass".
+  A bright, cool porcelain field washed by a slow aurora mesh (teal / violet /
+  rose). Content floats on frosted-glass panels with real edge lighting. One
+  electric accent (#0EA5E9) carries interaction; the mesh hues are atmosphere
+  only. Expressive Bricolage display over a clean Geist body.
+*/
+
+@theme {
+  /* Field */
+  --color-bg: #f7f8fc;
+  --color-bg-2: #eef1f8;
+  --color-ink: #14161c; /* headings / primary text */
+  --color-ink-soft: #3b4150; /* strong body */
+  --color-muted: #565d6e; /* muted body — still AA on porcelain */
+  --color-faint: #8b93a5; /* labels / captions only */
+
+  /* Glass */
+  --color-panel: rgba(255, 255, 255, 0.72);
+  --color-panel-solid: #ffffff;
+  --color-hairline: rgba(20, 22, 28, 0.08);
+  --color-hairline-strong: rgba(20, 22, 28, 0.14);
+
+  /* Accent — electric sky (the single interactive colour) */
+  --color-accent: #0ea5e9;
+  --color-accent-deep: #0369a1; /* accent-as-text on white (AA) */
+  --color-accent-ink: #ffffff;
+  --color-accent-wash: rgba(14, 165, 233, 0.1);
+
+  /* Aurora mesh hues (background atmosphere only) */
+  --color-aurora-teal: #2dd4bf;
+  --color-aurora-violet: #8b5cf6;
+  --color-aurora-rose: #fb7da8;
+  --color-aurora-amber: #fbbf77;
+
+  /* Semantic */
+  --color-ok: #0ea472;
+  --color-warn: #d98324;
+  --color-err: #e5484d;
+  --color-rec: #f43f5e; /* live recording only */
+
+  /* Shape — interactive = pill, panels 20, cards 16, inputs 12 */
+  --radius-input: 12px;
+  --radius-btn: 999px;
+  --radius-card: 16px;
+  --radius-panel: 20px;
+
+  /* Motion — strong custom curves */
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+  --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
+
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-bricolage), var(--font-geist-sans), sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, "SF Mono", monospace;
+}
+
+html {
+  color-scheme: light;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  background: var(--color-bg);
+  color: var(--color-ink-soft);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+.font-display {
+  font-family: var(--font-display);
+  letter-spacing: -0.02em;
+}
+
+.tabular {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+}
+
+/* ─── Frosted glass ──────────────────────────────────────────────────
+   Real edge lighting: top highlight + hairline + layered tinted shadow. */
+.glass {
+  background: var(--color-panel);
+  backdrop-filter: blur(22px) saturate(1.5);
+  -webkit-backdrop-filter: blur(22px) saturate(1.5);
+  border: 1px solid rgba(255, 255, 255, 0.65);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.9),
+    0 1px 2px rgba(20, 24, 40, 0.04),
+    0 14px 40px -12px rgba(30, 42, 90, 0.16);
+}
+
+.glass-soft {
+  background: rgba(255, 255, 255, 0.55);
+  backdrop-filter: blur(16px) saturate(1.4);
+  -webkit-backdrop-filter: blur(16px) saturate(1.4);
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.8),
+    0 8px 28px -14px rgba(30, 42, 90, 0.18);
+}
+
+/* Solid fallback when the OS asks for less transparency */
+@media (prefers-reduced-transparency: reduce) {
+  .glass,
+  .glass-soft {
+    background: var(--color-panel-solid);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+}
+
+/* Accent gradient text for one expressive word in a headline */
+.accent-gradient {
+  background: linear-gradient(
+    100deg,
+    var(--color-accent) 0%,
+    var(--color-aurora-violet) 60%,
+    var(--color-aurora-rose) 100%
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+::selection {
+  background: var(--color-accent-wash);
+  color: var(--color-ink);
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+/* ─── Motion keyframes ───────────────────────────────────────────────*/
+@keyframes aurora-drift {
+  0% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  50% {
+    transform: translate3d(4%, -3%, 0) scale(1.15);
+  }
+  100% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+
+@keyframes wave {
+  from {
+    transform: scaleY(0.35);
+  }
+  to {
+    transform: scaleY(1);
+  }
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.rise {
+  animation: rise 0.6s var(--ease-out) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
