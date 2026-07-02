@@ -1,8 +1,9 @@
 # GlaciaNav Notes
 
 Record or upload audio → transcribe with **AssemblyAI** → turn it into a summary,
-action items, decisions, and an ask-anything Q&A with **DeepSeek**. Export to
-Google Docs or Microsoft Teams. Self-hosted, one Docker stack, served at
+action items, decisions, and an ask-anything Q&A with **DeepSeek**. Rename
+speakers, share a recording with your workspace, and export a designed PDF or
+Markdown. Installable as a PWA. Self-hosted, one Docker stack, served at
 `notes.glacianav.com` through a Cloudflare Tunnel.
 
 ## Stack
@@ -40,7 +41,7 @@ npm run db:generate           # (migrations are committed; only needed after sch
 npm run db:migrate            # applies migrations + enables pgvector
 npm run db:seed               # creates the admin from ADMIN_EMAIL / ADMIN_PASSWORD
 npm run dev                   # app on :3000
-npm run worker                # background worker (transcription, LLM, exports)
+npm run worker                # background worker (transcription, LLM, embeddings)
 ```
 
 > Node 26 note: `drizzle-kit` needs `drizzle-kit@0.31+` on Node 23+. The Docker
