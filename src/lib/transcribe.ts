@@ -1,5 +1,8 @@
 import { AssemblyAI } from "assemblyai";
 import { spawn } from "node:child_process";
+import { tmpdir } from "node:os";
+import { mkdtemp, readFile, writeFile, rm } from "node:fs/promises";
+import { join } from "node:path";
 import { getObjectStream } from "./storage";
 import type { Utterance } from "../db/schema";
 
@@ -16,52 +19,62 @@ function useMock() {
   return process.env.MOCK_TRANSCRIPTION === "1" || !key || key === "dev";
 }
 
-// Convert any audio buffer to 16kHz mono WAV via ffmpeg. This normalises
-// exotic codecs (ALAC, HE-AAC, etc.) into a format AssemblyAI reliably accepts.
+// Convert any audio buffer to 16kHz mono WAV via ffmpeg. Uses temp files
+// instead of pipes — piping large buffers through stdin/stdout can produce
+// truncated output because of Node.js stream backpressure quirks.
 async function convertToWav(
   input: Buffer,
   sourceSize?: number
 ): Promise<Buffer> {
-  return new Promise((resolve, reject) => {
-    const ffmpeg = spawn("ffmpeg", [
-      "-i", "pipe:0",          // read from stdin
-      "-f", "wav",             // output format
-      "-acodec", "pcm_s16le",  // 16-bit PCM
-      "-ar", "16000",          // 16 kHz sample rate
-      "-ac", "1",              // mono
-      "-loglevel", "error",    // only errors on stderr
-      "pipe:1",                // write to stdout
-    ]);
+  const dir = await mkdtemp(join(tmpdir(), "transcribe-"));
+  const src = join(dir, "input.bin");
+  const dst = join(dir, "output.wav");
 
-    const chunks: Buffer[] = [];
-    ffmpeg.stdout.on("data", (chunk: Buffer) => chunks.push(chunk));
+  try {
+    await writeFile(src, input);
 
-    let stderr = "";
-    ffmpeg.stderr.on("data", (d: Buffer) => {
-      stderr += d.toString();
+    await new Promise<void>((resolve, reject) => {
+      const ffmpeg = spawn("ffmpeg", [
+        "-y",                    // overwrite output
+        "-i", src,               // input file
+        "-f", "wav",             // output format
+        "-acodec", "pcm_s16le",  // 16-bit PCM
+        "-ar", "16000",          // 16 kHz sample rate
+        "-ac", "1",              // mono
+        "-loglevel", "error",    // only errors on stderr
+        dst,                     // output file
+      ]);
+
+      let stderr = "";
+      ffmpeg.stderr.on("data", (d: Buffer) => {
+        stderr += d.toString();
+      });
+
+      ffmpeg.on("close", (code) => {
+        if (code !== 0) {
+          const srcInfo = sourceSize
+            ? ` (${(sourceSize / 1024 / 1024).toFixed(1)} MB source)`
+            : "";
+          reject(
+            new Error(
+              `ffmpeg conversion failed (exit ${code})${srcInfo}: ${stderr.slice(0, 300) || "no stderr output"}`
+            )
+          );
+          return;
+        }
+        resolve();
+      });
+
+      ffmpeg.on("error", (err) =>
+        reject(new Error(`ffmpeg spawn failed: ${err.message}`))
+      );
     });
 
-    ffmpeg.on("close", (code) => {
-      if (code !== 0) {
-        const srcInfo = sourceSize
-          ? ` (${(sourceSize / 1024 / 1024).toFixed(1)} MB source)`
-          : "";
-        reject(
-          new Error(
-            `ffmpeg conversion failed (exit ${code})${srcInfo}: ${stderr.slice(0, 300) || "no stderr output"}`
-          )
-        );
-        return;
-      }
-      resolve(Buffer.concat(chunks));
-    });
-
-    ffmpeg.on("error", (err) => reject(new Error(`ffmpeg spawn failed: ${err.message}`)));
-
-    // Pipe the source audio into ffmpeg and close stdin.
-    ffmpeg.stdin.write(input);
-    ffmpeg.stdin.end();
-  });
+    const wav = await readFile(dst);
+    return wav;
+  } finally {
+    await rm(dir, { recursive: true, force: true }).catch(() => {});
+  }
 }
 
 export async function transcribeAudio(
