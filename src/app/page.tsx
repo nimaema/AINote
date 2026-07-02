@@ -3,12 +3,13 @@ import { redirect } from "next/navigation";
 import { desc, eq, sql } from "drizzle-orm";
 import { auth } from "@/lib/auth";
 import { db } from "@/db";
-import { recordings, results, transcripts } from "@/db/schema";
+import { recordings, results, transcripts, projects } from "@/db/schema";
 import { relativeTime, humanDuration, humanTotalTime } from "@/lib/format";
 import { languageName } from "@/lib/language";
 import { AppHeader } from "@/components/app-header";
 import { Waveform } from "@/components/waveform";
 import { RecordingsList, type RecItem } from "@/components/dashboard/recordings-list";
+import { ProjectsSection } from "@/components/projects/projects-section";
 import { Microphone, UploadSimple } from "@phosphor-icons/react/dist/ssr";
 
 export default async function DashboardPage() {
@@ -39,13 +40,31 @@ export default async function DashboardPage() {
       summary: results.summary,
       topics: results.topics,
       actionCount: sql<number>`coalesce(jsonb_array_length(${results.actionItems}), 0)::int`,
+      projectId: recordings.projectId,
+      projectName: projects.name,
+      projectColor: projects.color,
     })
     .from(recordings)
     .leftJoin(results, eq(results.recordingId, recordings.id))
     .leftJoin(transcripts, eq(transcripts.recordingId, recordings.id))
+    .leftJoin(projects, eq(projects.id, recordings.projectId))
     .where(eq(recordings.userId, userId))
     .orderBy(desc(recordings.createdAt))
     .limit(200);
+
+  // Projects with their recording counts.
+  const projectRows = await db
+    .select({
+      id: projects.id,
+      name: projects.name,
+      color: projects.color,
+      count: sql<number>`count(${recordings.id})::int`,
+    })
+    .from(projects)
+    .leftJoin(recordings, eq(recordings.projectId, projects.id))
+    .where(eq(projects.userId, userId))
+    .groupBy(projects.id)
+    .orderBy(desc(projects.createdAt));
 
   const now = new Date();
   const items: RecItem[] = rows.map((r) => ({
@@ -60,6 +79,9 @@ export default async function DashboardPage() {
     summary: r.summary,
     topics: r.topics ?? [],
     actionCount: r.actionCount,
+    projectId: r.projectId,
+    projectName: r.projectName,
+    projectColor: r.projectColor,
   }));
 
   const firstName = (session.user.name ?? session.user.email ?? "there").split(/[@ ]/)[0];
@@ -108,6 +130,8 @@ export default async function DashboardPage() {
           <Stat label="Ready" value={String(stats.ready)} accent />
           <Stat label="Needs attention" value={String(stats.failed)} alert={stats.failed > 0} />
         </div>
+
+        <ProjectsSection projects={projectRows} />
 
         <RecordingsList items={items} />
       </main>

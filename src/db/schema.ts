@@ -82,6 +82,24 @@ export const verificationTokens = pgTable(
 );
 
 // ─── App tables ───────────────────────────────────────────────────────
+// A project groups recordings for navigation + cross-recording Q&A.
+export const projects = pgTable(
+  "projects",
+  {
+    id: text("id")
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    name: text("name").notNull(),
+    color: text("color").notNull().default("sky"), // palette key
+    createdAt: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { mode: "date" }).notNull().defaultNow(),
+  },
+  (t) => [index("projects_user_idx").on(t.userId, t.createdAt)]
+);
+
 export const recordings = pgTable(
   "recordings",
   {
@@ -91,6 +109,10 @@ export const recordings = pgTable(
     userId: text("user_id")
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
+    // Optional project grouping; deleting a project detaches its recordings.
+    projectId: text("project_id").references(() => projects.id, {
+      onDelete: "set null",
+    }),
     title: text("title"),
     source: recordingSourceEnum("source").notNull(),
     storageKey: text("storage_key").notNull(), // object key in MinIO
@@ -180,6 +202,20 @@ export const qaMessages = pgTable("qa_messages", {
   createdAt: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
 });
 
+// Chat history for a project-level (cross-recording) Q&A thread.
+export const projectQaMessages = pgTable("project_qa_messages", {
+  id: text("id")
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  projectId: text("project_id")
+    .notNull()
+    .references(() => projects.id, { onDelete: "cascade" }),
+  role: qaRoleEnum("role").notNull(),
+  content: text("content").notNull(),
+  citations: jsonb("citations").$type<Citation[]>(),
+  createdAt: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
+});
+
 // Per-user connections for exporting notes (Google Docs OAuth, Teams webhook).
 export const integrations = pgTable(
   "integrations",
@@ -238,9 +274,13 @@ export type Citation = {
   startMs?: number | null;
   speaker?: string | null;
   quote?: string;
+  // Set for cross-project answers so a citation can name/link its recording.
+  recordingId?: string | null;
+  recordingTitle?: string | null;
 };
 
 export type User = typeof users.$inferSelect;
+export type Project = typeof projects.$inferSelect;
 export type Recording = typeof recordings.$inferSelect;
 export type Transcript = typeof transcripts.$inferSelect;
 export type Result = typeof results.$inferSelect;

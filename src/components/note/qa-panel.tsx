@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import { PaperPlaneRight, Sparkle } from "@phosphor-icons/react";
 import type { Citation } from "@/db/schema";
 
@@ -11,12 +12,6 @@ type Msg = {
   citations?: Citation[] | null;
 };
 
-const SUGGESTIONS = [
-  "Summarize the decisions",
-  "What are my action items?",
-  "What's still open?",
-];
-
 function fmtMs(ms?: number | null) {
   if (ms == null) return null;
   const s = Math.floor(ms / 1000);
@@ -24,11 +19,17 @@ function fmtMs(ms?: number | null) {
 }
 
 export function QAPanel({
-  recordingId,
+  endpoint,
   initialMessages,
+  title = "Ask about this recording",
+  suggestions = ["Summarize the decisions", "What are my action items?", "What's still open?"],
+  emptyHint = "Ask anything about what was said.",
 }: {
-  recordingId: string;
+  endpoint: string;
   initialMessages: Msg[];
+  title?: string;
+  suggestions?: string[];
+  emptyHint?: string;
 }) {
   const [messages, setMessages] = useState<Msg[]>(initialMessages);
   const [input, setInput] = useState("");
@@ -46,25 +47,18 @@ export function QAPanel({
     setMessages((m) => [...m, { role: "user", content: q }]);
     setPending(true);
     try {
-      const res = await fetch(`/api/recordings/${recordingId}/qa`, {
+      const res = await fetch(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ question: q }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Failed");
-      setMessages((m) => [
-        ...m,
-        { role: "assistant", content: data.answer, citations: data.citations },
-      ]);
+      setMessages((m) => [...m, { role: "assistant", content: data.answer, citations: data.citations }]);
     } catch (e) {
       setMessages((m) => [
         ...m,
-        {
-          role: "assistant",
-          content:
-            e instanceof Error ? e.message : "Something went wrong. Try again.",
-        },
+        { role: "assistant", content: e instanceof Error ? e.message : "Something went wrong. Try again." },
       ]);
     } finally {
       setPending(false);
@@ -79,54 +73,54 @@ export function QAPanel({
         <span className="grid h-7 w-7 place-items-center rounded-full bg-accent-wash text-accent-deep">
           <Sparkle size={15} weight="fill" />
         </span>
-        <h2 className="font-display text-[15px] font-bold text-ink">
-          Ask about this recording
-        </h2>
+        <h2 className="font-display text-[15px] font-bold text-ink">{title}</h2>
       </div>
 
       <div ref={scrollRef} className="flex-1 space-y-4 overflow-y-auto px-5 py-5">
         {empty ? (
           <div className="flex h-full flex-col items-center justify-center text-center">
-            <p className="text-[13px] text-muted">
-              Ask anything about what was said.
-            </p>
+            <p className="text-[13px] text-muted">{emptyHint}</p>
             <div className="mt-4 flex flex-wrap justify-center gap-2">
-              {SUGGESTIONS.map((s) => (
+              {suggestions.map((sug) => (
                 <button
-                  key={s}
-                  onClick={() => ask(s)}
+                  key={sug}
+                  onClick={() => ask(sug)}
                   className="rounded-btn border border-hairline bg-white/60 px-3 py-1.5 text-[12.5px] text-ink-soft transition-colors duration-150 [transition-timing-function:var(--ease-out)] hover:border-accent hover:text-accent-deep cursor-pointer"
                 >
-                  {s}
+                  {sug}
                 </button>
               ))}
             </div>
           </div>
         ) : (
           messages.map((m, i) => (
-            <div
-              key={m.id ?? i}
-              className={m.role === "user" ? "flex justify-end" : "flex justify-start"}
-            >
+            <div key={m.id ?? i} className={m.role === "user" ? "flex justify-end" : "flex justify-start"}>
               <div
                 className={`max-w-[85%] whitespace-pre-wrap rounded-card px-3.5 py-2.5 text-[14px] leading-relaxed ${
-                  m.role === "user"
-                    ? "bg-ink text-white"
-                    : "border border-hairline bg-white/70 text-ink-soft"
+                  m.role === "user" ? "bg-ink text-white" : "border border-hairline bg-white/70 text-ink-soft"
                 }`}
               >
                 {m.content}
                 {m.citations && m.citations.length > 0 && (
                   <div className="mt-2 flex flex-wrap gap-1.5">
-                    {m.citations.map((c, j) => (
-                      <span
-                        key={j}
-                        className="rounded-btn bg-accent-wash px-2 py-0.5 font-mono text-[10.5px] text-accent-deep"
-                      >
-                        {c.speaker ?? "clip"}
-                        {fmtMs(c.startMs) ? ` · ${fmtMs(c.startMs)}` : ""}
-                      </span>
-                    ))}
+                    {m.citations.map((c, j) => {
+                      const time = fmtMs(c.startMs);
+                      const label = [c.recordingTitle, c.speaker ?? (c.recordingTitle ? null : "clip"), time]
+                        .filter(Boolean)
+                        .join(" · ");
+                      const chip = (
+                        <span className="inline-block rounded-btn bg-accent-wash px-2 py-0.5 font-mono text-[10.5px] text-accent-deep">
+                          {label}
+                        </span>
+                      );
+                      return c.recordingId ? (
+                        <Link key={j} href={`/note/${c.recordingId}`} className="hover:opacity-80">
+                          {chip}
+                        </Link>
+                      ) : (
+                        <span key={j}>{chip}</span>
+                      );
+                    })}
                   </div>
                 )}
               </div>

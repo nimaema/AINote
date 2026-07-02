@@ -16,6 +16,8 @@ import {
   Check,
   X,
 } from "@phosphor-icons/react";
+import { ProjectPicker } from "@/components/projects/project-picker";
+import { projectColor } from "@/lib/projects";
 
 export type RecItem = {
   id: string;
@@ -29,6 +31,9 @@ export type RecItem = {
   summary: string | null;
   topics: string[];
   actionCount: number;
+  projectId: string | null;
+  projectName: string | null;
+  projectColor: string | null;
 };
 
 const FILTERS = [
@@ -46,7 +51,15 @@ const STATUS: Record<string, { label: string; dot: string; text: string; note: s
   failed: { label: "Failed", dot: "bg-err", text: "text-err", note: "Processing failed — retry from the menu." },
 };
 
-export function RecordingsList({ items }: { items: RecItem[] }) {
+export function RecordingsList({
+  items,
+  heading = "Your captures",
+  hideProject = false,
+}: {
+  items: RecItem[];
+  heading?: string;
+  hideProject?: boolean;
+}) {
   const router = useRouter();
   const [q, setQ] = useState("");
   const [filter, setFilter] = useState<(typeof FILTERS)[number]["key"]>("all");
@@ -94,7 +107,7 @@ export function RecordingsList({ items }: { items: RecItem[] }) {
     <section aria-labelledby="recent-heading" className="mt-10">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3 px-1">
         <h2 id="recent-heading" className="font-display text-[18px] font-bold tracking-tight text-ink">
-          Your captures
+          {heading}
         </h2>
         <div className="relative">
           <MagnifyingGlass size={15} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-faint" />
@@ -135,6 +148,7 @@ export function RecordingsList({ items }: { items: RecItem[] }) {
               key={r.id}
               rec={r}
               busy={busy === r.id}
+              hideProject={hideProject}
               onRename={(t) => rename(r.id, t)}
               onDelete={() => remove(r.id)}
               onRetry={() => retry(r.id)}
@@ -149,12 +163,14 @@ export function RecordingsList({ items }: { items: RecItem[] }) {
 function RecordingCard({
   rec,
   busy,
+  hideProject,
   onRename,
   onDelete,
   onRetry,
 }: {
   rec: RecItem;
   busy: boolean;
+  hideProject?: boolean;
   onRename: (title: string) => void;
   onDelete: () => void;
   onRetry: () => void;
@@ -230,38 +246,47 @@ function RecordingCard({
                     <Translate size={11} weight="bold" /> {rec.language}
                   </span>
                 )}
+                {!hideProject && rec.projectId && rec.projectName && (
+                  <span className="inline-flex items-center gap-1 text-ink-soft">
+                    <span className="h-2 w-2 rounded-full" style={{ background: projectColor(rec.projectColor) }} />
+                    {rec.projectName}
+                  </span>
+                )}
               </p>
             </>
           )}
         </div>
 
         {!editing && (
-          <div className="pointer-events-auto relative shrink-0">
-            <button
-              onClick={() => setMenu((m) => !m)}
-              disabled={busy}
-              className="grid h-8 w-8 place-items-center rounded-input text-muted transition-colors duration-150 hover:bg-white disabled:opacity-50 cursor-pointer"
-              aria-label="More actions"
-            >
-              <DotsThreeVertical size={18} weight="bold" />
-            </button>
-            {menu && (
-              <>
-                <div className="fixed inset-0 z-30" onClick={() => setMenu(false)} />
-                <div className="glass-menu pop-in absolute right-0 top-full z-50 mt-1 w-40 overflow-hidden rounded-card p-1.5">
-                  <MenuItem icon={<PencilSimple size={15} />} label="Rename" onClick={() => { setMenu(false); setEditing(true); }} />
-                  {rec.status === "failed" && (
-                    <MenuItem icon={<ArrowClockwise size={15} />} label="Retry" onClick={() => { setMenu(false); onRetry(); }} />
-                  )}
-                  <MenuItem
-                    icon={<Trash size={15} />}
-                    label="Delete"
-                    danger
-                    onClick={() => { setMenu(false); if (confirm(`Delete "${rec.title}"? This can't be undone.`)) onDelete(); }}
-                  />
-                </div>
-              </>
-            )}
+          <div className="pointer-events-auto relative z-20 flex shrink-0 items-center gap-0.5">
+            <ProjectPicker recordingId={rec.id} currentProjectId={rec.projectId} variant="icon" />
+            <div className="relative">
+              <button
+                onClick={() => setMenu((m) => !m)}
+                disabled={busy}
+                className="grid h-8 w-8 place-items-center rounded-input text-muted transition-colors duration-150 hover:bg-white disabled:opacity-50 cursor-pointer"
+                aria-label="More actions"
+              >
+                <DotsThreeVertical size={18} weight="bold" />
+              </button>
+              {menu && (
+                <>
+                  <div className="fixed inset-0 z-30" onClick={() => setMenu(false)} />
+                  <div className="glass-menu pop-in absolute right-0 top-full z-50 mt-1 w-40 overflow-hidden rounded-card p-1.5">
+                    <MenuItem icon={<PencilSimple size={15} />} label="Rename" onClick={() => { setMenu(false); setEditing(true); }} />
+                    {rec.status === "failed" && (
+                      <MenuItem icon={<ArrowClockwise size={15} />} label="Retry" onClick={() => { setMenu(false); onRetry(); }} />
+                    )}
+                    <MenuItem
+                      icon={<Trash size={15} />}
+                      label="Delete"
+                      danger
+                      onClick={() => { setMenu(false); if (confirm(`Delete "${rec.title}"? This can't be undone.`)) onDelete(); }}
+                    />
+                  </div>
+                </>
+              )}
+            </div>
           </div>
         )}
       </div>

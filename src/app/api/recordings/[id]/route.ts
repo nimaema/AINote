@@ -4,6 +4,7 @@ import { z } from "zod";
 import { auth } from "@/lib/auth";
 import { db } from "@/db";
 import { recordings } from "@/db/schema";
+import { getOwnedProject } from "@/lib/projects-server";
 import { removeObject } from "@/lib/storage";
 
 export const runtime = "nodejs";
@@ -18,12 +19,15 @@ const patchSchema = z
   .object({
     title: z.string().trim().min(1).max(200).optional(),
     isPublic: z.boolean().optional(),
+    projectId: z.string().nullable().optional(), // null = remove from project
   })
-  .refine((v) => v.title !== undefined || v.isPublic !== undefined, {
-    message: "Nothing to update",
-  });
+  .refine(
+    (v) => v.title !== undefined || v.isPublic !== undefined || v.projectId !== undefined,
+    { message: "Nothing to update" }
+  );
 
-// Rename a recording and/or change its visibility. Owner-only.
+// Rename a recording, change its visibility, and/or move it to a project.
+// Owner-only.
 export async function PATCH(
   req: Request,
   { params }: { params: Promise<{ id: string }> }
@@ -38,9 +42,16 @@ export async function PATCH(
   const parsed = patchSchema.safeParse(await req.json().catch(() => null));
   if (!parsed.success) return NextResponse.json({ error: "Nothing to update" }, { status: 400 });
 
-  const fields: { title?: string; isPublic?: boolean } = {};
+  // Assigning to a project requires owning that project.
+  if (parsed.data.projectId) {
+    const project = await getOwnedProject(parsed.data.projectId, session.user.id);
+    if (!project) return NextResponse.json({ error: "Project not found" }, { status: 400 });
+  }
+
+  const fields: { title?: string; isPublic?: boolean; projectId?: string | null } = {};
   if (parsed.data.title !== undefined) fields.title = parsed.data.title;
   if (parsed.data.isPublic !== undefined) fields.isPublic = parsed.data.isPublic;
+  if (parsed.data.projectId !== undefined) fields.projectId = parsed.data.projectId;
 
   await db.update(recordings).set(fields).where(eq(recordings.id, id));
   return NextResponse.json({ ok: true, ...fields });

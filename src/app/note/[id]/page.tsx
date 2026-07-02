@@ -307,7 +307,7 @@ function NoteBody({
         {/* Right column: Q&A (sticky on desktop) */}
         <div className="lg:sticky lg:top-24 lg:self-start">
           <QAPanel
-            recordingId={recordingId}
+            endpoint={`/api/recordings/${recordingId}/qa`}
             initialMessages={history.map((m) => ({
               id: m.id,
               role: m.role,
