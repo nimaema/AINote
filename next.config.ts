@@ -7,7 +7,10 @@ const nextConfig: NextConfig = {
   serverExternalPackages: ["@xenova/transformers", "bullmq", "ioredis"],
   experimental: {
     // Allow large audio blobs through server actions if we ever use them.
-    serverActions: { bodySizeLimit: "10mb" },
+    serverActions: { bodySizeLimit: "300mb" },
+    // Allow large uploads to pass through middleware without being truncated.
+    // Default is 10mb; we match the 300 MB cap from the recordings route.
+    proxyClientMaxBodySize: "300mb",
   },
 };
 
