@@ -1,4 +1,5 @@
 import { AssemblyAI } from "assemblyai";
+import { spawn } from "node:child_process";
 import { getObjectStream } from "./storage";
 import type { Utterance } from "../db/schema";
 
@@ -15,6 +16,54 @@ function useMock() {
   return process.env.MOCK_TRANSCRIPTION === "1" || !key || key === "dev";
 }
 
+// Convert any audio buffer to 16kHz mono WAV via ffmpeg. This normalises
+// exotic codecs (ALAC, HE-AAC, etc.) into a format AssemblyAI reliably accepts.
+async function convertToWav(
+  input: Buffer,
+  sourceSize?: number
+): Promise<Buffer> {
+  return new Promise((resolve, reject) => {
+    const ffmpeg = spawn("ffmpeg", [
+      "-i", "pipe:0",          // read from stdin
+      "-f", "wav",             // output format
+      "-acodec", "pcm_s16le",  // 16-bit PCM
+      "-ar", "16000",          // 16 kHz sample rate
+      "-ac", "1",              // mono
+      "-loglevel", "error",    // only errors on stderr
+      "pipe:1",                // write to stdout
+    ]);
+
+    const chunks: Buffer[] = [];
+    ffmpeg.stdout.on("data", (chunk: Buffer) => chunks.push(chunk));
+
+    let stderr = "";
+    ffmpeg.stderr.on("data", (d: Buffer) => {
+      stderr += d.toString();
+    });
+
+    ffmpeg.on("close", (code) => {
+      if (code !== 0) {
+        const srcInfo = sourceSize
+          ? ` (${(sourceSize / 1024 / 1024).toFixed(1)} MB source)`
+          : "";
+        reject(
+          new Error(
+            `ffmpeg conversion failed (exit ${code})${srcInfo}: ${stderr.slice(0, 300) || "no stderr output"}`
+          )
+        );
+        return;
+      }
+      resolve(Buffer.concat(chunks));
+    });
+
+    ffmpeg.on("error", (err) => reject(new Error(`ffmpeg spawn failed: ${err.message}`)));
+
+    // Pipe the source audio into ffmpeg and close stdin.
+    ffmpeg.stdin.write(input);
+    ffmpeg.stdin.end();
+  });
+}
+
 export async function transcribeAudio(
   storageKey: string
 ): Promise<TranscribeResult> {
@@ -25,7 +74,7 @@ export async function transcribeAudio(
   // Buffer the audio from storage before handing it to AssemblyAI. Passing a raw
   // S3 stream can upload with no content-length and land as an empty file (which
   // AssemblyAI then "transcribes" to nothing). A Buffer uploads reliably.
-  const { body } = await getObjectStream(storageKey);
+  const { body, contentLength } = await getObjectStream(storageKey);
   const chunks: Buffer[] = [];
   for await (const chunk of body) {
     chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
@@ -34,9 +83,15 @@ export async function transcribeAudio(
   if (audio.length === 0) {
     throw new Error("Audio file is empty in storage");
   }
+  // Convert any audio format to 16kHz mono WAV via ffmpeg before sending to
+  // AssemblyAI. This fixes transcoding failures on ALAC, HE-AAC, and other
+  // exotic codecs that may sit inside an .m4a container.
+  const wav = await convertToWav(audio, contentLength);
+
+  console.log(`Transcribing ${(wav.length / 1024 / 1024).toFixed(1)} MB WAV (source was ${(audio.length / 1024 / 1024).toFixed(1)} MB ${contentLength ? "reported" : "unknown"})`);
 
   const t = await client.transcripts.transcribe({
-    audio,
+    audio: wav,
     speaker_labels: true,
   });
   if (t.status === "error") {
@@ -46,7 +101,7 @@ export async function transcribeAudio(
   const text = (t.text ?? "").trim();
   if (!text) {
     throw new Error(
-      "AssemblyAI returned an empty transcript — the audio may have no clear speech."
+      "AssemblyAI returned an empty transcript — the audio may have no clear speech, or a zero-byte file may have been uploaded. Check the upload for a content-length mismatch."
     );
   }
 

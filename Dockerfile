@@ -5,7 +5,7 @@ FROM node:22-slim AS base
 ENV NEXT_TELEMETRY_DISABLED=1
 WORKDIR /app
 # libc for onnxruntime (transformers.js / bge-small) native bindings
-RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates \
+RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates ffmpeg \
     && rm -rf /var/lib/apt/lists/*
 
 # ---- Dependencies ----

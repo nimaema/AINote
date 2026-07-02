@@ -42,6 +42,8 @@ services:
         condition: service_healthy
     volumes:
       - models:/app/.models
+    mem_limit: 1g
+    memswap_limit: 1g
 
   postgres:
     image: pgvector/pgvector:pg17
