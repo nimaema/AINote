@@ -13,7 +13,9 @@ export function Pwa() {
 
   useEffect(() => {
     if ("serviceWorker" in navigator) {
-      navigator.serviceWorker.register("/sw.js").catch(() => {});
+      // updateViaCache: "none" keeps the browser from HTTP-caching sw.js, so a
+      // new worker (and its cache purge) is picked up on the next visit.
+      navigator.serviceWorker.register("/sw.js", { updateViaCache: "none" }).catch(() => {});
     }
 
     const standalone =
