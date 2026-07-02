@@ -15,6 +15,13 @@
       "when": 1782938482056,
       "tag": "0001_soft_thor_girl",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1782989983911,
+      "tag": "0002_bumpy_texas_twister",
+      "breakpoints": true
     }
   ]
 }

@@ -14,9 +14,16 @@ async function owned(id: string, userId: string) {
   });
 }
 
-const patchSchema = z.object({ title: z.string().trim().min(1).max(200) });
+const patchSchema = z
+  .object({
+    title: z.string().trim().min(1).max(200).optional(),
+    isPublic: z.boolean().optional(),
+  })
+  .refine((v) => v.title !== undefined || v.isPublic !== undefined, {
+    message: "Nothing to update",
+  });
 
-// Rename a recording.
+// Rename a recording and/or change its visibility. Owner-only.
 export async function PATCH(
   req: Request,
   { params }: { params: Promise<{ id: string }> }
@@ -29,10 +36,14 @@ export async function PATCH(
   if (!rec) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
   const parsed = patchSchema.safeParse(await req.json().catch(() => null));
-  if (!parsed.success) return NextResponse.json({ error: "Title is required" }, { status: 400 });
+  if (!parsed.success) return NextResponse.json({ error: "Nothing to update" }, { status: 400 });
 
-  await db.update(recordings).set({ title: parsed.data.title }).where(eq(recordings.id, id));
-  return NextResponse.json({ ok: true, title: parsed.data.title });
+  const fields: { title?: string; isPublic?: boolean } = {};
+  if (parsed.data.title !== undefined) fields.title = parsed.data.title;
+  if (parsed.data.isPublic !== undefined) fields.isPublic = parsed.data.isPublic;
+
+  await db.update(recordings).set(fields).where(eq(recordings.id, id));
+  return NextResponse.json({ ok: true, ...fields });
 }
 
 // Delete a recording, its audio, and (via FK cascade) transcript/results/qa.

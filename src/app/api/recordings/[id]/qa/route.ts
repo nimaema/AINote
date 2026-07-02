@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
-import { and, eq } from "drizzle-orm";
 import { z } from "zod";
 import { auth } from "@/lib/auth";
 import { db } from "@/db";
-import { recordings, qaMessages } from "@/db/schema";
+import { qaMessages } from "@/db/schema";
+import { getAccessibleRecording } from "@/lib/access";
 import { answerRecordingQuestion } from "@/lib/qa";
 
 export const runtime = "nodejs";
@@ -19,11 +19,8 @@ export async function POST(
   if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const { id } = await params;
-  const rec = await db.query.recordings.findFirst({
-    where: and(eq(recordings.id, id), eq(recordings.userId, session.user.id)),
-    columns: { id: true },
-  });
-  if (!rec) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  const access = await getAccessibleRecording(id, session.user.id);
+  if (!access) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
   const parsed = bodySchema.safeParse(await req.json().catch(() => null));
   if (!parsed.success) {

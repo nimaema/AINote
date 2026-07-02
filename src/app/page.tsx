@@ -3,8 +3,9 @@ import { redirect } from "next/navigation";
 import { desc, eq, sql } from "drizzle-orm";
 import { auth } from "@/lib/auth";
 import { db } from "@/db";
-import { recordings, results } from "@/db/schema";
+import { recordings, results, transcripts } from "@/db/schema";
 import { relativeTime, humanDuration, humanTotalTime } from "@/lib/format";
+import { languageName } from "@/lib/language";
 import { AppHeader } from "@/components/app-header";
 import { Waveform } from "@/components/waveform";
 import { RecordingsList, type RecItem } from "@/components/dashboard/recordings-list";
@@ -33,12 +34,15 @@ export default async function DashboardPage() {
       source: recordings.source,
       createdAt: recordings.createdAt,
       durationSec: recordings.durationSec,
+      isPublic: recordings.isPublic,
+      language: transcripts.language,
       summary: results.summary,
       topics: results.topics,
       actionCount: sql<number>`coalesce(jsonb_array_length(${results.actionItems}), 0)::int`,
     })
     .from(recordings)
     .leftJoin(results, eq(results.recordingId, recordings.id))
+    .leftJoin(transcripts, eq(transcripts.recordingId, recordings.id))
     .where(eq(recordings.userId, userId))
     .orderBy(desc(recordings.createdAt))
     .limit(200);
@@ -51,6 +55,8 @@ export default async function DashboardPage() {
     source: r.source,
     dateLabel: relativeTime(r.createdAt, now),
     durationLabel: humanDuration(r.durationSec),
+    isPublic: r.isPublic,
+    language: languageName(r.language),
     summary: r.summary,
     topics: r.topics ?? [],
     actionCount: r.actionCount,

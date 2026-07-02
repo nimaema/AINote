@@ -99,6 +99,9 @@ export const recordings = pgTable(
     sizeBytes: integer("size_bytes"),
     status: recordingStatusEnum("status").notNull().default("uploaded"),
     error: text("error"),
+    // When true, any signed-in user (not just the owner) can view the
+    // transcript, notes, and chat for this recording.
+    isPublic: boolean("is_public").notNull().default(false),
     createdAt: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
   },
   (t) => [index("recordings_user_idx").on(t.userId, t.createdAt)]
@@ -116,6 +119,9 @@ export const transcripts = pgTable("transcripts", {
   text: text("text"),
   // AssemblyAI utterances: [{ speaker, text, start, end }]
   utterances: jsonb("utterances").$type<Utterance[]>(),
+  // Owner-defined display names for raw speaker labels, e.g. { "A": "Nima" }.
+  // Applied at render/export time; original labels stay in `utterances`.
+  speakerNames: jsonb("speaker_names").$type<Record<string, string>>(),
   createdAt: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
 });
 

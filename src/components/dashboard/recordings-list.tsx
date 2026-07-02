@@ -11,6 +11,8 @@ import {
   ArrowClockwise,
   WaveSawtooth,
   ListChecks,
+  Globe,
+  Translate,
   Check,
   X,
 } from "@phosphor-icons/react";
@@ -22,6 +24,8 @@ export type RecItem = {
   source: "record" | "upload";
   dateLabel: string;
   durationLabel: string;
+  isPublic: boolean;
+  language: string | null;
   summary: string | null;
   topics: string[];
   actionCount: number;
@@ -204,13 +208,28 @@ function RecordingCard({
             </div>
           ) : (
             <>
-              <p className="truncate pr-6 text-[15px] font-semibold text-ink">{rec.title}</p>
+              <div className="flex items-center gap-1.5 pr-6">
+                <p className="truncate text-[15px] font-semibold text-ink">{rec.title}</p>
+                {rec.isPublic && (
+                  <span
+                    className="inline-flex shrink-0 items-center gap-1 rounded-btn bg-accent-wash px-1.5 py-0.5 text-[9.5px] font-semibold uppercase tracking-[0.08em] text-accent-deep"
+                    title="Shared with your workspace"
+                  >
+                    <Globe size={10} weight="bold" /> Public
+                  </span>
+                )}
+              </div>
               <p className="mt-0.5 flex flex-wrap items-center gap-x-2 font-mono text-[11px] text-faint">
                 <span>{rec.dateLabel}</span>
                 <span>·</span>
                 <span>{rec.durationLabel}</span>
                 <span>·</span>
                 <span>{rec.source === "record" ? "Recorded" : "Uploaded"}</span>
+                {rec.language && (
+                  <span className="inline-flex items-center gap-1 text-accent-deep">
+                    <Translate size={11} weight="bold" /> {rec.language}
+                  </span>
+                )}
               </p>
             </>
           )}
@@ -229,7 +248,7 @@ function RecordingCard({
             {menu && (
               <>
                 <div className="fixed inset-0 z-30" onClick={() => setMenu(false)} />
-                <div className="glass absolute right-0 top-full z-40 mt-1 w-40 overflow-hidden rounded-card p-1.5">
+                <div className="glass-menu pop-in absolute right-0 top-full z-50 mt-1 w-40 overflow-hidden rounded-card p-1.5">
                   <MenuItem icon={<PencilSimple size={15} />} label="Rename" onClick={() => { setMenu(false); setEditing(true); }} />
                   {rec.status === "failed" && (
                     <MenuItem icon={<ArrowClockwise size={15} />} label="Retry" onClick={() => { setMenu(false); onRetry(); }} />

@@ -56,7 +56,7 @@ export function NoteActions({ id, title }: { id: string; title: string }) {
       {menu && !renaming && (
         <>
           <div className="fixed inset-0 z-30" onClick={() => setMenu(false)} />
-          <div className="glass absolute right-0 top-full z-40 mt-2 w-44 overflow-hidden rounded-card p-1.5">
+          <div className="glass-menu pop-in absolute right-0 top-full z-50 mt-2 w-44 overflow-hidden rounded-card p-1.5">
             <button
               onClick={() => { setRenaming(true); setValue(title); }}
               className="flex w-full items-center gap-2.5 rounded-input px-3 py-2.5 text-left text-[14px] text-ink-soft transition-colors duration-150 [transition-timing-function:var(--ease-out)] hover:bg-white/70 cursor-pointer"
@@ -76,7 +76,7 @@ export function NoteActions({ id, title }: { id: string; title: string }) {
       {renaming && (
         <>
           <div className="fixed inset-0 z-30" onClick={() => { setRenaming(false); setMenu(false); }} />
-          <div className="glass absolute right-0 top-full z-40 mt-2 flex w-72 items-center gap-2 rounded-card p-2">
+          <div className="glass-menu pop-in absolute right-0 top-full z-50 mt-2 flex w-72 items-center gap-2 rounded-card p-2">
             <input
               autoFocus
               value={value}
