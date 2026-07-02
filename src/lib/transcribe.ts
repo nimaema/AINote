@@ -19,30 +19,34 @@ function useMock() {
   return process.env.MOCK_TRANSCRIPTION === "1" || !key || key === "dev";
 }
 
-// Convert any audio buffer to 16kHz mono WAV via ffmpeg. Uses temp files
-// instead of pipes — piping large buffers through stdin/stdout can produce
-// truncated output because of Node.js stream backpressure quirks.
-async function convertToWav(
+// Convert any audio buffer to 16kHz mono FLAC via ffmpeg. FLAC is lossless, so
+// the samples are identical to the equivalent WAV (which is what AssemblyAI
+// ingests) but the file is ~2x smaller — less worker memory and a faster upload,
+// with zero effect on transcription quality. Uses temp files instead of pipes —
+// piping large buffers through stdin/stdout can produce truncated output because
+// of Node.js stream backpressure quirks.
+async function convertToFlac(
   input: Buffer,
   sourceSize?: number
 ): Promise<Buffer> {
   const dir = await mkdtemp(join(tmpdir(), "transcribe-"));
   const src = join(dir, "input.bin");
-  const dst = join(dir, "output.wav");
+  const dst = join(dir, "output.flac");
 
   try {
     await writeFile(src, input);
 
     await new Promise<void>((resolve, reject) => {
       const ffmpeg = spawn("ffmpeg", [
-        "-y",                    // overwrite output
-        "-i", src,               // input file
-        "-f", "wav",             // output format
-        "-acodec", "pcm_s16le",  // 16-bit PCM
-        "-ar", "16000",          // 16 kHz sample rate
-        "-ac", "1",              // mono
-        "-loglevel", "error",    // only errors on stderr
-        dst,                     // output file
+        "-y",                       // overwrite output
+        "-i", src,                  // input file
+        "-f", "flac",               // output format (lossless)
+        "-acodec", "flac",          // FLAC codec
+        "-ar", "16000",             // 16 kHz sample rate
+        "-ac", "1",                 // mono
+        "-compression_level", "8",  // max compression (smallest file)
+        "-loglevel", "error",       // only errors on stderr
+        dst,                        // output file
       ]);
 
       let stderr = "";
@@ -70,8 +74,8 @@ async function convertToWav(
       );
     });
 
-    const wav = await readFile(dst);
-    return wav;
+    const flac = await readFile(dst);
+    return flac;
   } finally {
     await rm(dir, { recursive: true, force: true }).catch(() => {});
   }
@@ -96,15 +100,16 @@ export async function transcribeAudio(
   if (audio.length === 0) {
     throw new Error("Audio file is empty in storage");
   }
-  // Convert any audio format to 16kHz mono WAV via ffmpeg before sending to
-  // AssemblyAI. This fixes transcoding failures on ALAC, HE-AAC, and other
-  // exotic codecs that may sit inside an .m4a container.
-  const wav = await convertToWav(audio, contentLength);
+  // Convert any audio format to 16kHz mono FLAC via ffmpeg before sending to
+  // AssemblyAI. This normalizes exotic codecs (ALAC, HE-AAC, etc. inside an .m4a
+  // container) and, being lossless, keeps transcription quality identical while
+  // producing a much smaller payload than WAV.
+  const flac = await convertToFlac(audio, contentLength);
 
-  console.log(`Transcribing ${(wav.length / 1024 / 1024).toFixed(1)} MB WAV (source was ${(audio.length / 1024 / 1024).toFixed(1)} MB ${contentLength ? "reported" : "unknown"})`);
+  console.log(`Transcribing ${(flac.length / 1024 / 1024).toFixed(1)} MB FLAC (source was ${(audio.length / 1024 / 1024).toFixed(1)} MB ${contentLength ? "reported" : "unknown"})`);
 
   const t = await client.transcripts.transcribe({
-    audio: wav,
+    audio: flac,
     speaker_labels: true,
   });
   if (t.status === "error") {
