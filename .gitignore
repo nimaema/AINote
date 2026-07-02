@@ -12,3 +12,4 @@ npm-debug.log*
 coverage
 next-env.d.ts
 .claude/
+.vscode/
