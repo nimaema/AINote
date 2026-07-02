@@ -67,10 +67,13 @@ function mdCell(v?: string | null) {
 }
 
 // ─── Markdown ──────────────────────────────────────────────────────────
-// Structured, front-matter'd Markdown that reads well raw and renders richly.
+// Structured, front-matter'd Markdown that reads well raw and renders richly in
+// GitHub / Obsidian / Notion: a metadata table, callouts, task lists, badges,
+// and a collapsible transcript.
 export function toMarkdown(n: NoteExport): string {
   const L: string[] = [];
   const created = n.createdAt.toISOString();
+  const roster = speakerRoster(n);
 
   // YAML front matter — picked up by Obsidian, Notion imports, static gens.
   L.push("---");
@@ -83,26 +86,35 @@ export function toMarkdown(n: NoteExport): string {
   L.push("---", "");
 
   L.push(`# ${n.title}`, "");
-  L.push(`\`${metaLine(n)}\``, "");
+
+  // Metadata table.
+  const dateStr = n.createdAt.toLocaleString("en-US", { dateStyle: "medium", timeStyle: "short" });
+  const rows: [string, string][] = [["Date", dateStr]];
+  if (n.durationSec) rows.push(["Duration", fmtDuration(n.durationSec)]);
+  if (n.language) rows.push(["Language", n.language]);
+  if (roster.length) rows.push(["Speakers", roster.join(", ")]);
+  L.push("| | |", "| :-- | :-- |");
+  for (const [k, v] of rows) L.push(`| **${k}** | ${mdCell(v)} |`);
+  L.push("");
 
   if (n.summary) {
-    L.push("## Summary", "");
+    L.push("> [!NOTE]", "> **Summary**", ">");
     for (const line of n.summary.split("\n")) L.push(`> ${line}`);
     L.push("");
   }
 
   if (n.actionItems.length) {
     L.push("## Action items", "");
-    L.push("| Task | Owner | Due |", "| --- | --- | --- |");
     for (const a of n.actionItems) {
-      L.push(`| ${mdCell(a.task)} | ${mdCell(a.owner)} | ${mdCell(a.due)} |`);
+      const meta = [a.owner, a.due].filter(Boolean).join(" · ");
+      L.push(`- [ ] ${a.task}${meta ? `  \`${meta}\`` : ""}`);
     }
     L.push("");
   }
 
   if (n.decisions.length) {
-    L.push("## Decisions", "");
-    for (const d of n.decisions) L.push(`- ${d}`);
+    L.push("> [!IMPORTANT]", "> **Decisions**", ">");
+    for (const d of n.decisions) L.push(`> - ${d}`);
     L.push("");
   }
 
@@ -117,19 +129,22 @@ export function toMarkdown(n: NoteExport): string {
     L.push(n.topics.map((t) => `\`${t}\``).join(" "), "");
   }
 
+  // Transcript in a collapsible so long notes stay scannable.
   L.push("## Transcript", "");
   if (n.utterances.length) {
+    L.push("<details>", `<summary>${n.utterances.length} turns · click to expand</summary>`, "");
     for (const u of n.utterances) {
-      L.push(`**${u.speaker}** · \`${fmtClock(u.start)}\``, "");
+      L.push(`**${u.speaker}** &nbsp;\`${fmtClock(u.start)}\``, "");
       L.push(u.text, "");
     }
+    L.push("</details>", "");
   } else if (n.transcriptText) {
     L.push(n.transcriptText, "");
   }
 
   L.push(
     "---",
-    `*Exported from GlaciaNav Notes on ${new Date().toLocaleDateString("en-US", { dateStyle: "long" })}.*`
+    `<sub>Exported from **GlaciaNav Notes** on ${new Date().toLocaleDateString("en-US", { dateStyle: "long" })}.</sub>`
   );
   return L.join("\n");
 }

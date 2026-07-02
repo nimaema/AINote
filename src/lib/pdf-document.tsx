@@ -36,18 +36,34 @@ function speakerColor(name: string, roster: string[]) {
 }
 
 const s = StyleSheet.create({
-  page: { fontFamily: "Helvetica", fontSize: 10, color: C.inkSoft, paddingBottom: 54 },
+  // Uniform page margins on every page (incl. continuation pages), so content
+  // never touches the top/edges.
+  page: {
+    fontFamily: "Helvetica",
+    fontSize: 10,
+    color: C.inkSoft,
+    paddingTop: 42,
+    paddingBottom: 56,
+    paddingHorizontal: 44,
+  },
 
-  // Header band
-  header: { backgroundColor: C.ink, paddingHorizontal: 40, paddingTop: 34, paddingBottom: 26 },
-  brandRow: { flexDirection: "row", alignItems: "center", marginBottom: 16 },
+  // Header letterhead card (contained within the page margins, not full-bleed)
+  header: {
+    backgroundColor: C.ink,
+    borderRadius: 10,
+    paddingHorizontal: 26,
+    paddingTop: 24,
+    paddingBottom: 22,
+    marginBottom: 24,
+  },
+  brandRow: { flexDirection: "row", alignItems: "center", marginBottom: 15 },
   brandDot: { width: 7, height: 7, borderRadius: 3.5, backgroundColor: C.accent, marginRight: 7 },
   brand: { fontFamily: "Helvetica-Bold", fontSize: 8.5, letterSpacing: 2.4, color: C.accentLight },
-  title: { fontFamily: "Helvetica-Bold", fontSize: 23, color: "#ffffff", lineHeight: 1.15 },
+  title: { fontFamily: "Helvetica-Bold", fontSize: 22, color: "#ffffff", lineHeight: 1.15 },
   meta: { fontFamily: "Helvetica", fontSize: 9, color: C.onInkSoft, marginTop: 9 },
-  accentRule: { height: 3, backgroundColor: C.accent },
+  accentBar: { height: 3, width: 46, borderRadius: 2, backgroundColor: C.accent, marginTop: 15 },
 
-  body: { paddingHorizontal: 40, paddingTop: 24 },
+  body: {},
 
   // Section label
   sectionLabel: {
@@ -178,8 +194,8 @@ export function NotePdf({ note }: { note: NoteExport }) {
           </View>
           <Text style={s.title}>{note.title}</Text>
           <Text style={s.meta}>{metaLine(note)}</Text>
+          <View style={s.accentBar} />
         </View>
-        <View style={s.accentRule} />
 
         <View style={s.body}>
           {note.summary ? (
