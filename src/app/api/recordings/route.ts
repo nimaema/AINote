@@ -25,47 +25,51 @@ const EXT_BY_MIME: Record<string, string> = {
 };
 
 function extFor(mime: string, filename?: string) {
-  if (EXT_BY_MIME[mime]) return EXT_BY_MIME[mime];
+  // Ignore any codec suffix, e.g. "audio/webm;codecs=opus".
+  const base = mime.split(";")[0].trim();
+  if (EXT_BY_MIME[base]) return EXT_BY_MIME[base];
   const fromName = filename?.split(".").pop()?.toLowerCase();
   if (fromName && /^[a-z0-9]{2,5}$/.test(fromName)) return fromName;
   return "bin";
 }
 
-// POST /api/recordings — multipart upload of a recorded/uploaded audio blob.
-// Streams the body straight to MinIO, then creates the recording row.
+// POST /api/recordings — the audio is sent as the RAW request body (not
+// multipart); metadata rides in the query string. The body is streamed straight
+// to MinIO so nothing is buffered in memory and there is no multipart parser to
+// choke on large (e.g. 30-minute) recordings.
 export async function POST(req: Request) {
   const session = await auth();
   if (!session?.user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  let form: FormData;
-  try {
-    form = await req.formData();
-  } catch {
-    return NextResponse.json({ error: "Invalid form data" }, { status: 400 });
+  if (!req.body) {
+    return NextResponse.json({ error: "No audio provided" }, { status: 400 });
   }
 
-  const file = form.get("file");
-  if (!(file instanceof File) || file.size === 0) {
-    return NextResponse.json({ error: "No audio file provided" }, { status: 400 });
-  }
-  if (file.size > MAX_BYTES) {
-    return NextResponse.json(
-      { error: "File is too large (max 300 MB)." },
-      { status: 413 }
-    );
-  }
-
-  const source = form.get("source") === "record" ? "record" : "upload";
-  const mimeType = (form.get("mimeType") as string) || file.type || "audio/webm";
-  const durationRaw = form.get("durationSec");
+  const params = new URL(req.url).searchParams;
+  const source = params.get("source") === "record" ? "record" : "upload";
+  const mimeType =
+    params.get("mimeType") || req.headers.get("content-type") || "audio/webm";
+  const filename = params.get("filename") || undefined;
+  const durationRaw = params.get("durationSec");
   const durationSec = durationRaw ? Math.round(Number(durationRaw)) || null : null;
 
-  const rawTitle = (form.get("title") as string)?.trim();
+  // XMLHttpRequest sets Content-Length for a Blob body, so we can reject
+  // oversized uploads before streaming a single byte to storage.
+  const lenHeader = req.headers.get("content-length");
+  const sizeBytes = lenHeader != null ? Number(lenHeader) : null;
+  if (sizeBytes === 0) {
+    return NextResponse.json({ error: "No audio provided" }, { status: 400 });
+  }
+  if (sizeBytes != null && sizeBytes > MAX_BYTES) {
+    return NextResponse.json({ error: "File is too large (max 300 MB)." }, { status: 413 });
+  }
+
+  const rawTitle = params.get("title")?.trim();
   const fallbackTitle =
-    source === "upload" && file.name
-      ? file.name.replace(/\.[^.]+$/, "")
+    source === "upload" && filename
+      ? filename.replace(/\.[^.]+$/, "")
       : `Recording · ${new Date().toLocaleString("en-US", {
           month: "short",
           day: "numeric",
@@ -74,12 +78,12 @@ export async function POST(req: Request) {
         })}`;
   const title = rawTitle || fallbackTitle;
 
-  const ext = extFor(mimeType, file.name);
+  const ext = extFor(mimeType, filename);
   const storageKey = `${session.user.id}/${crypto.randomUUID()}.${ext}`;
 
   try {
     const nodeStream = Readable.fromWeb(
-      file.stream() as unknown as import("node:stream/web").ReadableStream
+      req.body as unknown as import("node:stream/web").ReadableStream
     );
     await putObject(storageKey, nodeStream, mimeType);
   } catch (err) {
@@ -96,7 +100,7 @@ export async function POST(req: Request) {
       storageKey,
       mimeType,
       durationSec,
-      sizeBytes: file.size,
+      sizeBytes: sizeBytes ?? null,
       status: "uploaded",
     })
     .returning({ id: recordings.id });

@@ -166,18 +166,24 @@ export function Recorder({ initialMode }: { initialMode: Mode }) {
     setProgress(0);
     setError(null);
 
-    const form = new FormData();
-    const ext = payload.mime.includes("webm") ? "webm" : "audio";
-    form.append("file", payload.blob, payload.name ?? `recording.${ext}`);
-    form.append("source", mode);
-    form.append("mimeType", payload.mime);
-    if (title.trim()) form.append("title", title.trim());
-    if (elapsed > 0) form.append("durationSec", String(elapsed));
+    // Send the audio as the raw request body; metadata rides in the query
+    // string. This streams straight to storage — no multipart, so long
+    // recordings don't trip the server's form-data parser.
+    const ext = payload.mime.includes("webm")
+      ? "webm"
+      : payload.mime.includes("mp4")
+        ? "m4a"
+        : "audio";
+    const params = new URLSearchParams({ source: mode, mimeType: payload.mime });
+    params.set("filename", payload.name ?? `recording.${ext}`);
+    if (title.trim()) params.set("title", title.trim());
+    if (elapsed > 0) params.set("durationSec", String(elapsed));
 
     try {
       const id = await new Promise<string>((resolve, reject) => {
         const xhr = new XMLHttpRequest();
-        xhr.open("POST", "/api/recordings");
+        xhr.open("POST", `/api/recordings?${params.toString()}`);
+        xhr.setRequestHeader("Content-Type", payload.mime || "application/octet-stream");
         xhr.upload.onprogress = (e) => {
           if (e.lengthComputable) setProgress(e.loaded / e.total);
         };
@@ -191,7 +197,7 @@ export function Recorder({ initialMode }: { initialMode: Mode }) {
           }
         };
         xhr.onerror = () => reject(new Error("Network error during upload"));
-        xhr.send(form);
+        xhr.send(payload.blob);
       });
       router.push(`/note/${id}`);
       router.refresh();
