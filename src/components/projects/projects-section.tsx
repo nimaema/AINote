@@ -48,7 +48,7 @@ export function ProjectsSection({ projects }: { projects: ProjectRow[] }) {
         {!creating && (
           <button
             onClick={() => setCreating(true)}
-            className="inline-flex h-7 items-center gap-1 rounded-input px-2 text-[12.5px] font-medium text-muted transition-colors duration-150 [transition-timing-function:var(--ease-out)] hover:bg-white hover:text-ink cursor-pointer"
+            className="inline-flex h-7 items-center gap-1 rounded-input px-2 text-[12.5px] font-medium text-muted transition-[background-color,color,transform] duration-150 [transition-timing-function:var(--ease-out)] hover:bg-panel hover:text-ink active:scale-[0.98] cursor-pointer"
           >
             <Plus size={13} weight="bold" /> New
           </button>
@@ -66,7 +66,7 @@ export function ProjectsSection({ projects }: { projects: ProjectRow[] }) {
               if (e.key === "Escape") setCreating(false);
             }}
             placeholder="Project name"
-            className="h-9 min-w-0 flex-1 rounded-input border border-hairline bg-white px-3 text-[14px] text-ink placeholder:text-faint focus:border-accent focus:outline-none focus:shadow-[0_0_0_4px_var(--color-accent-wash)]"
+            className="h-9 min-w-0 flex-1 rounded-input border border-hairline bg-bg px-3 text-[14px] text-ink placeholder:text-faint focus:border-accent focus:outline-none focus:shadow-[0_0_0_4px_var(--color-accent-wash)]"
           />
           <div className="flex items-center gap-1.5">
             {(Object.keys(PROJECT_COLORS) as ProjectColor[]).map((c) => (
@@ -74,23 +74,23 @@ export function ProjectsSection({ projects }: { projects: ProjectRow[] }) {
                 key={c}
                 onClick={() => setColor(c)}
                 aria-label={c}
-                className={`grid h-6 w-6 place-items-center rounded-full transition-transform duration-150 ${color === c ? "ring-2 ring-offset-2 ring-ink" : ""}`}
+                className={`grid h-6 w-6 place-items-center rounded-full transition-transform duration-150 ${color === c ? "ring-2 ring-accent ring-offset-2 ring-offset-panel" : ""}`}
                 style={{ background: PROJECT_COLORS[c] }}
               >
-                {color === c && <Check size={12} weight="bold" className="text-white" />}
+                {color === c && <Check size={12} weight="bold" className="text-bg" />}
               </button>
             ))}
           </div>
           <button
             onClick={create}
             disabled={busy || !name.trim()}
-            className="inline-flex h-9 items-center gap-1.5 rounded-btn bg-ink px-4 text-[13px] font-medium text-white transition-transform duration-150 [transition-timing-function:var(--ease-out)] active:scale-[0.98] disabled:opacity-40 cursor-pointer"
+            className="inline-flex h-9 items-center gap-1.5 rounded-btn bg-accent px-4 text-[13px] font-semibold text-accent-ink transition-transform duration-150 [transition-timing-function:var(--ease-out)] active:scale-[0.98] disabled:opacity-40 cursor-pointer"
           >
             {busy ? "Creating…" : "Create"}
           </button>
           <button
             onClick={() => setCreating(false)}
-            className="grid h-9 w-9 place-items-center rounded-btn text-muted hover:text-ink cursor-pointer"
+            className="grid h-9 w-9 place-items-center rounded-btn text-muted hover:bg-panel hover:text-ink cursor-pointer"
             aria-label="Cancel"
           >
             <X size={16} />
@@ -116,10 +116,10 @@ export function ProjectsSection({ projects }: { projects: ProjectRow[] }) {
             <Link
               key={p.id}
               href={`/project/${p.id}`}
-              className="glass-soft flex min-w-0 shrink-0 items-center gap-2.5 rounded-card px-3 py-2 transition-colors duration-150 [transition-timing-function:var(--ease-out)] hover:border-hairline-strong cursor-pointer"
+              className="glass-soft flex min-w-0 shrink-0 items-center gap-2.5 rounded-card px-3 py-2 transition-[border-color,background-color,transform] duration-150 [transition-timing-function:var(--ease-out)] hover:border-hairline-strong hover:bg-panel-lift active:scale-[0.98] cursor-pointer"
             >
               <span
-                className="grid h-7 w-7 shrink-0 place-items-center rounded-[7px] text-white"
+                className="grid h-7 w-7 shrink-0 place-items-center rounded-[7px] text-bg"
                 style={{ background: projectColor(p.color) }}
               >
                 <FolderSimple size={14} weight="fill" />

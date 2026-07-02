@@ -1,5 +1,5 @@
-// Brand mark: a compact spectral waveform glyph in the accent gradient. Built
-// from elements (no hand-drawn SVG paths). `live` breathes the bars.
+// Brand mark: a compact spectral waveform glyph built from elements.
+// `live` breathes the bars for recording and sign-in surfaces.
 export function SignalMark({
   size = 22,
   live = false,
@@ -23,7 +23,7 @@ export function SignalMark({
           style={{
             height: `${h * 100}%`,
             background:
-              "linear-gradient(180deg, var(--color-accent), var(--color-aurora-violet))",
+              "linear-gradient(180deg, var(--color-accent-deep), var(--color-accent))",
             transformOrigin: "center",
             animation: live
               ? `wave ${820 + i * 90}ms ${i * 70}ms var(--ease-in-out) infinite alternate`

@@ -9,6 +9,7 @@ import {
   CheckCircle,
   WarningCircle,
   Copy,
+  X,
 } from "@phosphor-icons/react";
 import {
   createUser,
@@ -65,10 +66,10 @@ export function UsersAdmin({ users, meId }: { users: UserRow[]; meId: string }) 
   }
 
   const input =
-    "h-11 rounded-input border border-hairline bg-white/70 px-3.5 text-[14px] text-ink placeholder:text-faint focus:border-accent focus:outline-none focus:shadow-[0_0_0_4px_var(--color-accent-wash)]";
+    "h-11 rounded-input border border-hairline bg-bg px-3.5 text-[14px] text-ink placeholder:text-faint focus:border-accent focus:outline-none focus:shadow-[0_0_0_4px_var(--color-accent-wash)]";
 
   return (
-    <div className="space-y-6">
+    <div className="flex flex-col gap-6">
       {/* Add user */}
       <section className="glass rounded-panel p-6">
         <h2 className="flex items-center gap-2 text-[13.5px] font-semibold text-ink">
@@ -88,7 +89,7 @@ export function UsersAdmin({ users, meId }: { users: UserRow[]; meId: string }) 
           <button
             type="submit"
             disabled={pending || !email.trim()}
-            className="inline-flex h-11 items-center justify-center gap-1.5 rounded-btn bg-ink px-5 text-[14px] font-medium text-white transition-transform duration-150 [transition-timing-function:var(--ease-out)] active:scale-[0.98] disabled:opacity-50 cursor-pointer"
+            className="inline-flex h-11 items-center justify-center gap-1.5 rounded-btn bg-accent px-5 text-[14px] font-semibold text-accent-ink transition-transform duration-150 [transition-timing-function:var(--ease-out)] active:scale-[0.98] disabled:opacity-50 cursor-pointer"
           >
             <UserPlus size={16} /> Add
           </button>
@@ -119,7 +120,7 @@ export function UsersAdmin({ users, meId }: { users: UserRow[]; meId: string }) 
             <p>{flash.text}</p>
             {flash.secret && (
               <div className="mt-1.5 flex items-center gap-2">
-                <code className="rounded-input bg-white/70 px-2 py-1 font-mono text-[13px] text-ink">
+                <code className="rounded-input bg-bg px-2 py-1 font-mono text-[13px] text-ink">
                   {flash.secret}
                 </code>
                 <button
@@ -133,7 +134,7 @@ export function UsersAdmin({ users, meId }: { users: UserRow[]; meId: string }) 
             )}
           </div>
           <button onClick={() => setFlash(null)} className="shrink-0 text-faint hover:text-ink cursor-pointer" aria-label="Dismiss">
-            ✕
+            <X size={15} />
           </button>
         </div>
       )}
@@ -154,7 +155,7 @@ export function UsersAdmin({ users, meId }: { users: UserRow[]; meId: string }) 
                     </span>
                   )}
                   {!u.active && (
-                    <span className="rounded-btn bg-[rgba(20,22,28,0.06)] px-2 py-0.5 text-[11px] font-medium text-muted">
+                    <span className="rounded-btn bg-panel px-2 py-0.5 text-[11px] font-medium text-muted">
                       Inactive
                     </span>
                   )}
@@ -163,13 +164,10 @@ export function UsersAdmin({ users, meId }: { users: UserRow[]; meId: string }) 
                   )}
                 </div>
                 {u.name && <p className="truncate text-[12.5px] text-muted">{u.email}</p>}
-                <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5 font-mono text-[11px] text-faint">
+                <p className="mt-1 flex flex-wrap items-center gap-x-2.5 gap-y-0.5 font-mono text-[11px] text-faint">
                   <span>{u.recordings} rec</span>
-                  <span>·</span>
                   <span>{u.timeLabel}</span>
-                  <span>·</span>
                   <span>{u.storageLabel}</span>
-                  <span>·</span>
                   <span>active {u.lastActiveLabel}</span>
                 </p>
               </div>
@@ -232,7 +230,7 @@ function RowBtn({
       className={`inline-flex h-8 items-center gap-1.5 rounded-btn border px-3 text-[12.5px] font-medium transition-colors duration-150 [transition-timing-function:var(--ease-out)] disabled:opacity-40 cursor-pointer ${
         danger
           ? "border-hairline text-err hover:bg-[rgba(229,72,77,0.08)]"
-          : "border-hairline text-ink-soft hover:bg-white/70"
+          : "border-hairline text-ink-soft hover:bg-panel-lift"
       }`}
     >
       {icon}

@@ -1,48 +1,46 @@
 @import "tailwindcss";
 
 /*
-  GlaciaNav Notes — "Workstation".
-  A cool graphite-on-porcelain product surface: white panels with hairline
-  borders sitting on a slightly deeper field, one electric accent (#0EA5E9)
-  reserved for interaction and signal. Compact radii, dense-but-breathing
-  lists, Geist everywhere with mono for data. Bricolage survives only in the
-  wordmark; the aurora hues survive only as data colors (speakers, charts).
+  GlaciaNav Notes, field console.
+  A dark capture workspace inspired by recorder hardware: graphite body,
+  warm paper text, amber signal light, dense ledgers, and quiet motion.
 */
 
 @theme {
   /* Field */
-  --color-bg: #f1f3f8;
-  --color-bg-2: #e9edf4;
-  --color-ink: #14161c; /* headings / primary text */
-  --color-ink-soft: #3b4150; /* strong body */
-  --color-muted: #565d6e; /* muted body — still AA on porcelain */
-  --color-faint: #8b93a5; /* labels / captions only */
+  --color-bg: #10110f;
+  --color-bg-2: #151713;
+  --color-ink: #f4eddd;
+  --color-ink-soft: #d5ccba;
+  --color-muted: #a49b89;
+  --color-faint: #77705f;
 
   /* Surfaces */
-  --color-panel: #ffffff;
-  --color-panel-solid: #ffffff;
-  --color-hairline: rgba(20, 22, 28, 0.09);
-  --color-hairline-strong: rgba(20, 22, 28, 0.16);
+  --color-panel: #191b17;
+  --color-panel-solid: #1f211c;
+  --color-panel-lift: #25271f;
+  --color-hairline: rgba(244, 237, 221, 0.1);
+  --color-hairline-strong: rgba(244, 237, 221, 0.18);
 
-  /* Accent — electric sky (the single interactive colour) */
-  --color-accent: #0ea5e9;
-  --color-accent-deep: #0369a1; /* accent-as-text on white (AA) */
-  --color-accent-ink: #ffffff;
-  --color-accent-wash: rgba(14, 165, 233, 0.1);
+  /* Accent: amber signal light */
+  --color-accent: #f0b64a;
+  --color-accent-deep: #ffd27a;
+  --color-accent-ink: #17140d;
+  --color-accent-wash: rgba(240, 182, 74, 0.14);
 
-  /* Aurora mesh hues (background atmosphere only) */
-  --color-aurora-teal: #2dd4bf;
-  --color-aurora-violet: #8b5cf6;
-  --color-aurora-rose: #fb7da8;
-  --color-aurora-amber: #fbbf77;
+  /* Secondary signal colors for speakers and projects only */
+  --color-aurora-teal: #6fb7a8;
+  --color-aurora-violet: #8ea0c7;
+  --color-aurora-rose: #c67676;
+  --color-aurora-amber: #dca85a;
 
   /* Semantic */
-  --color-ok: #0ea472;
-  --color-warn: #d98324;
-  --color-err: #e5484d;
-  --color-rec: #f43f5e; /* live recording only */
+  --color-ok: #83b983;
+  --color-warn: #dca85a;
+  --color-err: #e26a57;
+  --color-rec: #e74f3d;
 
-  /* Shape — compact product radii: inputs 8, buttons/cards 10, panels 12.
+  /* Shape: compact product radii. Inputs 8, buttons/cards 10, panels 12.
      Pills are reserved for status dots/avatars via --radius-pill. */
   --radius-input: 8px;
   --radius-btn: 10px;
@@ -50,7 +48,7 @@
   --radius-panel: 12px;
   --radius-pill: 999px;
 
-  /* Motion — strong custom curves */
+  /* Motion: strong custom curves */
   --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
   --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
   --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
@@ -61,14 +59,15 @@
 }
 
 html {
-  color-scheme: light;
+  color-scheme: dark;
   -webkit-text-size-adjust: 100%;
 }
 
 body {
-  /* Flat field with a whisper of brand light at the top — no lava blobs. */
+  /* Recorder body: flat graphite with a calibrated top signal wash. */
   background:
-    radial-gradient(1100px 420px at 78% -12%, rgba(14, 165, 233, 0.05), transparent 62%),
+    radial-gradient(900px 340px at 84% -14%, rgba(240, 182, 74, 0.08), transparent 60%),
+    linear-gradient(180deg, #141610 0%, var(--color-bg) 42%),
     var(--color-bg);
   color: var(--color-ink-soft);
   font-family: var(--font-sans);
@@ -87,26 +86,30 @@ body {
 }
 
 /* ─── Surfaces ────────────────────────────────────────────────────────
-   Crisp product panels: white on the field, hairline edge, near-zero shadow.
-   The old class names are kept so every existing usage re-skins in place. */
+   Product panels: dark face plates, amber edge response, no glossy blobs.
+   Old class names are kept so existing usage re-skins in place. */
 .glass {
-  background: var(--color-panel-solid);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.025), transparent 36%),
+    var(--color-panel-solid);
   border: 1px solid var(--color-hairline);
-  box-shadow: 0 1px 2px rgba(18, 22, 33, 0.04);
+  box-shadow:
+    inset 0 1px 0 rgba(244, 237, 221, 0.04),
+    0 18px 50px -36px rgba(0, 0, 0, 0.72);
 }
 
 .glass-soft {
-  background: var(--color-panel-solid);
+  background: var(--color-panel);
   border: 1px solid var(--color-hairline);
 }
 
-/* Floating menus / popovers — the only layer that earns a real shadow. */
+/* Floating menus and popovers. */
 .glass-menu {
   background: var(--color-panel-solid);
   border: 1px solid var(--color-hairline-strong);
   box-shadow:
-    0 2px 6px -2px rgba(20, 24, 40, 0.1),
-    0 16px 40px -12px rgba(30, 42, 90, 0.22);
+    inset 0 1px 0 rgba(244, 237, 221, 0.05),
+    0 22px 60px -18px rgba(0, 0, 0, 0.68);
 }
 
 ::selection {
@@ -120,8 +123,8 @@ body {
   border-radius: 6px;
 }
 
-/* ─── Motion keyframes ───────────────────────────────────────────────*/
-@keyframes aurora-drift {
+/* Motion keyframes */
+@keyframes signal-drift {
   0% {
     transform: translate3d(0, 0, 0) scale(1);
   }
@@ -154,10 +157,10 @@ body {
 }
 
 .rise {
-  animation: rise 0.6s var(--ease-out) both;
+  animation: rise 220ms var(--ease-out) both;
 }
 
-/* Menu / popover entrance — scales up from near-full (never from nothing),
+/* Menu and popover entrance. Scales up from near-full (never from nothing),
    fast and responsive per the ease-out curve. */
 @keyframes popIn {
   from {

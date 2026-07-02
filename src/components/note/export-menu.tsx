@@ -37,7 +37,7 @@ export function ExportMenu({ recordingId }: { recordingId: string }) {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch {
-      /* clipboard denied — silently ignore */
+      /* clipboard denied, silently ignore */
     } finally {
       setCopying(false);
       setOpen(false);
@@ -108,7 +108,7 @@ function MenuItem({
     <button
       role="menuitem"
       onClick={onClick}
-      className="flex w-full items-center gap-2.5 rounded-input px-3 py-2.5 text-left text-[14px] text-ink-soft transition-colors duration-150 [transition-timing-function:var(--ease-out)] hover:bg-accent-wash cursor-pointer"
+      className="flex w-full items-center gap-2.5 rounded-input px-3 py-2.5 text-left text-[14px] text-ink-soft transition-colors duration-150 [transition-timing-function:var(--ease-out)] hover:bg-panel-lift cursor-pointer"
     >
       <span className="text-accent-deep">{icon}</span>
       <span className="flex-1">{label}</span>

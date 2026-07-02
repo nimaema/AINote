@@ -59,13 +59,13 @@ export function NoteActions({ id, title }: { id: string; title: string }) {
           <div className="glass-menu pop-in absolute right-0 top-full z-50 mt-2 w-44 overflow-hidden rounded-card p-1.5">
             <button
               onClick={() => { setRenaming(true); setValue(title); }}
-              className="flex w-full items-center gap-2.5 rounded-input px-3 py-2.5 text-left text-[14px] text-ink-soft transition-colors duration-150 [transition-timing-function:var(--ease-out)] hover:bg-white/70 cursor-pointer"
+              className="flex w-full items-center gap-2.5 rounded-input px-3 py-2.5 text-left text-[14px] text-ink-soft transition-colors duration-150 [transition-timing-function:var(--ease-out)] hover:bg-panel-lift cursor-pointer"
             >
               <PencilSimple size={16} /> Rename
             </button>
             <button
               onClick={() => { setMenu(false); remove(); }}
-              className="flex w-full items-center gap-2.5 rounded-input px-3 py-2.5 text-left text-[14px] text-err transition-colors duration-150 [transition-timing-function:var(--ease-out)] hover:bg-white/70 cursor-pointer"
+              className="flex w-full items-center gap-2.5 rounded-input px-3 py-2.5 text-left text-[14px] text-err transition-colors duration-150 [transition-timing-function:var(--ease-out)] hover:bg-panel-lift cursor-pointer"
             >
               <Trash size={16} /> Delete
             </button>
@@ -85,12 +85,12 @@ export function NoteActions({ id, title }: { id: string; title: string }) {
                 if (e.key === "Enter") save();
                 if (e.key === "Escape") { setRenaming(false); setMenu(false); setValue(title); }
               }}
-              className="h-9 flex-1 rounded-input border border-hairline bg-white px-3 text-[14px] text-ink focus:border-accent focus:outline-none"
+              className="h-9 flex-1 rounded-input border border-hairline bg-bg px-3 text-[14px] text-ink focus:border-accent focus:outline-none"
             />
             <button
               onClick={save}
               disabled={busy}
-              className="grid h-9 w-9 shrink-0 place-items-center rounded-input bg-ink text-white disabled:opacity-50 cursor-pointer"
+              className="grid h-9 w-9 shrink-0 place-items-center rounded-input bg-accent text-accent-ink disabled:opacity-50 cursor-pointer"
               aria-label="Save name"
             >
               <Check size={16} weight="bold" />

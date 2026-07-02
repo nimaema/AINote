@@ -70,7 +70,7 @@ export function ProjectPicker({
     variant === "icon" ? (
       <button
         onClick={() => setOpen((o) => !o)}
-        className="grid h-8 w-8 place-items-center rounded-input text-muted transition-colors duration-150 hover:bg-white hover:text-ink cursor-pointer"
+        className="grid h-8 w-8 place-items-center rounded-input text-muted transition-colors duration-150 hover:bg-panel-lift hover:text-ink cursor-pointer"
         aria-label="Move to project"
         title="Move to project"
       >
@@ -86,7 +86,7 @@ export function ProjectPicker({
     ) : (
       <button
         onClick={() => setOpen((o) => !o)}
-        className="flex w-full items-center gap-2.5 rounded-input px-2.5 py-2 text-left text-[13.5px] text-ink-soft transition-colors duration-150 [transition-timing-function:var(--ease-out)] hover:bg-white/70 cursor-pointer"
+        className="flex w-full items-center gap-2.5 rounded-input px-2.5 py-2 text-left text-[13.5px] text-ink-soft transition-colors duration-150 [transition-timing-function:var(--ease-out)] hover:bg-panel-lift cursor-pointer"
       >
         <FolderSimple size={15} /> Move to project…
       </button>
@@ -104,7 +104,7 @@ export function ProjectPicker({
                 <button
                   onClick={() => assign(null)}
                   disabled={busy}
-                  className="flex w-full items-center gap-2.5 rounded-input px-2.5 py-2 text-left text-[13px] text-muted transition-colors hover:bg-white/70 disabled:opacity-50 cursor-pointer"
+                  className="flex w-full items-center gap-2.5 rounded-input px-2.5 py-2 text-left text-[13px] text-muted transition-colors hover:bg-panel-lift disabled:opacity-50 cursor-pointer"
                 >
                   <X size={14} /> Remove from project
                 </button>
@@ -119,7 +119,7 @@ export function ProjectPicker({
                     key={p.id}
                     onClick={() => assign(p.id)}
                     disabled={busy}
-                    className="flex w-full items-center gap-2.5 rounded-input px-2.5 py-2 text-left text-[13.5px] text-ink-soft transition-colors hover:bg-white/70 disabled:opacity-50 cursor-pointer"
+                    className="flex w-full items-center gap-2.5 rounded-input px-2.5 py-2 text-left text-[13.5px] text-ink-soft transition-colors hover:bg-panel-lift disabled:opacity-50 cursor-pointer"
                   >
                     <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ background: projectColor(p.color) }} />
                     <span className="flex-1 truncate">{p.name}</span>
@@ -141,12 +141,12 @@ export function ProjectPicker({
                       if (e.key === "Escape") setCreating(false);
                     }}
                     placeholder="Project name"
-                    className="h-8 flex-1 rounded-input border border-accent bg-white px-2.5 text-[13px] text-ink focus:outline-none"
+                    className="h-8 flex-1 rounded-input border border-accent bg-bg px-2.5 text-[13px] text-ink focus:outline-none"
                   />
                   <button
                     onClick={createAndAssign}
                     disabled={busy || !newName.trim()}
-                    className="grid h-8 w-8 shrink-0 place-items-center rounded-input bg-ink text-white disabled:opacity-40 cursor-pointer"
+                    className="grid h-8 w-8 shrink-0 place-items-center rounded-input bg-accent text-accent-ink disabled:opacity-40 cursor-pointer"
                     aria-label="Create"
                   >
                     <Check size={15} weight="bold" />

@@ -33,7 +33,7 @@ function extFor(mime: string, filename?: string) {
   return "bin";
 }
 
-// POST /api/recordings — the audio is sent as the RAW request body (not
+// POST /api/recordings: the audio is sent as the RAW request body (not
 // multipart); metadata rides in the query string. The body is streamed straight
 // to MinIO so nothing is buffered in memory and there is no multipart parser to
 // choke on large (e.g. 30-minute) recordings.
@@ -70,7 +70,7 @@ export async function POST(req: Request) {
   const fallbackTitle =
     source === "upload" && filename
       ? filename.replace(/\.[^.]+$/, "")
-      : `Recording · ${new Date().toLocaleString("en-US", {
+      : `Recording - ${new Date().toLocaleString("en-US", {
           month: "short",
           day: "numeric",
           hour: "numeric",

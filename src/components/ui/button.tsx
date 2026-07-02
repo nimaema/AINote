@@ -14,15 +14,15 @@ const base =
   "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent";
 
 const variants: Record<Variant, string> = {
-  // Ink fill — the primary action. White on near-black passes AA comfortably.
+  // Amber fill: the primary action and the app's only signal color.
   primary:
-    "bg-ink text-white shadow-[0_1px_2px_rgba(20,24,40,0.12),0_10px_28px_-10px_rgba(14,165,233,0.5)] hover:shadow-[0_1px_2px_rgba(20,24,40,0.14),0_14px_34px_-8px_rgba(14,165,233,0.75)]",
-  // Accent fill — for moments that should read electric (uses deep accent for AA).
+    "bg-accent text-accent-ink shadow-[0_14px_30px_-18px_rgba(240,182,74,0.8)] hover:shadow-[0_16px_34px_-16px_rgba(240,182,74,0.85)]",
+  // Dark fill for secondary committed actions.
   accent:
-    "bg-accent-deep text-white shadow-[0_10px_28px_-10px_rgba(3,105,161,0.7)] hover:brightness-110",
+    "bg-panel-lift text-ink shadow-[inset_0_0_0_1px_var(--color-hairline-strong)] hover:bg-panel",
   glass:
-    "glass text-ink hover:bg-[rgba(255,255,255,0.85)]",
-  ghost: "text-muted hover:text-ink hover:bg-[rgba(20,22,28,0.05)]",
+    "glass text-ink hover:bg-panel-lift",
+  ghost: "text-muted hover:text-ink hover:bg-panel",
 };
 
 const sizes: Record<Size, string> = {

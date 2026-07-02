@@ -167,7 +167,7 @@ export function Recorder({ initialMode }: { initialMode: Mode }) {
     setError(null);
 
     // Send the audio as the raw request body; metadata rides in the query
-    // string. This streams straight to storage — no multipart, so long
+    // string. This streams straight to storage, no multipart, so long
     // recordings don't trip the server's form-data parser.
     const ext = payload.mime.includes("webm")
       ? "webm"
@@ -217,7 +217,7 @@ export function Recorder({ initialMode }: { initialMode: Mode }) {
   const canSave = rec === "ready" && !uploading;
 
   return (
-    <div className="glass rise rounded-panel p-6 sm:p-8">
+    <div className="glass rise rounded-panel p-5 sm:p-7">
       {/* Top row: back + mode toggle */}
       <div className="mb-6 flex items-center justify-between gap-4">
         <Link
@@ -232,7 +232,7 @@ export function Recorder({ initialMode }: { initialMode: Mode }) {
               key={m}
               onClick={() => switchMode(m)}
               className={`inline-flex h-9 items-center gap-1.5 rounded-btn px-4 text-[13px] font-medium transition-colors duration-150 [transition-timing-function:var(--ease-out)] cursor-pointer ${
-                mode === m ? "bg-ink text-white" : "text-muted hover:text-ink"
+                mode === m ? "bg-accent text-accent-ink" : "text-muted hover:text-ink"
               }`}
             >
               {m === "record" ? <Microphone size={15} /> : <UploadSimple size={15} />}
@@ -283,7 +283,7 @@ export function Recorder({ initialMode }: { initialMode: Mode }) {
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             placeholder="Name this recording"
-            className="mt-2 h-11 w-full rounded-input border border-hairline bg-white/70 px-4 text-[15px] text-ink placeholder:text-faint transition-[border-color,box-shadow] duration-150 [transition-timing-function:var(--ease-out)] hover:border-hairline-strong focus:border-accent focus:outline-none focus:shadow-[0_0_0_4px_var(--color-accent-wash)]"
+            className="mt-2 h-11 w-full rounded-input border border-hairline bg-bg px-4 text-[15px] text-ink placeholder:text-faint transition-[border-color,box-shadow] duration-150 [transition-timing-function:var(--ease-out)] hover:border-hairline-strong focus:border-accent focus:outline-none focus:shadow-[0_0_0_4px_var(--color-accent-wash)]"
           />
 
           {uploading ? (
@@ -294,13 +294,13 @@ export function Recorder({ initialMode }: { initialMode: Mode }) {
                   {Math.round(progress * 100)}%
                 </span>
               </div>
-              <div className="h-1.5 w-full overflow-hidden rounded-full bg-[rgba(20,22,28,0.08)]">
+              <div className="h-1.5 w-full overflow-hidden rounded-full bg-panel">
                 <div
                   className="h-full rounded-full transition-[width] duration-150 [transition-timing-function:var(--ease-out)]"
                   style={{
                     width: `${Math.max(progress * 100, 4)}%`,
                     background:
-                      "linear-gradient(90deg, var(--color-accent), var(--color-aurora-violet))",
+                      "linear-gradient(90deg, var(--color-accent), var(--color-accent-deep))",
                   }}
                 />
               </div>
@@ -309,7 +309,7 @@ export function Recorder({ initialMode }: { initialMode: Mode }) {
             <button
               onClick={save}
               disabled={!canSave}
-              className="mt-5 inline-flex h-12 w-full items-center justify-center gap-2 rounded-btn bg-ink px-6 text-[15px] font-medium text-white shadow-[0_1px_2px_rgba(20,24,40,0.12),0_12px_30px_-10px_rgba(14,165,233,0.6)] transition-[transform,box-shadow] duration-150 [transition-timing-function:var(--ease-out)] hover:-translate-y-0.5 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50 cursor-pointer"
+              className="mt-5 inline-flex h-12 w-full items-center justify-center gap-2 rounded-btn bg-accent px-6 text-[15px] font-semibold text-accent-ink shadow-[0_14px_30px_-18px_rgba(240,182,74,0.8)] transition-[transform,box-shadow] duration-150 [transition-timing-function:var(--ease-out)] hover:-translate-y-0.5 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50 cursor-pointer"
             >
               <CheckCircle size={18} weight="fill" />
               Save &amp; process
@@ -323,7 +323,7 @@ export function Recorder({ initialMode }: { initialMode: Mode }) {
 
 function Stage({ children }: { children: React.ReactNode }) {
   return (
-    <div className="grid min-h-[240px] place-items-center rounded-card border border-hairline bg-white/40 p-6">
+    <div className="grid min-h-[260px] place-items-center rounded-card border border-hairline bg-bg p-6">
       {children}
     </div>
   );
@@ -354,7 +354,7 @@ function RecordStage({
         <div className="flex flex-col items-center text-center">
           <button
             onClick={onStart}
-            className="grid h-20 w-20 place-items-center rounded-full bg-ink text-white shadow-[0_10px_30px_-8px_rgba(14,165,233,0.6)] transition-transform duration-150 [transition-timing-function:var(--ease-out)] hover:-translate-y-0.5 active:scale-95 cursor-pointer"
+            className="grid h-20 w-20 place-items-center rounded-full bg-accent text-accent-ink shadow-[0_18px_40px_-22px_rgba(240,182,74,0.95)] transition-transform duration-150 [transition-timing-function:var(--ease-out)] hover:-translate-y-0.5 active:scale-95 cursor-pointer"
             aria-label="Start recording"
           >
             <Microphone size={30} weight="fill" />
@@ -393,7 +393,7 @@ function RecordStage({
             </button>
             <button
               onClick={onStop}
-              className="inline-flex h-11 items-center gap-2 rounded-btn bg-ink px-5 text-sm font-medium text-white transition-transform duration-150 [transition-timing-function:var(--ease-out)] active:scale-95 cursor-pointer"
+              className="inline-flex h-11 items-center gap-2 rounded-btn bg-accent px-5 text-sm font-semibold text-accent-ink transition-transform duration-150 [transition-timing-function:var(--ease-out)] active:scale-95 cursor-pointer"
             >
               <Stop size={16} weight="fill" /> Stop
             </button>
@@ -438,7 +438,7 @@ function UploadStage({
               </span>
             ) : null}
           </div>
-          <div className="w-full max-w-md rounded-card border border-hairline bg-white/50 px-5 py-3">
+          <div className="w-full max-w-md rounded-card border border-hairline bg-panel px-5 py-3">
             <Waveform bars={44} height={44} live={false} />
           </div>
           <audio controls src={previewUrl} className="w-full max-w-md" />
@@ -469,7 +469,7 @@ function UploadStage({
         if (f) onFile(f);
       }}
       className={`grid min-h-[240px] w-full place-items-center rounded-card border-2 border-dashed p-6 text-center transition-colors duration-150 [transition-timing-function:var(--ease-out)] cursor-pointer ${
-        drag ? "border-accent bg-accent-wash" : "border-hairline-strong bg-white/40 hover:bg-white/60"
+        drag ? "border-accent bg-accent-wash" : "border-hairline-strong bg-bg hover:bg-panel"
       }`}
     >
       <div className="flex flex-col items-center">
@@ -479,7 +479,7 @@ function UploadStage({
         <p className="mt-4 text-[15px] font-medium text-ink">
           Drop an audio file, or click to browse
         </p>
-        <p className="mt-1 text-[13px] text-muted">MP3, M4A, WAV, WebM, or OGG · up to 300 MB</p>
+        <p className="mt-1 text-[13px] text-muted">MP3, M4A, WAV, WebM, or OGG. Up to 300 MB.</p>
       </div>
       <input
         ref={inputRef}
@@ -509,9 +509,9 @@ function ReadyPreview({
     <div className="flex w-full max-w-lg flex-col items-center gap-5">
       <div className="flex items-center gap-2 text-[13px] text-muted">
         <CheckCircle size={16} weight="fill" className="text-ok" />
-        Recorded {elapsed > 0 ? `· ${fmt(elapsed)}` : ""}
+        Recorded {elapsed > 0 ? fmt(elapsed) : ""}
       </div>
-      <div className="w-full max-w-md rounded-card border border-hairline bg-white/50 px-5 py-3">
+      <div className="w-full max-w-md rounded-card border border-hairline bg-panel px-5 py-3">
         <Waveform bars={44} height={44} live={false} />
       </div>
       <audio controls src={previewUrl} className="w-full max-w-md" />

@@ -59,7 +59,7 @@ export function Pwa() {
       </div>
       <button
         onClick={install}
-        className="h-9 shrink-0 rounded-btn bg-ink px-3.5 text-[13px] font-medium text-white transition-transform duration-150 [transition-timing-function:var(--ease-out)] active:scale-[0.97] cursor-pointer"
+        className="h-9 shrink-0 rounded-btn bg-accent px-3.5 text-[13px] font-semibold text-accent-ink transition-transform duration-150 [transition-timing-function:var(--ease-out)] active:scale-[0.97] cursor-pointer"
       >
         Install
       </button>

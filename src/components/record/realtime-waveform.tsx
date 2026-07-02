@@ -71,8 +71,8 @@ export function RealtimeWaveform({
       const gap = 3 * dpr;
       const bw = (w - gap * (barCount - 1)) / barCount;
       const grad = ctx.createLinearGradient(0, 0, 0, h);
-      grad.addColorStop(0, "#0ea5e9");
-      grad.addColorStop(1, "#8b5cf6");
+      grad.addColorStop(0, "#ffd27a");
+      grad.addColorStop(1, "#f0b64a");
       ctx.fillStyle = grad;
 
       for (let i = 0; i < barCount; i++) {

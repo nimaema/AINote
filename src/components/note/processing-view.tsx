@@ -67,7 +67,7 @@ export function ProcessingView({
             setStatus("uploaded");
             router.refresh();
           }}
-          className="mx-auto mt-5 inline-flex h-10 items-center gap-2 rounded-btn bg-ink px-5 text-[14px] font-medium text-white transition-transform duration-150 [transition-timing-function:var(--ease-out)] hover:-translate-y-0.5 active:scale-[0.98] cursor-pointer"
+          className="mx-auto mt-5 inline-flex h-10 items-center gap-2 rounded-btn bg-accent px-5 text-[14px] font-semibold text-accent-ink transition-transform duration-150 [transition-timing-function:var(--ease-out)] hover:-translate-y-0.5 active:scale-[0.98] cursor-pointer"
         >
           <ArrowClockwise size={16} weight="bold" /> Try again
         </button>
@@ -82,7 +82,7 @@ export function ProcessingView({
 
   return (
     <div className="glass rounded-panel p-8 sm:p-10">
-      <div className="mx-auto mb-8 w-full max-w-md rounded-card border border-hairline bg-white/50 px-5 py-4">
+      <div className="mx-auto mb-8 w-full max-w-md rounded-card border border-hairline bg-bg px-5 py-4">
         <Waveform bars={52} height={56} />
       </div>
       <h2 className="text-center text-[17px] font-semibold text-ink">
@@ -103,7 +103,7 @@ export function ProcessingView({
                   state === "done"
                     ? "bg-accent-wash text-accent-deep"
                     : state === "active"
-                      ? "bg-ink text-white"
+                      ? "bg-accent text-accent-ink"
                       : "border border-hairline text-faint"
                 }`}
               >

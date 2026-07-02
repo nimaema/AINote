@@ -76,7 +76,7 @@ export default async function NotePage({
 
   return (
     <AppShell user={session.user}>
-      <main className="mx-auto max-w-6xl px-4 pb-28 pt-5 sm:px-6 md:px-8 md:pb-12 md:pt-6">
+      <main className="mx-auto max-w-7xl px-4 pb-28 pt-5 sm:px-6 md:px-8 md:pb-12 md:pt-6">
         <Link
           href="/"
           className="inline-flex items-center gap-1.5 text-[13px] text-muted transition-colors duration-150 [transition-timing-function:var(--ease-out)] hover:text-ink"
@@ -84,22 +84,22 @@ export default async function NotePage({
           <ArrowLeft size={15} /> All captures
         </Link>
 
-        <div className="mt-3 mb-5 flex flex-wrap items-start justify-between gap-4">
+        <div className="mt-3 mb-5 flex flex-wrap items-start justify-between gap-4 border-b border-hairline pb-5">
           <div className="min-w-0">
             <h1 className="text-[22px] font-semibold tracking-[-0.01em] text-ink sm:text-[24px]">
               {rec.title ?? "Untitled recording"}
             </h1>
             <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1.5 font-mono text-[12px] text-faint">
               <span>{new Date(rec.createdAt).toLocaleString("en-US", { dateStyle: "medium", timeStyle: "short" })}</span>
-              {rec.durationSec ? <span>· {fmtMs(rec.durationSec * 1000)}</span> : null}
-              <span>· {rec.source === "record" ? "Recorded" : "Uploaded"}</span>
+              {rec.durationSec ? <span>{fmtMs(rec.durationSec * 1000)}</span> : null}
+              <span>{rec.source === "record" ? "Recorded" : "Uploaded"}</span>
               {language && (
                 <span className="inline-flex items-center gap-1 rounded-btn bg-accent-wash px-2 py-0.5 text-accent-deep">
                   <Translate size={12} weight="bold" /> {language}
                 </span>
               )}
               {!isOwner && (
-                <span className="inline-flex items-center gap-1 rounded-btn bg-[rgba(20,22,28,0.05)] px-2 py-0.5 text-muted">
+                <span className="inline-flex items-center gap-1 rounded-btn bg-panel px-2 py-0.5 text-muted">
                   <Globe size={12} weight="bold" /> Shared with you
                 </span>
               )}
@@ -174,12 +174,12 @@ function NoteBody({
   const displayName = (raw: string) => speakerNames[raw] ?? raw;
 
   return (
-    <div className="space-y-5">
+    <div className="flex flex-col gap-5">
       <AudioPlayer recordingId={recordingId} durationSec={durationSec} />
 
       <div className="grid gap-5 lg:grid-cols-[1.55fr_1fr]">
         {/* Left column: the notes */}
-        <div className="space-y-5">
+        <div className="flex flex-col gap-5">
           {summary && (
             <section className="glass rounded-panel p-6">
               <h2 className="text-[13.5px] font-semibold text-ink">Summary</h2>
@@ -192,7 +192,7 @@ function NoteBody({
               <PanelHeading icon={<ListChecks size={16} weight="duotone" />}>
                 Action items
               </PanelHeading>
-              <ul className="mt-3 space-y-2.5">
+              <ul className="mt-3 flex flex-col gap-2.5">
                 {actionItems.map((a, i) => (
                   <li key={i} className="flex items-start gap-3">
                     <Circle size={18} className="mt-0.5 shrink-0 text-accent-deep" />
@@ -219,7 +219,7 @@ function NoteBody({
                     <PanelHeading icon={<CheckCircle size={16} weight="duotone" />}>
                       Decisions
                     </PanelHeading>
-                    <ul className="mt-3 space-y-2 text-[14px] text-ink-soft">
+                    <ul className="mt-3 flex flex-col gap-2 text-[14px] text-ink-soft">
                       {decisions.map((d, i) => (
                         <li key={i} className="flex gap-2">
                           <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-accent" />
@@ -234,10 +234,10 @@ function NoteBody({
                     <PanelHeading icon={<Flag size={16} weight="duotone" />}>
                       Follow-ups
                     </PanelHeading>
-                    <ul className="mt-3 space-y-2 text-[14px] text-ink-soft">
+                    <ul className="mt-3 flex flex-col gap-2 text-[14px] text-ink-soft">
                       {followUps.map((f, i) => (
                         <li key={i} className="flex gap-2">
-                          <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-aurora-violet" />
+                          <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-warn" />
                           {f}
                         </li>
                       ))}
@@ -274,7 +274,7 @@ function NoteBody({
               )}
             </div>
             {utterances.length > 0 ? (
-              <div className="mt-4 max-h-[520px] space-y-4 overflow-y-auto pr-2">
+              <div className="mt-4 flex max-h-[520px] flex-col gap-4 overflow-y-auto pr-2">
                 {utterances.map((u, i) => {
                   const color = colorFor(u.speaker);
                   return (
@@ -339,7 +339,7 @@ function Chip({ children, muted }: { children: React.ReactNode; muted?: boolean 
   return (
     <span
       className={`inline-flex items-center rounded-btn px-2.5 py-0.5 text-[12px] font-medium ${
-        muted ? "bg-[rgba(20,22,28,0.06)] text-muted" : "bg-accent-wash text-accent-deep"
+        muted ? "bg-panel text-muted" : "bg-accent-wash text-accent-deep"
       }`}
     >
       {children}

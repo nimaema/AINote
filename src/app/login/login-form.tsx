@@ -33,7 +33,7 @@ export function LoginForm({ from }: { from: string }) {
   }
 
   const field =
-    "h-12 w-full rounded-input border border-hairline bg-white/70 px-4 " +
+    "h-12 w-full rounded-input border border-hairline bg-bg px-4 " +
     "text-[15px] text-ink placeholder:text-faint " +
     "transition-[border-color,box-shadow] duration-150 [transition-timing-function:var(--ease-out)] " +
     "hover:border-hairline-strong focus:border-accent focus:outline-none " +

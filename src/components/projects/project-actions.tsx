@@ -67,7 +67,7 @@ export function ProjectActions({
           <div className="glass-menu pop-in absolute right-0 top-full z-50 mt-2 w-56 rounded-card p-1.5">
             <button
               onClick={() => { setRenaming(true); setValue(name); }}
-              className="flex w-full items-center gap-2.5 rounded-input px-3 py-2.5 text-left text-[14px] text-ink-soft transition-colors hover:bg-white/70 cursor-pointer"
+              className="flex w-full items-center gap-2.5 rounded-input px-3 py-2.5 text-left text-[14px] text-ink-soft transition-colors hover:bg-panel-lift cursor-pointer"
             >
               <PencilSimple size={16} /> Rename
             </button>
@@ -83,11 +83,11 @@ export function ProjectActions({
                     onClick={() => patch({ color: c })}
                     aria-label={c}
                     className={`grid h-6 w-6 place-items-center rounded-full transition-transform duration-150 ${
-                      c === color ? "ring-2 ring-ink ring-offset-2" : "hover:scale-110"
+                      c === color ? "ring-2 ring-accent ring-offset-2 ring-offset-panel" : "hover:scale-110"
                     }`}
                     style={{ background: PROJECT_COLORS[c] }}
                   >
-                    {c === color && <Check size={12} weight="bold" className="text-white" />}
+                    {c === color && <Check size={12} weight="bold" className="text-bg" />}
                   </button>
                 ))}
               </div>
@@ -96,7 +96,7 @@ export function ProjectActions({
             <div className="my-1 h-px bg-hairline" />
             <button
               onClick={() => { setMenu(false); remove(); }}
-              className="flex w-full items-center gap-2.5 rounded-input px-3 py-2.5 text-left text-[14px] text-err transition-colors hover:bg-white/70 cursor-pointer"
+              className="flex w-full items-center gap-2.5 rounded-input px-3 py-2.5 text-left text-[14px] text-err transition-colors hover:bg-panel-lift cursor-pointer"
             >
               <Trash size={16} /> Delete project
             </button>
@@ -116,19 +116,19 @@ export function ProjectActions({
                 if (e.key === "Enter") saveName();
                 if (e.key === "Escape") { setRenaming(false); setMenu(false); setValue(name); }
               }}
-              className="h-9 flex-1 rounded-input border border-hairline bg-white px-3 text-[14px] text-ink focus:border-accent focus:outline-none"
+              className="h-9 flex-1 rounded-input border border-hairline bg-bg px-3 text-[14px] text-ink focus:border-accent focus:outline-none"
             />
             <button
               onClick={saveName}
               disabled={busy}
-              className="grid h-9 w-9 shrink-0 place-items-center rounded-input bg-ink text-white disabled:opacity-50 cursor-pointer"
+              className="grid h-9 w-9 shrink-0 place-items-center rounded-input bg-accent text-accent-ink disabled:opacity-50 cursor-pointer"
               aria-label="Save name"
             >
               <Check size={16} weight="bold" />
             </button>
             <button
               onClick={() => { setRenaming(false); setMenu(false); setValue(name); }}
-              className="grid h-9 w-9 shrink-0 place-items-center rounded-input text-muted hover:bg-white cursor-pointer"
+              className="grid h-9 w-9 shrink-0 place-items-center rounded-input text-muted hover:bg-panel-lift cursor-pointer"
               aria-label="Cancel"
             >
               <X size={16} />

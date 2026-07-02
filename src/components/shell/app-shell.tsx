@@ -21,19 +21,19 @@ export function AppShell({ user, children }: { user: ShellUser; children: React.
     <div className="min-h-[100dvh]">
       {/* Desktop sidebar */}
       <aside
-        className="fixed inset-y-0 left-0 z-40 hidden w-60 flex-col border-r border-hairline md:flex"
+        className="fixed inset-y-0 left-0 z-40 hidden w-64 flex-col border-r border-hairline bg-bg-2 md:flex"
         style={{ paddingTop: "env(safe-area-inset-top)" }}
       >
-        <div className="flex h-14 shrink-0 items-center px-4">
+        <div className="flex h-16 shrink-0 items-center px-4">
           <Link href="/" className="cursor-pointer">
             <Wordmark />
           </Link>
         </div>
 
-        <div className="px-3 pb-3 pt-1">
+        <div className="px-3 pb-4 pt-1">
           <Link
             href="/record"
-            className="flex h-9 items-center justify-center gap-1.5 rounded-btn bg-ink text-[13.5px] font-medium text-white shadow-[0_1px_2px_rgba(20,24,40,0.16)] transition-[transform,box-shadow] duration-150 [transition-timing-function:var(--ease-out)] hover:-translate-y-px active:scale-[0.98] cursor-pointer"
+            className="flex h-10 items-center justify-center gap-1.5 rounded-btn bg-accent text-[13.5px] font-semibold text-accent-ink shadow-[0_14px_30px_-18px_rgba(240,182,74,0.8)] transition-[transform,box-shadow] duration-150 [transition-timing-function:var(--ease-out)] hover:-translate-y-px active:scale-[0.98] cursor-pointer"
           >
             <Plus size={15} weight="bold" /> New capture
           </Link>
@@ -41,8 +41,8 @@ export function AppShell({ user, children }: { user: ShellUser; children: React.
 
         <SidebarNav isAdmin={isAdmin} />
 
-        <div className="mt-auto flex items-center gap-2.5 border-t border-hairline p-3">
-          <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-ink text-[12.5px] font-semibold text-white">
+        <div className="mt-auto flex items-center gap-2.5 border-t border-hairline bg-bg/35 p-3">
+          <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-accent text-[12.5px] font-semibold text-accent-ink">
             {initial}
           </span>
           <div className="min-w-0 flex-1 leading-tight">
@@ -55,7 +55,7 @@ export function AppShell({ user, children }: { user: ShellUser; children: React.
 
       {/* Mobile top bar */}
       <header
-        className="sticky top-0 z-30 flex h-12 items-center justify-between border-b border-hairline bg-white/85 px-4 backdrop-blur-md md:hidden"
+        className="sticky top-0 z-30 flex h-12 items-center justify-between border-b border-hairline bg-bg-2/90 px-4 backdrop-blur-md md:hidden"
         style={{ paddingTop: "env(safe-area-inset-top)" }}
       >
         <Link href="/" className="inline-flex items-center gap-2 cursor-pointer">
@@ -67,13 +67,13 @@ export function AppShell({ user, children }: { user: ShellUser; children: React.
         <Link
           href="/settings"
           aria-label="Account"
-          className="grid h-8 w-8 place-items-center rounded-full bg-ink text-[12px] font-semibold text-white"
+          className="grid h-8 w-8 place-items-center rounded-full bg-accent text-[12px] font-semibold text-accent-ink"
         >
           {initial}
         </Link>
       </header>
 
-      <div className="md:pl-60">{children}</div>
+      <div className="md:pl-64">{children}</div>
 
       <MobileTabBar isAdmin={isAdmin} />
     </div>

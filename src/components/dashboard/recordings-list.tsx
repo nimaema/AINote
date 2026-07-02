@@ -44,11 +44,11 @@ const FILTERS = [
 ] as const;
 
 const STATUS: Record<string, { label: string; dot: string; text: string; note: string }> = {
-  uploaded: { label: "Queued", dot: "bg-faint", text: "text-muted", note: "Queued for transcription…" },
-  transcribing: { label: "Transcribing", dot: "bg-accent", text: "text-accent-deep", note: "Transcribing the audio…" },
-  processing: { label: "Summarizing", dot: "bg-accent", text: "text-accent-deep", note: "Writing the summary…" },
+  uploaded: { label: "Queued", dot: "bg-faint", text: "text-muted", note: "Queued for transcription..." },
+  transcribing: { label: "Transcribing", dot: "bg-accent", text: "text-accent-deep", note: "Transcribing the audio..." },
+  processing: { label: "Summarizing", dot: "bg-accent", text: "text-accent-deep", note: "Writing the summary..." },
   done: { label: "Ready", dot: "bg-ok", text: "text-ok", note: "" },
-  failed: { label: "Failed", dot: "bg-err", text: "text-err", note: "Processing failed — retry from the menu." },
+  failed: { label: "Failed", dot: "bg-err", text: "text-err", note: "Processing failed. Retry from the menu." },
 };
 
 export function RecordingsList({
@@ -119,12 +119,12 @@ export function RecordingsList({
               value={q}
               onChange={(e) => setQ(e.target.value)}
               placeholder="Search"
-              className="h-8 w-36 min-w-0 rounded-input border border-hairline bg-white pl-[1.85rem] pr-2.5 text-[13px] text-ink placeholder:text-faint focus:border-accent focus:outline-none focus:shadow-[0_0_0_3px_var(--color-accent-wash)] transition-[border-color,box-shadow] duration-150 [transition-timing-function:var(--ease-out)] sm:w-48"
+              className="h-8 w-36 min-w-0 rounded-input border border-hairline bg-bg pl-[1.85rem] pr-2.5 text-[13px] text-ink placeholder:text-faint focus:border-accent focus:outline-none focus:shadow-[0_0_0_3px_var(--color-accent-wash)] transition-[border-color,box-shadow] duration-150 [transition-timing-function:var(--ease-out)] sm:w-48"
             />
           </div>
 
           {/* Segmented filter */}
-          <div className="flex items-center rounded-btn border border-hairline bg-[rgba(20,22,28,0.03)] p-0.5">
+          <div className="flex items-center rounded-btn border border-hairline bg-bg p-0.5">
             {FILTERS.map((f) => {
               const count = items.filter((r) => matchesFilter(r.status, f.key)).length;
               const active = filter === f.key;
@@ -133,7 +133,7 @@ export function RecordingsList({
                   key={f.key}
                   onClick={() => setFilter(f.key)}
                   className={`inline-flex h-7 items-center gap-1 rounded-[8px] px-2.5 text-[12px] font-medium transition-colors duration-150 [transition-timing-function:var(--ease-out)] cursor-pointer ${
-                    active ? "bg-white text-ink shadow-[0_1px_2px_rgba(18,22,33,0.08)]" : "text-muted hover:text-ink"
+                    active ? "bg-panel-lift text-ink" : "text-muted hover:text-ink"
                   }`}
                 >
                   {f.label}
@@ -195,13 +195,13 @@ function RecordingRow({
   }
 
   return (
-    <li className="group relative flex items-start gap-3 px-4 py-3 transition-colors duration-150 [transition-timing-function:var(--ease-out)] first:rounded-t-[11px] last:rounded-b-[11px] hover:bg-[#f7f9fc]">
+    <li className="group relative flex items-start gap-3 px-4 py-3 transition-colors duration-150 [transition-timing-function:var(--ease-out)] first:rounded-t-[11px] last:rounded-b-[11px] hover:bg-panel">
       {/* Whole-row click target (disabled while renaming) */}
       {!editing && (
         <Link href={`/note/${rec.id}`} className="absolute inset-0 z-0" aria-label={`Open ${rec.title}`} />
       )}
 
-      <span className="pointer-events-none relative z-10 mt-0.5 grid h-9 w-9 shrink-0 place-items-center rounded-input bg-accent-wash text-accent-deep">
+      <span className="pointer-events-none relative z-10 mt-0.5 grid h-9 w-9 shrink-0 place-items-center rounded-input border border-hairline bg-bg text-accent-deep">
         <WaveSawtooth size={17} weight="duotone" />
       </span>
 
@@ -217,12 +217,12 @@ function RecordingRow({
                 if (e.key === "Enter") saveRename();
                 if (e.key === "Escape") { setTitle(rec.title); setEditing(false); }
               }}
-              className="h-8 w-full rounded-input border border-accent bg-white px-2.5 text-[13.5px] text-ink focus:outline-none focus:shadow-[0_0_0_3px_var(--color-accent-wash)]"
+              className="h-8 w-full rounded-input border border-accent bg-bg px-2.5 text-[13.5px] text-ink focus:outline-none focus:shadow-[0_0_0_3px_var(--color-accent-wash)]"
             />
-            <button onClick={saveRename} className="grid h-8 w-8 shrink-0 place-items-center rounded-input text-ok hover:bg-white cursor-pointer" aria-label="Save name">
+            <button onClick={saveRename} className="grid h-8 w-8 shrink-0 place-items-center rounded-input text-ok hover:bg-panel-lift cursor-pointer" aria-label="Save name">
               <Check size={15} weight="bold" />
             </button>
-            <button onClick={() => { setTitle(rec.title); setEditing(false); }} className="grid h-8 w-8 shrink-0 place-items-center rounded-input text-muted hover:bg-white cursor-pointer" aria-label="Cancel">
+            <button onClick={() => { setTitle(rec.title); setEditing(false); }} className="grid h-8 w-8 shrink-0 place-items-center rounded-input text-muted hover:bg-panel-lift cursor-pointer" aria-label="Cancel">
               <X size={15} />
             </button>
           </div>
@@ -232,7 +232,7 @@ function RecordingRow({
               <p className="truncate text-[14px] font-medium text-ink">{rec.title}</p>
               {rec.isPublic && (
                 <span
-                  className="inline-flex shrink-0 items-center gap-1 rounded-[6px] bg-accent-wash px-1.5 py-0.5 text-[9.5px] font-semibold uppercase tracking-[0.08em] text-accent-deep"
+                  className="inline-flex shrink-0 items-center gap-1 rounded-[6px] bg-accent-wash px-1.5 py-0.5 text-[11px] font-medium text-accent-deep"
                   title="Shared with your workspace"
                 >
                   <Globe size={10} weight="bold" /> Public
@@ -244,34 +244,24 @@ function RecordingRow({
                 {rec.summary || s.note}
               </p>
             )}
-            <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5 font-mono text-[10.5px] text-faint">
+            <p className="mt-1 flex flex-wrap items-center gap-x-2.5 gap-y-0.5 font-mono text-[10.5px] text-faint">
               <span>{rec.dateLabel}</span>
-              <span aria-hidden>·</span>
               <span>{rec.durationLabel}</span>
               {rec.language && (
-                <>
-                  <span aria-hidden>·</span>
-                  <span className="inline-flex items-center gap-1">
-                    <Translate size={10.5} weight="bold" /> {rec.language}
-                  </span>
-                </>
+                <span className="inline-flex items-center gap-1">
+                  <Translate size={10.5} weight="bold" /> {rec.language}
+                </span>
               )}
               {rec.actionCount > 0 && (
-                <>
-                  <span aria-hidden>·</span>
-                  <span className="inline-flex items-center gap-1">
-                    <ListChecks size={10.5} /> {rec.actionCount}
-                  </span>
-                </>
+                <span className="inline-flex items-center gap-1">
+                  <ListChecks size={10.5} /> {rec.actionCount}
+                </span>
               )}
               {!hideProject && rec.projectId && rec.projectName && (
-                <>
-                  <span aria-hidden>·</span>
-                  <span className="inline-flex items-center gap-1 text-ink-soft">
-                    <span className="h-1.5 w-1.5 rounded-full" style={{ background: projectColor(rec.projectColor) }} />
-                    {rec.projectName}
-                  </span>
-                </>
+                <span className="inline-flex items-center gap-1 text-ink-soft">
+                  <span className="h-1.5 w-1.5 rounded-full" style={{ background: projectColor(rec.projectColor) }} />
+                  {rec.projectName}
+                </span>
               )}
             </p>
           </>
@@ -292,7 +282,7 @@ function RecordingRow({
               <button
                 onClick={() => setMenu((m) => !m)}
                 disabled={busy}
-                className="grid h-8 w-8 place-items-center rounded-input text-muted transition-colors duration-150 hover:bg-white hover:text-ink disabled:opacity-50 cursor-pointer"
+                className="grid h-8 w-8 place-items-center rounded-input text-muted transition-colors duration-150 hover:bg-panel-lift hover:text-ink disabled:opacity-50 cursor-pointer"
                 aria-label="More actions"
               >
                 <DotsThreeVertical size={17} weight="bold" />
@@ -326,7 +316,7 @@ function MenuItem({ icon, label, onClick, danger }: { icon: React.ReactNode; lab
   return (
     <button
       onClick={onClick}
-      className={`flex w-full items-center gap-2.5 rounded-[8px] px-2.5 py-2 text-left text-[13px] transition-colors duration-150 [transition-timing-function:var(--ease-out)] hover:bg-[rgba(20,22,28,0.05)] cursor-pointer ${
+      className={`flex w-full items-center gap-2.5 rounded-[8px] px-2.5 py-2 text-left text-[13px] transition-colors duration-150 [transition-timing-function:var(--ease-out)] hover:bg-panel-lift cursor-pointer ${
         danger ? "text-err" : "text-ink-soft"
       }`}
     >

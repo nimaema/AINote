@@ -37,7 +37,7 @@ export function QAPanel({
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
+    scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "auto" });
   }, [messages, pending]);
 
   async function ask(question: string) {
@@ -76,7 +76,7 @@ export function QAPanel({
         <h2 className="text-[13.5px] font-semibold text-ink">{title}</h2>
       </div>
 
-      <div ref={scrollRef} className="flex-1 space-y-4 overflow-y-auto px-5 py-5">
+      <div ref={scrollRef} className="flex flex-1 flex-col gap-4 overflow-y-auto px-5 py-5">
         {empty ? (
           <div className="flex h-full flex-col items-center justify-center text-center">
             <p className="text-[13px] text-muted">{emptyHint}</p>
@@ -85,7 +85,7 @@ export function QAPanel({
                 <button
                   key={sug}
                   onClick={() => ask(sug)}
-                  className="rounded-btn border border-hairline bg-white/60 px-3 py-1.5 text-[12.5px] text-ink-soft transition-colors duration-150 [transition-timing-function:var(--ease-out)] hover:border-accent hover:text-accent-deep cursor-pointer"
+                  className="rounded-btn border border-hairline bg-bg px-3 py-1.5 text-[12.5px] text-ink-soft transition-colors duration-150 [transition-timing-function:var(--ease-out)] hover:border-accent hover:text-accent-deep cursor-pointer"
                 >
                   {sug}
                 </button>
@@ -97,7 +97,7 @@ export function QAPanel({
             <div key={m.id ?? i} className={m.role === "user" ? "flex justify-end" : "flex justify-start"}>
               <div
                 className={`max-w-[85%] whitespace-pre-wrap rounded-card px-3.5 py-2.5 text-[14px] leading-relaxed ${
-                  m.role === "user" ? "bg-ink text-white" : "border border-hairline bg-white/70 text-ink-soft"
+                  m.role === "user" ? "bg-accent text-accent-ink" : "border border-hairline bg-bg text-ink-soft"
                 }`}
               >
                 {m.content}
@@ -107,7 +107,7 @@ export function QAPanel({
                       const time = fmtMs(c.startMs);
                       const label = [c.recordingTitle, c.speaker ?? (c.recordingTitle ? null : "clip"), time]
                         .filter(Boolean)
-                        .join(" · ");
+                        .join(" / ");
                       const chip = (
                         <span className="inline-block rounded-btn bg-accent-wash px-2 py-0.5 font-mono text-[10.5px] text-accent-deep">
                           {label}
@@ -129,7 +129,7 @@ export function QAPanel({
         )}
         {pending && (
           <div className="flex justify-start">
-            <div className="flex items-center gap-1 rounded-card border border-hairline bg-white/70 px-3.5 py-3">
+            <div className="flex items-center gap-1 rounded-card border border-hairline bg-bg px-3.5 py-3">
               {[0, 1, 2].map((i) => (
                 <span
                   key={i}
@@ -153,13 +153,13 @@ export function QAPanel({
           value={input}
           onChange={(e) => setInput(e.target.value)}
           placeholder="Ask a question…"
-          className="h-11 flex-1 rounded-input border border-hairline bg-white/70 px-4 text-[14px] text-ink placeholder:text-faint transition-[border-color,box-shadow] duration-150 [transition-timing-function:var(--ease-out)] focus:border-accent focus:outline-none focus:shadow-[0_0_0_4px_var(--color-accent-wash)]"
+          className="h-11 flex-1 rounded-input border border-hairline bg-bg px-4 text-[14px] text-ink placeholder:text-faint transition-[border-color,box-shadow] duration-150 [transition-timing-function:var(--ease-out)] focus:border-accent focus:outline-none focus:shadow-[0_0_0_4px_var(--color-accent-wash)]"
         />
         <button
           type="submit"
           disabled={pending || !input.trim()}
           aria-label="Send"
-          className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-ink text-white transition-transform duration-150 [transition-timing-function:var(--ease-out)] active:scale-95 disabled:opacity-40 cursor-pointer"
+          className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-accent text-accent-ink transition-transform duration-150 [transition-timing-function:var(--ease-out)] active:scale-95 disabled:opacity-40 cursor-pointer"
         >
           <PaperPlaneRight size={17} weight="fill" />
         </button>

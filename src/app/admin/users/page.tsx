@@ -43,7 +43,7 @@ export default async function AdminUsersPage() {
       recordings: usg?.count ?? 0,
       timeLabel: humanTotalTime(usg?.duration ?? 0),
       storageLabel: humanBytes(usg?.bytes ?? 0),
-      lastActiveLabel: usg?.lastAt ? relativeTime(new Date(usg.lastAt), now) : "—",
+      lastActiveLabel: usg?.lastAt ? relativeTime(new Date(usg.lastAt), now) : "never",
     };
   });
 
@@ -57,8 +57,9 @@ export default async function AdminUsersPage() {
   return (
     <AppShell user={session.user}>
       <main className="mx-auto max-w-4xl px-4 pb-28 pt-5 sm:px-6 md:px-8 md:pb-12 md:pt-7">
-        <div className="mb-5 px-1">
-          <h1 className="text-[20px] font-semibold tracking-[-0.01em] text-ink">Users</h1>
+        <div className="mb-5 border-b border-hairline px-1 pb-5">
+          <p className="font-mono text-[11px] text-faint">Administration</p>
+          <h1 className="mt-1 text-[24px] font-semibold tracking-[-0.015em] text-ink">Users</h1>
           <p className="mt-0.5 text-[13px] text-muted">
             Manage access and see how the workspace is being used.
           </p>
@@ -80,7 +81,7 @@ export default async function AdminUsersPage() {
 function Stat({ label, value }: { label: string; value: string }) {
   return (
     <div className="px-4 py-3">
-      <p className="font-mono text-[10.5px] uppercase tracking-[0.14em] text-faint">{label}</p>
+      <p className="font-mono text-[10.5px] text-faint">{label}</p>
       <p className="tabular mt-1 text-[20px] font-semibold tracking-[-0.01em] text-ink">{value}</p>
     </div>
   );

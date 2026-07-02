@@ -19,7 +19,7 @@ export function MobileTabBar({ isAdmin }: { isAdmin: boolean }) {
 
   return (
     <nav
-      className="glass fixed inset-x-3 bottom-3 z-40 flex items-stretch justify-around rounded-panel px-1.5 py-1.5 md:hidden"
+      className="glass-menu fixed inset-x-3 bottom-3 z-40 flex items-stretch justify-around rounded-panel px-1.5 py-1.5 md:hidden"
       style={{ paddingBottom: "max(0.375rem, env(safe-area-inset-bottom))" }}
       aria-label="Primary"
     >
@@ -29,8 +29,8 @@ export function MobileTabBar({ isAdmin }: { isAdmin: boolean }) {
           <Link
             key={href}
             href={href}
-            className={`flex min-w-[64px] flex-col items-center gap-0.5 rounded-input py-1.5 text-[11px] font-medium transition-colors duration-150 [transition-timing-function:var(--ease-out)] ${
-              active ? "text-accent-deep" : "text-muted"
+            className={`flex min-w-[64px] flex-col items-center gap-0.5 rounded-input py-1.5 text-[11px] font-medium transition-[background-color,color,transform] duration-150 [transition-timing-function:var(--ease-out)] active:scale-[0.97] ${
+              active ? "bg-accent-wash text-accent-deep" : "text-muted"
             }`}
           >
             <Icon size={22} weight={active ? "fill" : "regular"} />

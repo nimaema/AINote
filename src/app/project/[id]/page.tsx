@@ -75,7 +75,7 @@ export default async function ProjectPage({
 
   return (
     <AppShell user={session.user}>
-      <main className="mx-auto max-w-6xl px-4 pb-28 pt-5 sm:px-6 md:px-8 md:pb-12 md:pt-6">
+      <main className="mx-auto max-w-7xl px-4 pb-28 pt-5 sm:px-6 md:px-8 md:pb-12 md:pt-6">
         <Link
           href="/"
           className="inline-flex items-center gap-1.5 text-[13px] text-muted transition-colors duration-150 [transition-timing-function:var(--ease-out)] hover:text-ink"
@@ -83,10 +83,10 @@ export default async function ProjectPage({
           <ArrowLeft size={15} /> All captures
         </Link>
 
-        <div className="mt-4 mb-6 flex flex-wrap items-start justify-between gap-4">
+        <div className="glass mt-4 mb-6 flex flex-wrap items-start justify-between gap-4 rounded-panel p-4">
           <div className="flex min-w-0 items-center gap-3">
             <span
-              className="grid h-11 w-11 shrink-0 place-items-center rounded-input text-white"
+              className="grid h-11 w-11 shrink-0 place-items-center rounded-input text-bg"
               style={{ background: projectColor(project.color) }}
             >
               <FolderSimple size={20} weight="fill" />
@@ -95,8 +95,9 @@ export default async function ProjectPage({
               <h1 className="truncate text-[20px] font-semibold tracking-[-0.01em] text-ink sm:text-[22px]">
                 {project.name}
               </h1>
-              <p className="mt-0.5 font-mono text-[12px] text-faint">
-                {rows.length} {rows.length === 1 ? "recording" : "recordings"} · {readyCount} ready
+              <p className="mt-0.5 flex flex-wrap gap-x-3 font-mono text-[12px] text-faint">
+                <span>{rows.length} {rows.length === 1 ? "recording" : "recordings"}</span>
+                <span>{readyCount} ready</span>
               </p>
             </div>
           </div>

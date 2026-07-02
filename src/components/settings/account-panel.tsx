@@ -87,7 +87,7 @@ export function AccountPanel({
           <button
             type="button"
             onClick={() => setShow((s) => !s)}
-            className="inline-flex items-center gap-1.5 rounded-input px-2 py-1 text-ink-soft transition-colors duration-150 hover:bg-white/70 cursor-pointer"
+            className="inline-flex items-center gap-1.5 rounded-input px-2 py-1 text-ink-soft transition-colors duration-150 hover:bg-panel-lift cursor-pointer"
           >
             {show ? <EyeSlash size={15} /> : <Eye size={15} />}
             {show ? "Hide passwords" : "Show passwords"}
@@ -109,11 +109,11 @@ export function AccountPanel({
           <button
             type="submit"
             disabled={!canSubmit}
-            className="inline-flex h-11 items-center justify-center rounded-btn bg-ink px-5 text-[14px] font-medium text-white shadow-[0_1px_2px_rgba(20,24,40,0.12),0_10px_28px_-12px_rgba(14,165,233,0.55)] transition-[transform,box-shadow,opacity] duration-150 [transition-timing-function:var(--ease-out)] hover:-translate-y-0.5 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-40 cursor-pointer"
+            className="inline-flex h-11 items-center justify-center rounded-btn bg-accent px-5 text-[14px] font-semibold text-accent-ink shadow-[0_14px_30px_-18px_rgba(240,182,74,0.8)] transition-[transform,box-shadow,opacity] duration-150 [transition-timing-function:var(--ease-out)] hover:-translate-y-0.5 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-40 cursor-pointer"
           >
             {busy ? "Updating…" : "Update password"}
           </button>
-          <span className="rounded-btn bg-[rgba(20,22,28,0.05)] px-2.5 py-1 font-mono text-[11px] uppercase tracking-[0.12em] text-muted">
+          <span className="rounded-btn bg-panel px-2.5 py-1 font-mono text-[11px] text-muted">
             {role}
           </span>
         </div>
@@ -167,7 +167,7 @@ function PasswordInput({
       onChange={(e) => onChange(e.target.value)}
       autoComplete={autoComplete}
       placeholder={placeholder}
-      className="h-11 w-full rounded-input border border-hairline bg-white/80 px-3.5 text-[14px] text-ink placeholder:text-faint transition-[border-color,box-shadow] duration-150 [transition-timing-function:var(--ease-out)] focus:border-accent focus:outline-none focus:shadow-[0_0_0_4px_var(--color-accent-wash)]"
+      className="h-11 w-full rounded-input border border-hairline bg-bg px-3.5 text-[14px] text-ink placeholder:text-faint transition-[border-color,box-shadow] duration-150 [transition-timing-function:var(--ease-out)] focus:border-accent focus:outline-none focus:shadow-[0_0_0_4px_var(--color-accent-wash)]"
     />
   );
 }

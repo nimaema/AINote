@@ -46,7 +46,7 @@ export function SpeakerEditor({
     return (
       <button
         onClick={() => setOpen(true)}
-        className="inline-flex items-center gap-1.5 rounded-btn border border-hairline bg-white/60 px-2.5 py-1.5 text-[12px] font-medium text-ink-soft transition-colors duration-150 [transition-timing-function:var(--ease-out)] hover:border-accent hover:text-accent-deep cursor-pointer"
+        className="inline-flex items-center gap-1.5 rounded-btn border border-hairline bg-bg px-2.5 py-1.5 text-[12px] font-medium text-ink-soft transition-colors duration-150 [transition-timing-function:var(--ease-out)] hover:border-accent hover:text-accent-deep cursor-pointer"
       >
         <PencilSimple size={13} /> Rename speakers
       </button>
@@ -54,12 +54,12 @@ export function SpeakerEditor({
   }
 
   return (
-    <div className="rounded-card border border-hairline bg-white/70 p-3.5">
+    <div className="rounded-card border border-hairline bg-bg p-3.5">
       <div className="mb-3 flex items-center justify-between">
         <p className="text-[12.5px] font-semibold text-ink">Rename speakers</p>
         <button
           onClick={() => setOpen(false)}
-          className="grid h-6 w-6 place-items-center rounded-input text-muted hover:bg-white cursor-pointer"
+          className="grid h-6 w-6 place-items-center rounded-input text-muted hover:bg-panel-lift cursor-pointer"
           aria-label="Close"
         >
           <X size={14} />
@@ -74,7 +74,7 @@ export function SpeakerEditor({
           return (
             <div key={raw} className="flex items-center gap-2.5">
               <span
-                className="grid h-7 w-7 shrink-0 place-items-center rounded-full text-[11px] font-bold text-white"
+                className="grid h-7 w-7 shrink-0 place-items-center rounded-full text-[11px] font-bold text-bg"
                 style={{ background: colors[raw] }}
                 title={label}
               >
@@ -88,7 +88,7 @@ export function SpeakerEditor({
                   if (e.key === "Escape") setOpen(false);
                 }}
                 placeholder={label}
-                className="h-9 flex-1 rounded-input border border-hairline bg-white px-3 text-[13.5px] text-ink placeholder:text-faint focus:border-accent focus:outline-none focus:shadow-[0_0_0_4px_var(--color-accent-wash)]"
+                className="h-9 flex-1 rounded-input border border-hairline bg-panel px-3 text-[13.5px] text-ink placeholder:text-faint focus:border-accent focus:outline-none focus:shadow-[0_0_0_4px_var(--color-accent-wash)]"
               />
             </div>
           );
@@ -105,7 +105,7 @@ export function SpeakerEditor({
         <button
           onClick={save}
           disabled={busy}
-          className="inline-flex h-9 items-center gap-1.5 rounded-btn bg-ink px-4 text-[13px] font-medium text-white transition-transform duration-150 [transition-timing-function:var(--ease-out)] active:scale-[0.98] disabled:opacity-50 cursor-pointer"
+          className="inline-flex h-9 items-center gap-1.5 rounded-btn bg-accent px-4 text-[13px] font-semibold text-accent-ink transition-transform duration-150 [transition-timing-function:var(--ease-out)] active:scale-[0.98] disabled:opacity-50 cursor-pointer"
         >
           <Check size={15} weight="bold" /> {busy ? "Saving…" : "Save names"}
         </button>

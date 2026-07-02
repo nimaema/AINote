@@ -4,7 +4,7 @@ import { useMemo } from "react";
 
 // A spectral waveform of mirrored bars. `live` makes the bars breathe (staggered
 // scaleY on the GPU); otherwise it renders a static, varied silhouette. This is
-// the app's signature object — it appears idle here and, later, wired to real
+// the app's signature object. It appears idle here and later wires to real
 // microphone amplitude during recording and to playback in the note view.
 export function Waveform({
   bars = 56,
@@ -17,7 +17,7 @@ export function Waveform({
   height?: number;
   className?: string;
 }) {
-  // Deterministic spectral-looking heights (no Math.random — stable on SSR).
+  // Deterministic spectral-looking heights. No Math.random, stable on SSR.
   // Fixed precision so the server and client emit byte-identical style strings.
   const heights = useMemo(
     () =>
@@ -44,7 +44,7 @@ export function Waveform({
           style={{
             height: `${h}%`,
             background:
-              "linear-gradient(180deg, var(--color-accent), var(--color-aurora-violet))",
+              "linear-gradient(180deg, var(--color-accent-deep), var(--color-accent))",
             transformOrigin: "center",
             opacity: 0.9,
             animation: live
