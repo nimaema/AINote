@@ -8,10 +8,6 @@ const nextConfig: NextConfig = {
   experimental: {
     // Allow large audio blobs through server actions if we ever use them.
     serverActions: { bodySizeLimit: "300mb" },
-    // Allow large uploads to pass through middleware without being truncated.
-    // Default is 10mb; we match the 300 MB cap from the recordings route.
-    // @ts-expect-error – supported by Next.js 15.5 at runtime; types haven't caught up
-    proxyClientMaxBodySize: "300mb",
   },
 };
 

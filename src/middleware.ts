@@ -27,6 +27,8 @@ export default auth((req) => {
 
 export const config = {
   matcher: [
-    "/((?!api/auth|_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|webp|ico)$).*)",
+    // Exclude api/recordings — audio uploads stream directly to storage and
+    // must not be buffered by middleware (the route handler does its own auth).
+    "/((?!api/auth|api/recordings|_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|webp|ico)$).*)",
   ],
 };
