@@ -5,7 +5,7 @@ import { eq } from "drizzle-orm";
 import { db } from "./db";
 import { recordings, transcripts, results, transcriptChunks } from "./db/schema";
 import { transcribeAudio } from "./lib/transcribe";
-import { analyzeTranscript, MODEL } from "./lib/deepseek";
+import { analyzeTranscript, DeepSeekJsonError, MODEL, type Analysis } from "./lib/deepseek";
 import { chunkTranscript, embed } from "./lib/embeddings";
 import { enqueueProcess, PIPELINE_QUEUE, type PipelineJob } from "./lib/queue";
 
@@ -57,7 +57,7 @@ async function handleProcess(job: Job<PipelineJob>) {
   if (!tr?.text) throw new Error("no transcript to process");
 
   // 1) Summary / action items / decisions / topics via DeepSeek.
-  const analysis = await analyzeTranscript(tr.text);
+  const analysis = await analyzeTranscriptOrFallback(tr.text, recordingId);
   await db.delete(results).where(eq(results.recordingId, recordingId));
   await db.insert(results).values({
     recordingId,
@@ -66,7 +66,7 @@ async function handleProcess(job: Job<PipelineJob>) {
     decisions: analysis.decisions,
     topics: analysis.topics,
     followUps: analysis.followUps,
-    model: MODEL,
+    model: analysis.model,
   });
 
   // 2) Embeddings for Q&A retrieval — only worth it for long transcripts.
@@ -94,6 +94,32 @@ async function handleProcess(job: Job<PipelineJob>) {
     .update(recordings)
     .set({ status: "done" })
     .where(eq(recordings.id, recordingId));
+}
+
+type WorkerAnalysis = Analysis & { model: string };
+
+async function analyzeTranscriptOrFallback(
+  text: string,
+  recordingId: string
+): Promise<WorkerAnalysis> {
+  try {
+    return { ...(await analyzeTranscript(text)), model: MODEL };
+  } catch (err) {
+    if (!(err instanceof DeepSeekJsonError)) throw err;
+
+    console.warn(
+      `  DeepSeek returned malformed JSON for ${recordingId}; saving fallback notes`
+    );
+    return {
+      summary:
+        "The transcript was processed, but DeepSeek returned malformed JSON for the structured notes. The full transcript and Q&A context are still available; retry processing to regenerate the summary, action items, decisions, topics, and follow-ups.",
+      actionItems: [],
+      decisions: [],
+      topics: ["Transcript processed", "Analysis retry needed"],
+      followUps: ["Retry processing this recording to regenerate structured notes."],
+      model: `${MODEL} (fallback)`,
+    };
+  }
 }
 
 const worker = new Worker<PipelineJob>(

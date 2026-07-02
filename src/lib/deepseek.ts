@@ -8,6 +8,13 @@ export type Analysis = {
   followUps: string[];
 };
 
+export class DeepSeekJsonError extends Error {
+  constructor(message: string, readonly raw: string) {
+    super(message);
+    this.name = "DeepSeekJsonError";
+  }
+}
+
 const BASE = process.env.DEEPSEEK_BASE_URL ?? "https://api.deepseek.com";
 export const MODEL = process.env.DEEPSEEK_MODEL ?? "deepseek-v4-flash";
 
@@ -55,6 +62,82 @@ const SYSTEM = `You are a meticulous meeting-notes analyst. You read a transcrip
 }
 Keep arrays tight — omit filler. Use names exactly as they appear. If a field has nothing, use an empty array.`;
 
+// Models sometimes wrap JSON in ```json fences or add a sentence of prose even
+// in JSON mode. Pull the JSON object out before parsing.
+function tryParseJson(raw: string): Record<string, unknown> | null {
+  if (!raw) return null;
+  const cleaned = raw.trim().replace(/^\uFEFF/, "");
+  const candidates: string[] = [cleaned];
+
+  const fenced = cleaned.match(/```(?:json)?\s*([\s\S]*?)```/i);
+  if (fenced) candidates.push(fenced[1].trim());
+
+  const balanced = extractFirstJsonObject(cleaned);
+  if (balanced) candidates.push(balanced);
+
+  const first = cleaned.indexOf("{");
+  const last = cleaned.lastIndexOf("}");
+  if (first !== -1 && last > first) candidates.push(raw.slice(first, last + 1));
+
+  for (const c of candidates) {
+    const parsed = parseCandidate(c);
+    if (parsed) return parsed;
+  }
+  return null;
+}
+
+function parseCandidate(candidate: string): Record<string, unknown> | null {
+  const variants = [
+    candidate,
+    candidate
+      .replace(/[“”]/g, '"')
+      .replace(/[‘’]/g, "'")
+      .replace(/,\s*([}\]])/g, "$1"),
+  ];
+
+  for (const variant of variants) {
+    try {
+      const parsed = JSON.parse(variant);
+      if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+        return parsed as Record<string, unknown>;
+      }
+    } catch {
+      /* try next variant */
+    }
+  }
+  return null;
+}
+
+function extractFirstJsonObject(raw: string): string | null {
+  const start = raw.indexOf("{");
+  if (start === -1) return null;
+
+  let depth = 0;
+  let inString = false;
+  let escaped = false;
+
+  for (let i = start; i < raw.length; i++) {
+    const ch = raw[i];
+    if (inString) {
+      if (escaped) {
+        escaped = false;
+      } else if (ch === "\\") {
+        escaped = true;
+      } else if (ch === '"') {
+        inString = false;
+      }
+      continue;
+    }
+
+    if (ch === '"') inString = true;
+    if (ch === "{") depth++;
+    if (ch === "}") depth--;
+    if (depth === 0) return raw.slice(start, i + 1);
+  }
+
+  return null;
+}
+
 export async function analyzeTranscript(text: string): Promise<Analysis> {
   if (useMock()) return mockAnalysis();
 
@@ -66,12 +149,25 @@ export async function analyzeTranscript(text: string): Promise<Analysis> {
     { json: true, temperature: 0.2 }
   );
 
-  let parsed: Record<string, unknown>;
-  try {
-    parsed = JSON.parse(raw);
-  } catch {
-    throw new Error("DeepSeek returned non-JSON output");
+  let parsed = tryParseJson(raw);
+
+  // One repair attempt: hand the malformed output back and ask for clean JSON.
+  if (!parsed) {
+    const repaired = await deepseekChat(
+      [
+        {
+          role: "system",
+          content:
+            "Return ONLY a single valid JSON object. Do not add prose or code fences. Preserve the meaning and use keys summary, action_items, decisions, topics, follow_ups.",
+        },
+        { role: "user", content: raw.slice(0, 12000) },
+      ],
+      { json: true, temperature: 0 }
+    );
+    parsed = tryParseJson(repaired);
   }
+
+  if (!parsed) throw new DeepSeekJsonError("DeepSeek returned non-JSON output", raw);
   return normalize(parsed);
 }
 
