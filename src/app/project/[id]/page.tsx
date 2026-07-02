@@ -8,7 +8,7 @@ import { getOwnedProject } from "@/lib/projects-server";
 import { projectColor } from "@/lib/projects";
 import { relativeTime, humanDuration } from "@/lib/format";
 import { languageName } from "@/lib/language";
-import { AppHeader } from "@/components/app-header";
+import { AppShell } from "@/components/shell/app-shell";
 import { RecordingsList, type RecItem } from "@/components/dashboard/recordings-list";
 import { QAPanel } from "@/components/note/qa-panel";
 import { ProjectActions } from "@/components/projects/project-actions";
@@ -74,9 +74,8 @@ export default async function ProjectPage({
   const readyCount = rows.filter((r) => r.status === "done").length;
 
   return (
-    <div className="min-h-[100dvh]">
-      <AppHeader user={session.user} />
-      <main className="mx-auto max-w-6xl px-4 pb-28 md:pb-20 pt-8 sm:px-6">
+    <AppShell user={session.user}>
+      <main className="mx-auto max-w-6xl px-4 pb-28 pt-5 sm:px-6 md:px-8 md:pb-12 md:pt-6">
         <Link
           href="/"
           className="inline-flex items-center gap-1.5 text-[13px] text-muted transition-colors duration-150 [transition-timing-function:var(--ease-out)] hover:text-ink"
@@ -93,7 +92,7 @@ export default async function ProjectPage({
               <FolderSimple size={20} weight="fill" />
             </span>
             <div className="min-w-0">
-              <h1 className="truncate font-display text-[26px] font-bold tracking-tight text-ink sm:text-[30px]">
+              <h1 className="truncate text-[20px] font-semibold tracking-[-0.01em] text-ink sm:text-[22px]">
                 {project.name}
               </h1>
               <p className="mt-0.5 font-mono text-[12px] text-faint">
@@ -134,6 +133,6 @@ export default async function ProjectPage({
           </div>
         </div>
       </main>
-    </div>
+    </AppShell>
   );
 }

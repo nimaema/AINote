@@ -71,7 +71,7 @@ export function UsersAdmin({ users, meId }: { users: UserRow[]; meId: string }) 
     <div className="space-y-6">
       {/* Add user */}
       <section className="glass rounded-panel p-6">
-        <h2 className="flex items-center gap-2 font-display text-[15px] font-bold text-ink">
+        <h2 className="flex items-center gap-2 text-[13.5px] font-semibold text-ink">
           <UserPlus size={17} className="text-accent-deep" /> Add a user
         </h2>
         <form onSubmit={onAdd} className="mt-4 grid gap-3 sm:grid-cols-[1fr_1fr_auto_auto]">

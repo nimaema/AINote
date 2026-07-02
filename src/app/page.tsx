@@ -6,8 +6,7 @@ import { db } from "@/db";
 import { recordings, results, transcripts, projects } from "@/db/schema";
 import { relativeTime, humanDuration, humanTotalTime } from "@/lib/format";
 import { languageName } from "@/lib/language";
-import { AppHeader } from "@/components/app-header";
-import { Waveform } from "@/components/waveform";
+import { AppShell } from "@/components/shell/app-shell";
 import { RecordingsList, type RecItem } from "@/components/dashboard/recordings-list";
 import { ProjectsSection } from "@/components/projects/projects-section";
 import { Microphone, UploadSimple } from "@phosphor-icons/react/dist/ssr";
@@ -87,55 +86,45 @@ export default async function DashboardPage() {
   const firstName = (session.user.name ?? session.user.email ?? "there").split(/[@ ]/)[0];
 
   return (
-    <div className="min-h-[100dvh]">
-      <AppHeader user={session.user} />
-
-      <main className="mx-auto max-w-6xl px-4 pb-28 md:pb-20 pt-8 sm:px-6">
-        {/* Hero */}
-        <section className="glass rise relative overflow-hidden rounded-panel p-7 sm:p-9">
-          <div className="relative z-10 max-w-xl">
-            <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-accent-deep">Console</p>
-            <h1 className="mt-3 font-display text-[30px] font-bold leading-[1.05] tracking-tight text-ink sm:text-[38px]">
-              Hi {firstName}. Turn a conversation into <span className="accent-gradient">notes</span>.
-            </h1>
-            <div className="mt-6 flex flex-wrap gap-3">
-              <Link
-                href="/record?mode=record"
-                className="inline-flex h-11 items-center gap-2 rounded-btn bg-ink px-5 text-[14px] font-medium text-white shadow-[0_1px_2px_rgba(20,24,40,0.12),0_12px_30px_-10px_rgba(14,165,233,0.6)] transition-[transform,box-shadow] duration-150 [transition-timing-function:var(--ease-out)] hover:-translate-y-0.5 active:scale-[0.98] cursor-pointer"
-              >
-                <Microphone size={17} weight="fill" /> Record now
-              </Link>
-              <Link
-                href="/record?mode=upload"
-                className="glass inline-flex h-11 items-center gap-2 rounded-btn px-5 text-[14px] font-medium text-ink transition-transform duration-150 [transition-timing-function:var(--ease-out)] hover:-translate-y-0.5 active:scale-[0.98] cursor-pointer"
-              >
-                <UploadSimple size={17} /> Upload a file
-              </Link>
-            </div>
+    <AppShell user={session.user}>
+      <main className="mx-auto max-w-6xl px-4 pb-28 pt-5 sm:px-6 md:px-8 md:pb-12 md:pt-7">
+        {/* Page header */}
+        <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h1 className="text-[20px] font-semibold tracking-[-0.01em] text-ink">Overview</h1>
+            <p className="mt-0.5 text-[13px] text-muted">
+              Welcome back, {firstName}. Everything you&apos;ve captured, in one place.
+            </p>
           </div>
-          <div className="pointer-events-none absolute -right-6 bottom-0 top-0 hidden w-[42%] items-center opacity-90 md:flex">
-            <Waveform bars={60} height={130} className="w-full" />
+          <div className="flex items-center gap-2">
+            <Link
+              href="/record?mode=upload"
+              className="glass inline-flex h-9 items-center gap-1.5 rounded-btn px-3.5 text-[13px] font-medium text-ink-soft transition-colors duration-150 [transition-timing-function:var(--ease-out)] hover:text-ink cursor-pointer"
+            >
+              <UploadSimple size={15} /> Upload
+            </Link>
+            <Link
+              href="/record?mode=record"
+              className="inline-flex h-9 items-center gap-1.5 rounded-btn bg-ink px-3.5 text-[13px] font-medium text-white shadow-[0_1px_2px_rgba(20,24,40,0.16)] transition-[transform,box-shadow] duration-150 [transition-timing-function:var(--ease-out)] hover:-translate-y-px active:scale-[0.98] cursor-pointer"
+            >
+              <Microphone size={15} weight="fill" /> Record
+            </Link>
           </div>
-          <div
-            aria-hidden
-            className="pointer-events-none absolute inset-y-0 right-0 hidden w-[42%] md:block"
-            style={{ background: "linear-gradient(90deg, var(--color-panel) 0%, transparent 42%)" }}
-          />
-        </section>
+        </div>
 
-        {/* Stats readout */}
-        <div className="mt-5 grid grid-cols-2 gap-2.5 sm:grid-cols-4">
+        {/* Stats strip */}
+        <div className="glass grid grid-cols-2 overflow-hidden rounded-card sm:grid-cols-4 sm:divide-x sm:divide-hairline max-sm:[&>*]:border-hairline max-sm:[&>*:nth-child(even)]:border-l max-sm:[&>*:nth-child(n+3)]:border-t">
           <Stat label="Captures" value={String(stats.total)} />
           <Stat label="Total time" value={humanTotalTime(stats.totalDuration)} />
           <Stat label="Ready" value={String(stats.ready)} accent />
-          <Stat label="Needs attention" value={String(stats.failed)} alert={stats.failed > 0} />
+          <Stat label="Failed" value={String(stats.failed)} alert={stats.failed > 0} />
         </div>
 
         <ProjectsSection projects={projectRows} />
 
-        <RecordingsList items={items} />
+        <RecordingsList items={items} heading="Captures" />
       </main>
-    </div>
+    </AppShell>
   );
 }
 
@@ -151,10 +140,10 @@ function Stat({
   alert?: boolean;
 }) {
   return (
-    <div className="glass-soft rounded-card px-4 py-3.5">
+    <div className="px-4 py-3">
       <p className="font-mono text-[10.5px] uppercase tracking-[0.14em] text-faint">{label}</p>
       <p
-        className={`tabular mt-1 font-display text-[24px] font-bold ${
+        className={`tabular mt-1 text-[20px] font-semibold tracking-[-0.01em] ${
           alert ? "text-err" : accent ? "text-accent-deep" : "text-ink"
         }`}
       >

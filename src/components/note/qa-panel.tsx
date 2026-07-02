@@ -73,7 +73,7 @@ export function QAPanel({
         <span className="grid h-7 w-7 place-items-center rounded-full bg-accent-wash text-accent-deep">
           <Sparkle size={15} weight="fill" />
         </span>
-        <h2 className="font-display text-[15px] font-bold text-ink">{title}</h2>
+        <h2 className="text-[13.5px] font-semibold text-ink">{title}</h2>
       </div>
 
       <div ref={scrollRef} className="flex-1 space-y-4 overflow-y-auto px-5 py-5">

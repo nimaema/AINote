@@ -1,27 +1,28 @@
 @import "tailwindcss";
 
 /*
-  GlaciaNav Notes — "Aurora Glass".
-  A bright, cool porcelain field washed by a slow aurora mesh (teal / violet /
-  rose). Content floats on frosted-glass panels with real edge lighting. One
-  electric accent (#0EA5E9) carries interaction; the mesh hues are atmosphere
-  only. Expressive Bricolage display over a clean Geist body.
+  GlaciaNav Notes — "Workstation".
+  A cool graphite-on-porcelain product surface: white panels with hairline
+  borders sitting on a slightly deeper field, one electric accent (#0EA5E9)
+  reserved for interaction and signal. Compact radii, dense-but-breathing
+  lists, Geist everywhere with mono for data. Bricolage survives only in the
+  wordmark; the aurora hues survive only as data colors (speakers, charts).
 */
 
 @theme {
   /* Field */
-  --color-bg: #f7f8fc;
-  --color-bg-2: #eef1f8;
+  --color-bg: #f1f3f8;
+  --color-bg-2: #e9edf4;
   --color-ink: #14161c; /* headings / primary text */
   --color-ink-soft: #3b4150; /* strong body */
   --color-muted: #565d6e; /* muted body — still AA on porcelain */
   --color-faint: #8b93a5; /* labels / captions only */
 
-  /* Glass */
-  --color-panel: rgba(255, 255, 255, 0.72);
+  /* Surfaces */
+  --color-panel: #ffffff;
   --color-panel-solid: #ffffff;
-  --color-hairline: rgba(20, 22, 28, 0.08);
-  --color-hairline-strong: rgba(20, 22, 28, 0.14);
+  --color-hairline: rgba(20, 22, 28, 0.09);
+  --color-hairline-strong: rgba(20, 22, 28, 0.16);
 
   /* Accent — electric sky (the single interactive colour) */
   --color-accent: #0ea5e9;
@@ -41,11 +42,13 @@
   --color-err: #e5484d;
   --color-rec: #f43f5e; /* live recording only */
 
-  /* Shape — interactive = pill, panels 20, cards 16, inputs 12 */
-  --radius-input: 12px;
-  --radius-btn: 999px;
-  --radius-card: 16px;
-  --radius-panel: 20px;
+  /* Shape — compact product radii: inputs 8, buttons/cards 10, panels 12.
+     Pills are reserved for status dots/avatars via --radius-pill. */
+  --radius-input: 8px;
+  --radius-btn: 10px;
+  --radius-card: 10px;
+  --radius-panel: 12px;
+  --radius-pill: 999px;
 
   /* Motion — strong custom curves */
   --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
@@ -63,7 +66,10 @@ html {
 }
 
 body {
-  background: var(--color-bg);
+  /* Flat field with a whisper of brand light at the top — no lava blobs. */
+  background:
+    radial-gradient(1100px 420px at 78% -12%, rgba(14, 165, 233, 0.05), transparent 62%),
+    var(--color-bg);
   color: var(--color-ink-soft);
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
@@ -80,66 +86,27 @@ body {
   font-feature-settings: "tnum" 1;
 }
 
-/* ─── Frosted glass ──────────────────────────────────────────────────
-   Real edge lighting: top highlight + hairline + layered tinted shadow. */
+/* ─── Surfaces ────────────────────────────────────────────────────────
+   Crisp product panels: white on the field, hairline edge, near-zero shadow.
+   The old class names are kept so every existing usage re-skins in place. */
 .glass {
-  background: var(--color-panel);
-  backdrop-filter: blur(22px) saturate(1.5);
-  -webkit-backdrop-filter: blur(22px) saturate(1.5);
-  border: 1px solid rgba(255, 255, 255, 0.65);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.9),
-    0 1px 2px rgba(20, 24, 40, 0.04),
-    0 14px 40px -12px rgba(30, 42, 90, 0.16);
+  background: var(--color-panel-solid);
+  border: 1px solid var(--color-hairline);
+  box-shadow: 0 1px 2px rgba(18, 22, 33, 0.04);
 }
 
 .glass-soft {
-  background: rgba(255, 255, 255, 0.55);
-  backdrop-filter: blur(16px) saturate(1.4);
-  -webkit-backdrop-filter: blur(16px) saturate(1.4);
-  border: 1px solid rgba(255, 255, 255, 0.55);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.8),
-    0 8px 28px -14px rgba(30, 42, 90, 0.18);
+  background: var(--color-panel-solid);
+  border: 1px solid var(--color-hairline);
 }
 
-/* Floating menus / popovers. These stack ON TOP of other glass panels, so a
-   translucent surface makes the layered content bleed through and become
-   unreadable. Menus use a near-opaque surface with a stronger edge + shadow so
-   they read as a distinct floating layer regardless of what's behind them. */
+/* Floating menus / popovers — the only layer that earns a real shadow. */
 .glass-menu {
-  background: rgba(255, 255, 255, 0.97);
-  backdrop-filter: blur(20px) saturate(1.6);
-  -webkit-backdrop-filter: blur(20px) saturate(1.6);
+  background: var(--color-panel-solid);
   border: 1px solid var(--color-hairline-strong);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.95),
-    0 2px 8px -2px rgba(20, 24, 40, 0.14),
-    0 18px 44px -12px rgba(30, 42, 90, 0.34);
-}
-
-/* Solid fallback when the OS asks for less transparency */
-@media (prefers-reduced-transparency: reduce) {
-  .glass,
-  .glass-soft,
-  .glass-menu {
-    background: var(--color-panel-solid);
-    backdrop-filter: none;
-    -webkit-backdrop-filter: none;
-  }
-}
-
-/* Accent gradient text for one expressive word in a headline */
-.accent-gradient {
-  background: linear-gradient(
-    100deg,
-    var(--color-accent) 0%,
-    var(--color-aurora-violet) 60%,
-    var(--color-aurora-rose) 100%
-  );
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
+    0 2px 6px -2px rgba(20, 24, 40, 0.1),
+    0 16px 40px -12px rgba(30, 42, 90, 0.22);
 }
 
 ::selection {

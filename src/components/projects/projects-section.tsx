@@ -37,15 +37,20 @@ export function ProjectsSection({ projects }: { projects: ProjectRow[] }) {
   }
 
   return (
-    <section className="mt-8">
-      <div className="mb-3 flex items-center justify-between px-1">
-        <h2 className="font-display text-[18px] font-bold tracking-tight text-ink">Projects</h2>
+    <section className="mt-5">
+      <div className="mb-2.5 flex items-center justify-between px-1">
+        <h2 className="text-[14px] font-semibold text-ink">
+          Projects
+          {projects.length > 0 && (
+            <span className="tabular ml-2 font-mono text-[11.5px] font-normal text-faint">{projects.length}</span>
+          )}
+        </h2>
         {!creating && (
           <button
             onClick={() => setCreating(true)}
-            className="inline-flex items-center gap-1.5 rounded-btn border border-hairline bg-white/70 px-3 py-1.5 text-[12.5px] font-medium text-ink-soft transition-colors duration-150 [transition-timing-function:var(--ease-out)] hover:border-accent hover:text-accent-deep cursor-pointer"
+            className="inline-flex h-7 items-center gap-1 rounded-input px-2 text-[12.5px] font-medium text-muted transition-colors duration-150 [transition-timing-function:var(--ease-out)] hover:bg-white hover:text-ink cursor-pointer"
           >
-            <Plus size={14} weight="bold" /> New project
+            <Plus size={13} weight="bold" /> New
           </button>
         )}
       </div>
@@ -95,36 +100,32 @@ export function ProjectsSection({ projects }: { projects: ProjectRow[] }) {
 
       {projects.length === 0 ? (
         !creating && (
-          <div className="glass-soft flex items-center gap-3 rounded-card px-4 py-3.5">
-            <span className="grid h-9 w-9 shrink-0 place-items-center rounded-input bg-accent-wash text-accent-deep">
-              <FolderSimple size={18} weight="duotone" />
+          <div className="glass-soft flex items-center gap-3 rounded-card px-4 py-3">
+            <span className="grid h-8 w-8 shrink-0 place-items-center rounded-input bg-accent-wash text-accent-deep">
+              <FolderSimple size={16} weight="duotone" />
             </span>
-            <p className="text-[13.5px] text-muted">
-              Group related recordings into a project to navigate them together and ask the AI across
+            <p className="text-[13px] text-muted">
+              Group related recordings into a project to browse them together and ask the AI across
               all of them.
             </p>
           </div>
         )
       ) : (
-        <div className="flex gap-3 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        <div className="flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {projects.map((p) => (
             <Link
               key={p.id}
               href={`/project/${p.id}`}
-              className="glass-soft group flex min-w-[190px] flex-col gap-3 rounded-card bg-white/60 p-4 transition-[transform,background-color] duration-150 [transition-timing-function:var(--ease-out)] hover:-translate-y-0.5 hover:bg-white/90 cursor-pointer"
+              className="glass-soft flex min-w-0 shrink-0 items-center gap-2.5 rounded-card px-3 py-2 transition-colors duration-150 [transition-timing-function:var(--ease-out)] hover:border-hairline-strong cursor-pointer"
             >
               <span
-                className="grid h-9 w-9 place-items-center rounded-input text-white"
+                className="grid h-7 w-7 shrink-0 place-items-center rounded-[7px] text-white"
                 style={{ background: projectColor(p.color) }}
               >
-                <FolderSimple size={18} weight="fill" />
+                <FolderSimple size={14} weight="fill" />
               </span>
-              <div className="min-w-0">
-                <p className="truncate text-[14.5px] font-semibold text-ink">{p.name}</p>
-                <p className="tabular mt-0.5 font-mono text-[11px] text-faint">
-                  {p.count} {p.count === 1 ? "recording" : "recordings"}
-                </p>
-              </div>
+              <span className="max-w-[11rem] truncate text-[13px] font-medium text-ink">{p.name}</span>
+              <span className="tabular font-mono text-[11px] text-faint">{p.count}</span>
             </Link>
           ))}
         </div>

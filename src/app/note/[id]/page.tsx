@@ -7,7 +7,7 @@ import { transcripts, results, qaMessages } from "@/db/schema";
 import type { Utterance } from "@/db/schema";
 import { getAccessibleRecording } from "@/lib/access";
 import { languageName } from "@/lib/language";
-import { AppHeader } from "@/components/app-header";
+import { AppShell } from "@/components/shell/app-shell";
 import { AudioPlayer } from "@/components/note/audio-player";
 import { QAPanel } from "@/components/note/qa-panel";
 import { ProcessingView } from "@/components/note/processing-view";
@@ -75,9 +75,8 @@ export default async function NotePage({
   const language = languageName(tr?.language);
 
   return (
-    <div className="min-h-[100dvh]">
-      <AppHeader user={session.user} />
-      <main className="mx-auto max-w-6xl px-4 pb-28 md:pb-20 pt-8 sm:px-6">
+    <AppShell user={session.user}>
+      <main className="mx-auto max-w-6xl px-4 pb-28 pt-5 sm:px-6 md:px-8 md:pb-12 md:pt-6">
         <Link
           href="/"
           className="inline-flex items-center gap-1.5 text-[13px] text-muted transition-colors duration-150 [transition-timing-function:var(--ease-out)] hover:text-ink"
@@ -85,9 +84,9 @@ export default async function NotePage({
           <ArrowLeft size={15} /> All captures
         </Link>
 
-        <div className="mt-4 mb-6 flex flex-wrap items-start justify-between gap-4">
+        <div className="mt-3 mb-5 flex flex-wrap items-start justify-between gap-4">
           <div className="min-w-0">
-            <h1 className="font-display text-[28px] font-bold tracking-tight text-ink sm:text-[32px]">
+            <h1 className="text-[22px] font-semibold tracking-[-0.01em] text-ink sm:text-[24px]">
               {rec.title ?? "Untitled recording"}
             </h1>
             <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1.5 font-mono text-[12px] text-faint">
@@ -139,7 +138,7 @@ export default async function NotePage({
           />
         )}
       </main>
-    </div>
+    </AppShell>
   );
 }
 
@@ -183,7 +182,7 @@ function NoteBody({
         <div className="space-y-5">
           {summary && (
             <section className="glass rounded-panel p-6">
-              <h2 className="font-display text-[15px] font-bold text-ink">Summary</h2>
+              <h2 className="text-[13.5px] font-semibold text-ink">Summary</h2>
               <p className="mt-2.5 text-[15px] leading-relaxed text-ink-soft">{summary}</p>
             </section>
           )}
@@ -331,7 +330,7 @@ function PanelHeading({
   return (
     <div className="flex items-center gap-2 text-accent-deep">
       {icon}
-      <h2 className="font-display text-[15px] font-bold text-ink">{children}</h2>
+      <h2 className="text-[13.5px] font-semibold text-ink">{children}</h2>
     </div>
   );
 }

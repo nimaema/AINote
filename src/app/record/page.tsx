@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
-import { AppHeader } from "@/components/app-header";
+import { AppShell } from "@/components/shell/app-shell";
 import { Recorder } from "@/components/record/recorder";
 
 export default async function RecordPage({
@@ -15,19 +15,16 @@ export default async function RecordPage({
   const initialMode = mode === "upload" ? "upload" : "record";
 
   return (
-    <div className="min-h-[100dvh]">
-      <AppHeader user={session.user} />
-      <main className="mx-auto max-w-2xl px-4 pb-28 md:pb-20 pt-10 sm:px-6">
-        <div className="mb-6 px-1">
-          <h1 className="font-display text-[26px] font-bold tracking-tight text-ink">
-            New capture
-          </h1>
-          <p className="mt-1 text-sm text-muted">
+    <AppShell user={session.user}>
+      <main className="mx-auto max-w-2xl px-4 pb-28 pt-5 sm:px-6 md:px-8 md:pb-12 md:pt-7">
+        <div className="mb-5 px-1">
+          <h1 className="text-[20px] font-semibold tracking-[-0.01em] text-ink">New capture</h1>
+          <p className="mt-0.5 text-[13px] text-muted">
             Record from your mic or upload a file. We&apos;ll take it from there.
           </p>
         </div>
         <Recorder initialMode={initialMode} />
       </main>
-    </div>
+    </AppShell>
   );
 }

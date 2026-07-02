@@ -1,6 +1,7 @@
 import { LoginForm } from "./login-form";
 import { SignalMark } from "@/components/brand";
 import { Waveform } from "@/components/waveform";
+import { AuroraBackground } from "@/components/aurora-background";
 
 export default async function LoginPage({
   searchParams,
@@ -11,6 +12,7 @@ export default async function LoginPage({
 
   return (
     <main className="grid min-h-[100dvh] place-items-center px-5 py-10">
+      <AuroraBackground />
       <div className="grid w-full max-w-5xl overflow-hidden rounded-panel lg:grid-cols-[1.05fr_0.95fr] glass rise">
         {/* Story side */}
         <section className="relative flex flex-col justify-between gap-10 p-9 lg:p-12">
@@ -30,7 +32,7 @@ export default async function LoginPage({
               Talk it through.
               <br />
               Get it back as{" "}
-              <span className="accent-gradient">clear notes</span>.
+              <span className="text-accent-deep">clear notes</span>.
             </h1>
             <p className="mt-5 max-w-sm text-[15px] leading-relaxed text-muted">
               Record or upload a conversation. It returns transcribed, summarized,
@@ -49,7 +51,7 @@ export default async function LoginPage({
             Sign in
           </h2>
           <p className="mt-1.5 mb-8 text-sm text-muted">
-            Enter your credentials to open the console.
+            Sign in to your workspace.
           </p>
           <LoginForm from={from} />
         </section>

@@ -2,7 +2,6 @@ import type { Metadata, Viewport } from "next";
 import { GeistSans } from "geist/font/sans";
 import { GeistMono } from "geist/font/mono";
 import { Bricolage_Grotesque } from "next/font/google";
-import { AuroraBackground } from "@/components/aurora-background";
 import { Pwa } from "@/components/pwa";
 import "./globals.css";
 
@@ -51,7 +50,6 @@ export default function RootLayout({
       className={`${GeistSans.variable} ${GeistMono.variable} ${bricolage.variable}`}
     >
       <body className="min-h-[100dvh] antialiased">
-        <AuroraBackground />
         {children}
         <Pwa />
       </body>

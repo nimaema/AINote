@@ -55,7 +55,7 @@ export function ProcessingView({
         <span className="mx-auto grid h-12 w-12 place-items-center rounded-full bg-[rgba(229,72,77,0.12)] text-err">
           <WarningCircle size={24} weight="fill" />
         </span>
-        <h2 className="mt-4 font-display text-[20px] font-bold text-ink">
+        <h2 className="mt-4 text-[17px] font-semibold text-ink">
           Processing failed
         </h2>
         <p className="mt-1.5 text-sm text-muted">
@@ -85,7 +85,7 @@ export function ProcessingView({
       <div className="mx-auto mb-8 w-full max-w-md rounded-card border border-hairline bg-white/50 px-5 py-4">
         <Waveform bars={52} height={56} />
       </div>
-      <h2 className="text-center font-display text-[20px] font-bold text-ink">
+      <h2 className="text-center text-[17px] font-semibold text-ink">
         Working on your notes
       </h2>
       <p className="mt-1.5 text-center text-sm text-muted">

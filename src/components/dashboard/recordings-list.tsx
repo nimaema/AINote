@@ -53,7 +53,7 @@ const STATUS: Record<string, { label: string; dot: string; text: string; note: s
 
 export function RecordingsList({
   items,
-  heading = "Your captures",
+  heading = "Captures",
   hideProject = false,
 }: {
   items: RecItem[];
@@ -104,47 +104,53 @@ export function RecordingsList({
   const retry = (id: string) => act(id, () => fetch(`/api/recordings/${id}/retry`, { method: "POST" }));
 
   return (
-    <section aria-labelledby="recent-heading" className="mt-10">
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-3 px-1">
-        <h2 id="recent-heading" className="font-display text-[18px] font-bold tracking-tight text-ink">
+    <section aria-labelledby="recent-heading" className="glass mt-5 rounded-panel">
+      {/* Toolbar */}
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-2 border-b border-hairline px-4 py-2.5">
+        <h2 id="recent-heading" className="text-[14px] font-semibold text-ink">
           {heading}
+          <span className="tabular ml-2 font-mono text-[11.5px] font-normal text-faint">{filtered.length}</span>
         </h2>
-        <div className="relative">
-          <MagnifyingGlass size={15} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-faint" />
-          <input
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-            placeholder="Search notes"
-            className="h-9 w-full min-w-0 rounded-btn border border-hairline bg-white/70 pl-8 pr-3 text-[13px] text-ink placeholder:text-faint focus:border-accent focus:outline-none focus:shadow-[0_0_0_4px_var(--color-accent-wash)] transition-[border-color,box-shadow] duration-200 [transition-timing-function:var(--ease-out)] sm:w-52"
-          />
-        </div>
-      </div>
 
-      <div className="mb-4 flex flex-wrap gap-1.5 px-1">
-        {FILTERS.map((f) => {
-          const count = items.filter((r) => matchesFilter(r.status, f.key)).length;
-          const active = filter === f.key;
-          return (
-            <button
-              key={f.key}
-              onClick={() => setFilter(f.key)}
-              className={`inline-flex items-center gap-1.5 rounded-btn border px-3 py-1.5 text-[12.5px] font-medium transition-colors duration-150 [transition-timing-function:var(--ease-out)] cursor-pointer ${
-                active ? "border-transparent bg-ink text-white" : "border-hairline text-muted hover:bg-white/60 hover:text-ink"
-              }`}
-            >
-              {f.label}
-              <span className={`tabular font-mono text-[11px] ${active ? "text-white/70" : "text-faint"}`}>{count}</span>
-            </button>
-          );
-        })}
+        <div className="ml-auto flex flex-wrap items-center gap-2">
+          <div className="relative">
+            <MagnifyingGlass size={14} className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-faint" />
+            <input
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+              placeholder="Search"
+              className="h-8 w-36 min-w-0 rounded-input border border-hairline bg-white pl-[1.85rem] pr-2.5 text-[13px] text-ink placeholder:text-faint focus:border-accent focus:outline-none focus:shadow-[0_0_0_3px_var(--color-accent-wash)] transition-[border-color,box-shadow] duration-150 [transition-timing-function:var(--ease-out)] sm:w-48"
+            />
+          </div>
+
+          {/* Segmented filter */}
+          <div className="flex items-center rounded-btn border border-hairline bg-[rgba(20,22,28,0.03)] p-0.5">
+            {FILTERS.map((f) => {
+              const count = items.filter((r) => matchesFilter(r.status, f.key)).length;
+              const active = filter === f.key;
+              return (
+                <button
+                  key={f.key}
+                  onClick={() => setFilter(f.key)}
+                  className={`inline-flex h-7 items-center gap-1 rounded-[8px] px-2.5 text-[12px] font-medium transition-colors duration-150 [transition-timing-function:var(--ease-out)] cursor-pointer ${
+                    active ? "bg-white text-ink shadow-[0_1px_2px_rgba(18,22,33,0.08)]" : "text-muted hover:text-ink"
+                  }`}
+                >
+                  {f.label}
+                  <span className={`tabular font-mono text-[10.5px] ${active ? "text-faint" : "text-faint/80"}`}>{count}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
       </div>
 
       {filtered.length === 0 ? (
         <EmptyState hasAny={items.length > 0} />
       ) : (
-        <ul className="grid gap-3 sm:grid-cols-2">
+        <ul className="divide-y divide-hairline">
           {filtered.map((r) => (
-            <RecordingCard
+            <RecordingRow
               key={r.id}
               rec={r}
               busy={busy === r.id}
@@ -160,7 +166,7 @@ export function RecordingsList({
   );
 }
 
-function RecordingCard({
+function RecordingRow({
   rec,
   busy,
   hideProject,
@@ -180,7 +186,6 @@ function RecordingCard({
   const [title, setTitle] = useState(rec.title);
   const inputRef = useRef<HTMLInputElement>(null);
   const s = STATUS[rec.status] ?? STATUS.uploaded;
-  const extraTopics = Math.max(0, rec.topics.length - 3);
 
   function saveRename() {
     const t = title.trim();
@@ -190,89 +195,112 @@ function RecordingCard({
   }
 
   return (
-    <li className="group glass-soft relative flex min-h-[150px] flex-col gap-3 rounded-card bg-white/55 p-4 transition-[transform,background-color,box-shadow] duration-150 [transition-timing-function:var(--ease-out)] hover:-translate-y-0.5 hover:bg-white/85">
-      {/* Whole-card click target (disabled while renaming) */}
+    <li className="group relative flex items-start gap-3 px-4 py-3 transition-colors duration-150 [transition-timing-function:var(--ease-out)] first:rounded-t-[11px] last:rounded-b-[11px] hover:bg-[#f7f9fc]">
+      {/* Whole-row click target (disabled while renaming) */}
       {!editing && (
-        <Link href={`/note/${rec.id}`} className="absolute inset-0 z-0 rounded-card" aria-label={`Open ${rec.title}`} />
+        <Link href={`/note/${rec.id}`} className="absolute inset-0 z-0" aria-label={`Open ${rec.title}`} />
       )}
 
-      {/* Header */}
-      <div className="pointer-events-none relative z-10 flex items-start gap-3">
-        <span className="grid h-10 w-10 shrink-0 place-items-center rounded-input bg-accent-wash text-accent-deep">
-          <WaveSawtooth size={18} weight="duotone" />
-        </span>
-        <div className="min-w-0 flex-1">
-          {editing ? (
-            <div className="pointer-events-auto flex items-center gap-1.5">
-              <input
-                ref={inputRef}
-                autoFocus
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") saveRename();
-                  if (e.key === "Escape") { setTitle(rec.title); setEditing(false); }
-                }}
-                className="h-8 w-full rounded-input border border-accent bg-white px-2.5 text-[14px] text-ink focus:outline-none focus:shadow-[0_0_0_4px_var(--color-accent-wash)]"
-              />
-              <button onClick={saveRename} className="grid h-8 w-8 shrink-0 place-items-center rounded-input text-ok hover:bg-white cursor-pointer" aria-label="Save name">
-                <Check size={16} weight="bold" />
-              </button>
-              <button onClick={() => { setTitle(rec.title); setEditing(false); }} className="grid h-8 w-8 shrink-0 place-items-center rounded-input text-muted hover:bg-white cursor-pointer" aria-label="Cancel">
-                <X size={16} />
-              </button>
+      <span className="pointer-events-none relative z-10 mt-0.5 grid h-9 w-9 shrink-0 place-items-center rounded-input bg-accent-wash text-accent-deep">
+        <WaveSawtooth size={17} weight="duotone" />
+      </span>
+
+      <div className="pointer-events-none relative z-10 min-w-0 flex-1">
+        {editing ? (
+          <div className="pointer-events-auto flex max-w-md items-center gap-1.5">
+            <input
+              ref={inputRef}
+              autoFocus
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") saveRename();
+                if (e.key === "Escape") { setTitle(rec.title); setEditing(false); }
+              }}
+              className="h-8 w-full rounded-input border border-accent bg-white px-2.5 text-[13.5px] text-ink focus:outline-none focus:shadow-[0_0_0_3px_var(--color-accent-wash)]"
+            />
+            <button onClick={saveRename} className="grid h-8 w-8 shrink-0 place-items-center rounded-input text-ok hover:bg-white cursor-pointer" aria-label="Save name">
+              <Check size={15} weight="bold" />
+            </button>
+            <button onClick={() => { setTitle(rec.title); setEditing(false); }} className="grid h-8 w-8 shrink-0 place-items-center rounded-input text-muted hover:bg-white cursor-pointer" aria-label="Cancel">
+              <X size={15} />
+            </button>
+          </div>
+        ) : (
+          <>
+            <div className="flex items-center gap-1.5">
+              <p className="truncate text-[14px] font-medium text-ink">{rec.title}</p>
+              {rec.isPublic && (
+                <span
+                  className="inline-flex shrink-0 items-center gap-1 rounded-[6px] bg-accent-wash px-1.5 py-0.5 text-[9.5px] font-semibold uppercase tracking-[0.08em] text-accent-deep"
+                  title="Shared with your workspace"
+                >
+                  <Globe size={10} weight="bold" /> Public
+                </span>
+              )}
             </div>
-          ) : (
-            <>
-              <div className="flex items-center gap-1.5 pr-6">
-                <p className="truncate text-[15px] font-semibold text-ink">{rec.title}</p>
-                {rec.isPublic && (
-                  <span
-                    className="inline-flex shrink-0 items-center gap-1 rounded-btn bg-accent-wash px-1.5 py-0.5 text-[9.5px] font-semibold uppercase tracking-[0.08em] text-accent-deep"
-                    title="Shared with your workspace"
-                  >
-                    <Globe size={10} weight="bold" /> Public
+            {(rec.summary || s.note) && (
+              <p className={`mt-0.5 line-clamp-1 text-[12.5px] ${rec.summary ? "text-muted" : "text-faint"}`}>
+                {rec.summary || s.note}
+              </p>
+            )}
+            <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5 font-mono text-[10.5px] text-faint">
+              <span>{rec.dateLabel}</span>
+              <span aria-hidden>·</span>
+              <span>{rec.durationLabel}</span>
+              {rec.language && (
+                <>
+                  <span aria-hidden>·</span>
+                  <span className="inline-flex items-center gap-1">
+                    <Translate size={10.5} weight="bold" /> {rec.language}
                   </span>
-                )}
-              </div>
-              <p className="mt-0.5 flex flex-wrap items-center gap-x-2 font-mono text-[11px] text-faint">
-                <span>{rec.dateLabel}</span>
-                <span>·</span>
-                <span>{rec.durationLabel}</span>
-                <span>·</span>
-                <span>{rec.source === "record" ? "Recorded" : "Uploaded"}</span>
-                {rec.language && (
-                  <span className="inline-flex items-center gap-1 text-accent-deep">
-                    <Translate size={11} weight="bold" /> {rec.language}
+                </>
+              )}
+              {rec.actionCount > 0 && (
+                <>
+                  <span aria-hidden>·</span>
+                  <span className="inline-flex items-center gap-1">
+                    <ListChecks size={10.5} /> {rec.actionCount}
                   </span>
-                )}
-                {!hideProject && rec.projectId && rec.projectName && (
+                </>
+              )}
+              {!hideProject && rec.projectId && rec.projectName && (
+                <>
+                  <span aria-hidden>·</span>
                   <span className="inline-flex items-center gap-1 text-ink-soft">
-                    <span className="h-2 w-2 rounded-full" style={{ background: projectColor(rec.projectColor) }} />
+                    <span className="h-1.5 w-1.5 rounded-full" style={{ background: projectColor(rec.projectColor) }} />
                     {rec.projectName}
                   </span>
-                )}
-              </p>
-            </>
-          )}
-        </div>
+                </>
+              )}
+            </p>
+          </>
+        )}
+      </div>
 
-        {!editing && (
-          <div className="pointer-events-auto relative z-20 flex shrink-0 items-center gap-0.5">
+      {/* Right rail: status + actions */}
+      {!editing && (
+        <div className="pointer-events-auto relative z-10 flex shrink-0 items-center gap-1.5 self-center">
+          <span className={`hidden items-center gap-1.5 sm:flex ${s.text}`}>
+            <span className={`h-1.5 w-1.5 rounded-full ${s.dot} ${["transcribing", "processing"].includes(rec.status) ? "animate-pulse" : ""}`} />
+            <span className="font-mono text-[10px] uppercase tracking-[0.1em]">{s.label}</span>
+          </span>
+
+          <div className="flex items-center gap-0.5 md:opacity-0 md:transition-opacity md:duration-150 md:group-hover:opacity-100 md:group-focus-within:opacity-100">
             <ProjectPicker recordingId={rec.id} currentProjectId={rec.projectId} variant="icon" />
             <div className="relative">
               <button
                 onClick={() => setMenu((m) => !m)}
                 disabled={busy}
-                className="grid h-8 w-8 place-items-center rounded-input text-muted transition-colors duration-150 hover:bg-white disabled:opacity-50 cursor-pointer"
+                className="grid h-8 w-8 place-items-center rounded-input text-muted transition-colors duration-150 hover:bg-white hover:text-ink disabled:opacity-50 cursor-pointer"
                 aria-label="More actions"
               >
-                <DotsThreeVertical size={18} weight="bold" />
+                <DotsThreeVertical size={17} weight="bold" />
               </button>
               {menu && (
                 <>
                   <div className="fixed inset-0 z-30" onClick={() => setMenu(false)} />
-                  <div className="glass-menu pop-in absolute right-0 top-full z-50 mt-1 w-40 overflow-hidden rounded-card p-1.5">
+                  <div className="glass-menu pop-in absolute right-0 top-full z-50 mt-1 w-40 overflow-hidden rounded-card p-1">
                     <MenuItem icon={<PencilSimple size={15} />} label="Rename" onClick={() => { setMenu(false); setEditing(true); }} />
                     {rec.status === "failed" && (
                       <MenuItem icon={<ArrowClockwise size={15} />} label="Retry" onClick={() => { setMenu(false); onRetry(); }} />
@@ -288,34 +316,8 @@ function RecordingCard({
               )}
             </div>
           </div>
-        )}
-      </div>
-
-      {/* Body: summary preview or status note */}
-      <p className={`pointer-events-none relative z-10 line-clamp-2 flex-1 text-[13.5px] leading-relaxed ${rec.summary ? "text-ink-soft" : "text-muted"}`}>
-        {rec.summary || s.note}
-      </p>
-
-      {/* Footer: topics + action count + status */}
-      <div className="pointer-events-none relative z-10 flex items-center justify-between gap-2">
-        <div className="flex min-w-0 flex-wrap items-center gap-1.5">
-          {rec.topics.slice(0, 3).map((t, i) => (
-            <span key={i} className="max-w-[9rem] truncate rounded-btn bg-accent-wash px-2 py-0.5 text-[11px] font-medium text-accent-deep">
-              {t}
-            </span>
-          ))}
-          {extraTopics > 0 && <span className="text-[11px] text-faint">+{extraTopics}</span>}
-          {rec.actionCount > 0 && (
-            <span className="inline-flex items-center gap-1 text-[11px] font-medium text-muted">
-              <ListChecks size={13} /> {rec.actionCount}
-            </span>
-          )}
         </div>
-        <span className={`flex shrink-0 items-center gap-1.5 ${s.text}`}>
-          <span className={`h-1.5 w-1.5 rounded-full ${s.dot} ${["transcribing", "processing"].includes(rec.status) ? "animate-pulse" : ""}`} />
-          <span className="font-mono text-[10.5px] uppercase tracking-[0.1em]">{s.label}</span>
-        </span>
-      </div>
+      )}
     </li>
   );
 }
@@ -324,7 +326,7 @@ function MenuItem({ icon, label, onClick, danger }: { icon: React.ReactNode; lab
   return (
     <button
       onClick={onClick}
-      className={`flex w-full items-center gap-2.5 rounded-input px-2.5 py-2 text-left text-[13.5px] transition-colors duration-150 [transition-timing-function:var(--ease-out)] hover:bg-white/70 cursor-pointer ${
+      className={`flex w-full items-center gap-2.5 rounded-[8px] px-2.5 py-2 text-left text-[13px] transition-colors duration-150 [transition-timing-function:var(--ease-out)] hover:bg-[rgba(20,22,28,0.05)] cursor-pointer ${
         danger ? "text-err" : "text-ink-soft"
       }`}
     >
@@ -336,10 +338,10 @@ function MenuItem({ icon, label, onClick, danger }: { icon: React.ReactNode; lab
 
 function EmptyState({ hasAny }: { hasAny: boolean }) {
   return (
-    <div className="glass-soft grid place-items-center rounded-panel px-6 py-14 text-center">
-      <WaveSawtooth size={26} className="text-faint" />
-      <p className="mt-3 text-[14px] font-medium text-ink">{hasAny ? "No matches" : "Nothing captured yet"}</p>
-      <p className="mt-1 text-[13px] text-muted">
+    <div className="grid place-items-center px-6 py-14 text-center">
+      <WaveSawtooth size={24} className="text-faint" />
+      <p className="mt-3 text-[13.5px] font-medium text-ink">{hasAny ? "No matches" : "Nothing captured yet"}</p>
+      <p className="mt-1 text-[12.5px] text-muted">
         {hasAny ? "Try a different search or filter." : "Record or upload audio to get started."}
       </p>
     </div>

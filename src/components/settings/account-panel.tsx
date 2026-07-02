@@ -42,7 +42,7 @@ export function AccountPanel({
     <section className="glass rounded-panel p-6 sm:p-7">
       <div className="flex items-center gap-2.5 text-accent-deep">
         <Lock size={17} weight="duotone" />
-        <h2 className="font-display text-[15px] font-bold text-ink">Password</h2>
+        <h2 className="text-[13.5px] font-semibold text-ink">Password</h2>
       </div>
       <p className="mt-1.5 text-[13px] text-muted">
         Change the password you use to sign in to {email}.
