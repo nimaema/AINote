@@ -25,7 +25,7 @@ export const recordingStatusEnum = pgEnum("recording_status", [
 export const exportTargetEnum = pgEnum("export_target", ["google_docs", "teams"]);
 export const exportStatusEnum = pgEnum("export_status", ["pending", "done", "failed"]);
 export const qaRoleEnum = pgEnum("qa_role", ["user", "assistant"]);
-export const integrationProviderEnum = pgEnum("integration_provider", ["google", "teams"]);
+export const integrationProviderEnum = pgEnum("integration_provider", ["google", "teams", "slack"]);
 
 // P10 — team layer
 export const projectRoleEnum = pgEnum("project_role", ["owner", "editor", "viewer"]);
@@ -135,9 +135,16 @@ export const recordings = pgTable(
     // When true, any signed-in user (not just the owner) can view the
     // transcript, notes, and chat for this recording.
     isPublic: boolean("is_public").notNull().default(false),
+    // P13: opt-in read-only external link (no sign-in), distinct from isPublic.
+    shareToken: text("share_token"),
+    // P13: denormalized summary + transcript text for full-text search.
+    searchText: text("search_text"),
     createdAt: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
   },
-  (t) => [index("recordings_user_idx").on(t.userId, t.createdAt)]
+  (t) => [
+    index("recordings_user_idx").on(t.userId, t.createdAt),
+    uniqueIndex("recordings_share_token_idx").on(t.shareToken),
+  ]
 );
 
 export const transcripts = pgTable("transcripts", {
@@ -236,6 +243,24 @@ export const projectQaMessages = pgTable("project_qa_messages", {
   citations: jsonb("citations").$type<Citation[]>(),
   createdAt: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
 });
+
+// A per-user, workspace-wide Q&A thread ("ask everything you can access").
+export const workspaceQaMessages = pgTable(
+  "workspace_qa_messages",
+  {
+    id: text("id")
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    role: qaRoleEnum("role").notNull(),
+    content: text("content").notNull(),
+    citations: jsonb("citations").$type<Citation[]>(),
+    createdAt: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
+  },
+  (t) => [index("workspace_qa_user_idx").on(t.userId, t.createdAt)]
+);
 
 // Per-user connections for exporting notes (Google Docs OAuth, Teams webhook).
 export const integrations = pgTable(

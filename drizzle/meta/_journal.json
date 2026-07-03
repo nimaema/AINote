@@ -50,6 +50,13 @@
       "when": 1783111977682,
       "tag": "0006_jittery_sage",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1783113831779,
+      "tag": "0007_sweet_hercules",
+      "breakpoints": true
     }
   ]
 }

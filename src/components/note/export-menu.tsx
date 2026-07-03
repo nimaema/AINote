@@ -9,12 +9,14 @@ import {
   WaveSawtooth,
   CaretDown,
   CheckCircle,
+  SlackLogo,
 } from "@phosphor-icons/react";
 
 export function ExportMenu({ recordingId }: { recordingId: string }) {
   const [open, setOpen] = useState(false);
   const [copied, setCopied] = useState(false);
   const [copying, setCopying] = useState(false);
+  const [sending, setSending] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -40,6 +42,20 @@ export function ExportMenu({ recordingId }: { recordingId: string }) {
       /* clipboard denied, silently ignore */
     } finally {
       setCopying(false);
+      setOpen(false);
+    }
+  }
+
+  async function sendSlack() {
+    setSending(true);
+    try {
+      const res = await fetch(`/api/recordings/${recordingId}/export/slack`, { method: "POST" });
+      if (!res.ok) {
+        const d = await res.json().catch(() => ({}));
+        alert(d.error ?? "Couldn't send to Slack.");
+      }
+    } finally {
+      setSending(false);
       setOpen(false);
     }
   }
@@ -81,6 +97,11 @@ export function ExportMenu({ recordingId }: { recordingId: string }) {
               onClick={copyMarkdown}
             />
             <div className="my-1.5 h-px bg-hairline" />
+            <MenuItem
+              icon={<SlackLogo size={17} weight="duotone" />}
+              label={sending ? "Sending…" : "Send to Slack"}
+              onClick={sendSlack}
+            />
             <MenuItem
               icon={<WaveSawtooth size={17} weight="duotone" />}
               label="Download audio"

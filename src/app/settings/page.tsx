@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { AppShell } from "@/components/shell/app-shell";
 import { AccountPanel } from "@/components/settings/account-panel";
+import { SlackPanel } from "@/components/settings/slack-panel";
 
 export default async function SettingsPage() {
   const session = await auth();
@@ -22,6 +23,7 @@ export default async function SettingsPage() {
           email={session.user.email ?? ""}
           role={session.user.role}
         />
+        <SlackPanel />
       </main>
     </AppShell>
   );

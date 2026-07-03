@@ -14,6 +14,7 @@ import { ProcessingView } from "@/components/note/processing-view";
 import { ExportMenu } from "@/components/note/export-menu";
 import { NoteActions } from "@/components/note/note-actions";
 import { VisibilityToggle } from "@/components/note/visibility-toggle";
+import { ShareLink } from "@/components/note/share-link";
 import { NoteWorkspace } from "@/components/note/note-workspace";
 import { ArrowLeft, Globe, Translate } from "@phosphor-icons/react/dist/ssr";
 
@@ -157,6 +158,9 @@ export default async function NotePage({
               {done && <ExportMenu recordingId={rec.id} />}
               {isOwner && done && (
                 <VisibilityToggle recordingId={rec.id} initialPublic={rec.isPublic} />
+              )}
+              {isOwner && done && (
+                <ShareLink recordingId={rec.id} initialToken={rec.shareToken} />
               )}
               {isOwner && <NoteActions id={rec.id} title={rec.title ?? "Untitled recording"} />}
             </div>

@@ -1,4 +1,4 @@
-import { and, eq } from "drizzle-orm";
+import { and, eq, inArray, or, sql, type SQL } from "drizzle-orm";
 import { db } from "@/db";
 import { recordings, projectMembers } from "@/db/schema";
 import type { Recording } from "@/db/schema";
@@ -65,4 +65,25 @@ export async function canEditRecording(
 
   if (rec.isPublic) return { recording: rec, canEdit: false };
   return null;
+}
+
+// A Drizzle WHERE condition selecting every recording the user can read:
+// owned, public, or belonging to a project they're a member of. For search and
+// workspace-wide Q&A.
+export async function accessibleRecordingsCondition(userId: string): Promise<SQL> {
+  const memberProjectIds = (
+    await db
+      .select({ id: projectMembers.projectId })
+      .from(projectMembers)
+      .where(eq(projectMembers.userId, userId))
+  ).map((r) => r.id);
+
+  const conds: SQL[] = [
+    eq(recordings.userId, userId),
+    eq(recordings.isPublic, true),
+  ];
+  if (memberProjectIds.length) {
+    conds.push(inArray(recordings.projectId, memberProjectIds));
+  }
+  return or(...conds) ?? sql`false`;
 }

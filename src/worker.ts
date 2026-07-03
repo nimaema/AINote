@@ -142,7 +142,7 @@ async function handleProcess(job: Job<PipelineJob>) {
 
   await db
     .update(recordings)
-    .set({ status: "done" })
+    .set({ status: "done", searchText: `${analysis.summary}\n\n${text}` })
     .where(eq(recordings.id, recordingId));
 }
 

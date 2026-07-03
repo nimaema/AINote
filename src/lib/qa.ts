@@ -1,9 +1,10 @@
-import { and, eq, sql } from "drizzle-orm";
+import { and, desc, eq, sql } from "drizzle-orm";
 import { db } from "../db";
 import { recordings, transcripts } from "../db/schema";
 import type { Citation } from "../db/schema";
 import { answerQuestion } from "./deepseek";
 import { embedQuery } from "./embeddings";
+import { accessibleRecordingsCondition } from "./access";
 
 const QA_THRESHOLD = Number(process.env.QA_RETRIEVAL_THRESHOLD ?? 12000);
 const PROJECT_CONTEXT_CAP = 18000; // chars fed to the model for a project answer
@@ -127,4 +128,44 @@ export async function answerProjectQuestion(
 
   const answer = await answerQuestion(question, context);
   return { answer, citations };
+}
+
+const WORKSPACE_CONTEXT_CAP = 24000; // chars fed to the model for a workspace answer
+
+// Answers a question across every recording the user can access (owned, public,
+// or in a project they're a member of). Bounded full-context over the most
+// recent transcribed recordings; each is labeled so the model can attribute.
+export async function answerWorkspaceQuestion(
+  userId: string,
+  question: string
+): Promise<{ answer: string; citations: Citation[] }> {
+  const cond = await accessibleRecordingsCondition(userId);
+  const recs = await db
+    .select({ id: recordings.id, title: recordings.title, text: transcripts.text })
+    .from(recordings)
+    .leftJoin(transcripts, eq(transcripts.recordingId, recordings.id))
+    .where(cond)
+    .orderBy(desc(recordings.createdAt))
+    .limit(60);
+
+  const withText = recs.filter((r) => r.text && r.text.trim());
+  if (!withText.length) {
+    return {
+      answer:
+        "There are no transcribed recordings you can access yet. Capture or get one shared with you, then ask again.",
+      citations: [],
+    };
+  }
+
+  let total = 0;
+  const parts: string[] = [];
+  for (const r of withText) {
+    const piece = `# ${r.title ?? "Untitled"}\n${r.text}`;
+    if (total + piece.length > WORKSPACE_CONTEXT_CAP && parts.length) break;
+    parts.push(piece);
+    total += piece.length;
+  }
+  const context = parts.join("\n\n---\n\n").slice(0, WORKSPACE_CONTEXT_CAP);
+  const answer = await answerQuestion(question, context);
+  return { answer, citations: [] };
 }
