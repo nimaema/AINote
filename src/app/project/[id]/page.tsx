@@ -1,12 +1,13 @@
 import Link from "next/link";
 import { redirect, notFound } from "next/navigation";
-import { and, asc, desc, eq, sql } from "drizzle-orm";
+import { asc, desc, eq, sql } from "drizzle-orm";
 import { auth } from "@/lib/auth";
 import { db } from "@/db";
 import { recordings, results, transcripts, projectQaMessages } from "@/db/schema";
 import type { ActionItem } from "@/db/schema";
-import { getOwnedProject } from "@/lib/projects-server";
+import { getAccessibleProject, roleAtLeast } from "@/lib/projects-server";
 import { projectColor } from "@/lib/projects";
+import { MembersPanel } from "@/components/projects/members-panel";
 import { relativeTime, humanDuration, humanTotalTime } from "@/lib/format";
 import { languageName } from "@/lib/language";
 import { AppShell } from "@/components/shell/app-shell";
@@ -31,8 +32,10 @@ export default async function ProjectPage({
   const userId = session.user.id;
 
   const { id } = await params;
-  const project = await getOwnedProject(id, userId);
-  if (!project) notFound();
+  const access = await getAccessibleProject(id, userId);
+  if (!access) notFound();
+  const project = access.project;
+  const canEdit = roleAtLeast(access.role, "editor");
 
   const [rows, history] = await Promise.all([
     db
@@ -53,7 +56,7 @@ export default async function ProjectPage({
       .from(recordings)
       .leftJoin(results, eq(results.recordingId, recordings.id))
       .leftJoin(transcripts, eq(transcripts.recordingId, recordings.id))
-      .where(and(eq(recordings.userId, userId), eq(recordings.projectId, id)))
+      .where(eq(recordings.projectId, id))
       .orderBy(desc(recordings.createdAt)),
     db.query.projectQaMessages.findMany({
       where: eq(projectQaMessages.projectId, id),
@@ -122,7 +125,13 @@ export default async function ProjectPage({
               </div>
             </div>
             <div className="flex items-center bg-bg p-4 sm:p-5 lg:min-w-[18rem] lg:justify-end">
-              <ProjectActions id={project.id} name={project.name} color={project.color} />
+              {canEdit ? (
+                <ProjectActions id={project.id} name={project.name} color={project.color} />
+              ) : (
+                <span className="rounded-pill bg-panel px-2.5 py-1 font-mono text-[11px] uppercase tracking-[0.1em] text-muted">
+                  {access.role}
+                </span>
+              )}
             </div>
           </div>
         </div>
@@ -150,6 +159,8 @@ export default async function ProjectPage({
           </div>
 
           <div className="flex min-w-0 flex-col gap-5 xl:sticky xl:top-6 xl:self-start">
+            <MembersPanel projectId={id} canManage={access.role === "owner"} />
+
             <section className="rounded-[18px] border border-hairline bg-panel-solid p-4">
               <div className="flex items-center gap-2 text-accent-deep">
                 <ListChecks size={17} weight="duotone" />

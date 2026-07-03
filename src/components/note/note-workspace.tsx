@@ -11,47 +11,18 @@ import {
   Hash,
   ArrowElbowDownRight,
 } from "@phosphor-icons/react";
-import type { ActionItem, Utterance, Citation } from "@/db/schema";
+import type { Utterance, Citation } from "@/db/schema";
 import { QAPanel } from "@/components/note/qa-panel";
 import { TranscriptPanel } from "@/components/note/transcript-panel";
+import { CommentsPanel } from "@/components/note/comments-panel";
+import { ActionBoard, type ActionRow } from "@/components/note/action-board";
 import {
   NoteAudioContext,
   useNoteAudio,
   type FocusSignal,
   type NoteAudioValue,
 } from "@/components/note/note-audio";
-
-// ─── Source-trace matching ────────────────────────────────────────────
-// Action items and decisions carry no timestamp, so we match each to the
-// utterance it most likely came from by significant-word overlap.
-
-function significantWords(text: string): Set<string> {
-  return new Set(
-    text
-      .toLowerCase()
-      .replace(/[^a-z0-9\s]/g, " ")
-      .split(/\s+/)
-      .filter((w) => w.length > 3)
-  );
-}
-
-function traceMatch(text: string, utterances: Utterance[]): number | null {
-  const target = significantWords(text);
-  if (target.size === 0) return null;
-  let bestStart: number | null = null;
-  let bestScore = 0;
-  for (const u of utterances) {
-    const words = significantWords(u.text);
-    let hits = 0;
-    for (const w of target) if (words.has(w)) hits++;
-    const score = hits / target.size;
-    if (score > bestScore) {
-      bestScore = score;
-      bestStart = u.start;
-    }
-  }
-  return bestScore >= 0.34 ? bestStart : null;
-}
+import { traceMatch } from "@/lib/trace";
 
 function fmtMs(ms: number) {
   const s = Math.max(0, Math.floor(ms / 1000));
@@ -64,11 +35,12 @@ export function NoteWorkspace({
   recordingId,
   durationSec,
   isOwner,
+  meId,
   utterances,
   speakerNames,
   transcriptText,
   summary,
-  actionItems,
+  actions,
   decisions,
   topics,
   followUps,
@@ -79,11 +51,12 @@ export function NoteWorkspace({
   recordingId: string;
   durationSec: number | null;
   isOwner: boolean;
+  meId: string;
   utterances: Utterance[];
   speakerNames: Record<string, string>;
   transcriptText: string;
   summary: string | null;
-  actionItems: ActionItem[];
+  actions: ActionRow[];
   decisions: string[];
   topics: string[];
   followUps: string[];
@@ -129,11 +102,8 @@ export function NoteWorkspace({
     [seekTo, currentMs, durationMs, playing, toggle, focus]
   );
 
-  // Trace anchors for the section chips + waveform markers.
-  const actionTraces = useMemo(
-    () => actionItems.map((a) => traceMatch(a.task, utterances)),
-    [actionItems, utterances]
-  );
+  // Trace anchors for the section chips + waveform markers. Action items carry
+  // a precomputed sourceMs; decisions/follow-ups are matched on the client.
   const decisionTraces = useMemo(
     () => decisions.map((d) => traceMatch(d, utterances)),
     [decisions, utterances]
@@ -145,14 +115,14 @@ export function NoteWorkspace({
 
   const markers = useMemo(
     () =>
-      [...actionTraces, ...decisionTraces]
+      [...actions.map((a) => a.sourceMs), ...decisionTraces]
         .filter((m): m is number => m != null)
         .sort((a, b) => a - b),
-    [actionTraces, decisionTraces]
+    [actions, decisionTraces]
   );
 
   const noteStats = [
-    { label: "Actions", value: String(actionItems.length) },
+    { label: "Actions", value: String(actions.length) },
     { label: "Decisions", value: String(decisions.length) },
     { label: "Follow-ups", value: String(followUps.length) },
     { label: "Speakers", value: String(speakerOrder.length || 1) },
@@ -207,20 +177,11 @@ export function NoteWorkspace({
               </section>
             )}
 
-            {actionItems.length > 0 && (
+            {actions.length > 0 && (
               <section className="rounded-[18px] border border-hairline bg-panel-solid p-5 sm:p-6">
                 <PanelHeading icon={<ListChecks size={16} weight="duotone" />}>Action board</PanelHeading>
-                <div className="mt-4 grid gap-2 lg:grid-cols-2">
-                  {actionItems.map((a, i) => (
-                    <div key={i} className="rounded-[14px] border border-hairline bg-bg p-3">
-                      <p className="text-[14px] leading-relaxed text-ink-soft">{a.task}</p>
-                      <div className="mt-2 flex flex-wrap items-center gap-1.5">
-                        {a.owner && <Chip>{a.owner}</Chip>}
-                        {a.due && <Chip muted>{a.due}</Chip>}
-                        {actionTraces[i] != null && <TraceChip ms={actionTraces[i]!} />}
-                      </div>
-                    </div>
-                  ))}
+                <div className="mt-4">
+                  <ActionBoard actions={actions} canManage={isOwner} />
                 </div>
               </section>
             )}
@@ -291,6 +252,8 @@ export function NoteWorkspace({
               speakerOrder={speakerOrder}
               speakerColors={speakerColors}
             />
+
+            <CommentsPanel recordingId={recordingId} meId={meId} />
           </div>
 
           <div className="xl:sticky xl:top-6 xl:self-start">

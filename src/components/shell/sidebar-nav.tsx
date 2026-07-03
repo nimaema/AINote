@@ -8,6 +8,7 @@ import {
   UsersThree,
   GearSix,
   ShareNetwork,
+  CheckSquareOffset,
   type Icon,
 } from "@phosphor-icons/react";
 
@@ -26,6 +27,7 @@ const ITEMS: Item[] = [
     match: (p) => p === "/" || p.startsWith("/note") || p.startsWith("/project"),
   },
   { href: "/team", label: "Team", icon: ShareNetwork, match: (p) => p.startsWith("/team") },
+  { href: "/tasks", label: "My tasks", icon: CheckSquareOffset, match: (p) => p.startsWith("/tasks") },
   { href: "/record", label: "Record", icon: Microphone, match: (p) => p.startsWith("/record") },
 ];
 

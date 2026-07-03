@@ -1,6 +1,6 @@
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { db } from "@/db";
-import { recordings } from "@/db/schema";
+import { recordings, projectMembers } from "@/db/schema";
 import type { Recording } from "@/db/schema";
 
 export type RecordingAccess = {
@@ -8,11 +8,10 @@ export type RecordingAccess = {
   isOwner: boolean;
 };
 
-// Central access rule for a single recording:
+// Read access to a single recording:
 //   - the owner can always access it
+//   - a member of the recording's project can access it
 //   - any signed-in user can access it when it's marked public
-// Editing actions (rename, delete, speakers, visibility, export) must
-// additionally check `isOwner`.
 export async function getAccessibleRecording(
   id: string,
   userId: string
@@ -23,7 +22,47 @@ export async function getAccessibleRecording(
   if (!rec) return null;
 
   const isOwner = rec.userId === userId;
-  if (!isOwner && !rec.isPublic) return null;
+  if (isOwner) return { recording: rec, isOwner: true };
 
-  return { recording: rec, isOwner };
+  if (rec.projectId) {
+    const member = await db.query.projectMembers.findFirst({
+      where: and(
+        eq(projectMembers.projectId, rec.projectId),
+        eq(projectMembers.userId, userId)
+      ),
+    });
+    if (member) return { recording: rec, isOwner: false };
+  }
+
+  if (rec.isPublic) return { recording: rec, isOwner: false };
+  return null;
+}
+
+// Write access for team actions (complete/assign an action, comment, edit).
+//   canEdit = owner OR project editor/owner. Public viewers get read-only.
+export async function canEditRecording(
+  id: string,
+  userId: string
+): Promise<{ recording: Recording; canEdit: boolean } | null> {
+  const rec = await db.query.recordings.findFirst({
+    where: eq(recordings.id, id),
+  });
+  if (!rec) return null;
+  if (rec.userId === userId) return { recording: rec, canEdit: true };
+
+  if (rec.projectId) {
+    const member = await db.query.projectMembers.findFirst({
+      where: and(
+        eq(projectMembers.projectId, rec.projectId),
+        eq(projectMembers.userId, userId)
+      ),
+    });
+    if (member && (member.role === "owner" || member.role === "editor")) {
+      return { recording: rec, canEdit: true };
+    }
+    if (member) return { recording: rec, canEdit: false };
+  }
+
+  if (rec.isPublic) return { recording: rec, canEdit: false };
+  return null;
 }

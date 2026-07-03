@@ -3,8 +3,9 @@ import { redirect, notFound } from "next/navigation";
 import { eq, asc } from "drizzle-orm";
 import { auth } from "@/lib/auth";
 import { db } from "@/db";
-import { transcripts, results, qaMessages, users } from "@/db/schema";
+import { transcripts, results, qaMessages, users, actionItems } from "@/db/schema";
 import type { Utterance, Citation } from "@/db/schema";
+import type { ActionRow } from "@/components/note/action-board";
 import { getAccessibleRecording } from "@/lib/access";
 import { languageName } from "@/lib/language";
 import { dateTimeLabel } from "@/lib/format";
@@ -78,6 +79,38 @@ export default async function NotePage({
   const colorFor = makeColorFor(speakerOrder);
   const speakerColors = Object.fromEntries(speakerOrder.map((sp) => [sp, colorFor(sp)]));
 
+  const actionRows: ActionRow[] = done
+    ? (
+        await db
+          .select({
+            id: actionItems.id,
+            task: actionItems.task,
+            ownerLabel: actionItems.ownerLabel,
+            dueLabel: actionItems.dueLabel,
+            assigneeId: actionItems.assigneeId,
+            assigneeName: users.name,
+            assigneeEmail: users.email,
+            status: actionItems.status,
+            sourceMs: actionItems.sourceMs,
+          })
+          .from(actionItems)
+          .leftJoin(users, eq(users.id, actionItems.assigneeId))
+          .where(eq(actionItems.recordingId, id))
+          .orderBy(asc(actionItems.orderIdx))
+      ).map((r) => ({
+        id: r.id,
+        task: r.task,
+        ownerLabel: r.ownerLabel,
+        dueLabel: r.dueLabel,
+        assigneeId: r.assigneeId,
+        assigneeName: r.assigneeId
+          ? r.assigneeName ?? r.assigneeEmail?.split("@")[0] ?? "Teammate"
+          : null,
+        status: r.status,
+        sourceMs: r.sourceMs,
+      }))
+    : [];
+
   return (
     <AppShell user={session.user}>
       <main className="mx-auto max-w-[1540px] px-3 pb-28 pt-3 sm:px-5 md:px-7 md:pb-12 md:pt-5">
@@ -130,11 +163,12 @@ export default async function NotePage({
             recordingId={rec.id}
             durationSec={rec.durationSec}
             isOwner={isOwner}
+            meId={session.user.id}
             utterances={utterances}
             speakerNames={tr?.speakerNames ?? {}}
             transcriptText={tr?.text ?? ""}
             summary={res?.summary ?? null}
-            actionItems={res?.actionItems ?? []}
+            actions={actionRows}
             decisions={res?.decisions ?? []}
             topics={res?.topics ?? []}
             followUps={res?.followUps ?? []}

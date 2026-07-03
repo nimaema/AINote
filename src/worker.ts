@@ -3,10 +3,11 @@ import { Worker, type Job, type ConnectionOptions } from "bullmq";
 import IORedis from "ioredis";
 import { eq } from "drizzle-orm";
 import { db } from "./db";
-import { recordings, transcripts, results, transcriptChunks } from "./db/schema";
+import { recordings, transcripts, results, transcriptChunks, actionItems } from "./db/schema";
 import { transcribeAudio } from "./lib/transcribe";
 import { analyzeTranscript, DeepSeekJsonError, MODEL, type Analysis } from "./lib/deepseek";
 import { chunkTranscript, embed } from "./lib/embeddings";
+import { traceMatch } from "./lib/trace";
 import { enqueueProcess, PIPELINE_QUEUE, type PipelineJob } from "./lib/queue";
 
 const QA_THRESHOLD = Number(process.env.QA_RETRIEVAL_THRESHOLD ?? 12000);
@@ -68,6 +69,33 @@ async function handleProcess(job: Job<PipelineJob>) {
     followUps: analysis.followUps,
     model: analysis.model,
   });
+
+  // Promote action items to real rows (assignable, completable) and precompute
+  // each one's source-trace anchor. Preserves existing assignments on retry by
+  // keeping done-state where the task text is unchanged.
+  const prior = await db.query.actionItems.findMany({
+    where: eq(actionItems.recordingId, recordingId),
+  });
+  const priorByTask = new Map(prior.map((p) => [p.task, p]));
+  await db.delete(actionItems).where(eq(actionItems.recordingId, recordingId));
+  if (analysis.actionItems.length > 0) {
+    const utts = tr.utterances ?? [];
+    await db.insert(actionItems).values(
+      analysis.actionItems.map((a, i) => {
+        const kept = priorByTask.get(a.task);
+        return {
+          recordingId,
+          task: a.task,
+          ownerLabel: a.owner ?? null,
+          dueLabel: a.due ?? null,
+          assigneeId: kept?.assigneeId ?? null,
+          status: kept?.status ?? "open",
+          sourceMs: traceMatch(a.task, utts),
+          orderIdx: i,
+        };
+      })
+    );
+  }
 
   // 2) Embeddings for Q&A retrieval — only worth it for long transcripts.
   //    Short ones get answered by stuffing the full transcript into context.

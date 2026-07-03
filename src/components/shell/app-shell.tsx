@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Wordmark, SignalMark } from "@/components/brand";
 import { SidebarNav } from "./sidebar-nav";
 import { MobileTabBar } from "@/components/nav/mobile-tab-bar";
+import { NotificationsBell } from "@/components/nav/notifications-bell";
 import { SignOutButton } from "@/components/sign-out-button";
 import { Plus } from "@phosphor-icons/react/dist/ssr";
 
@@ -24,10 +25,11 @@ export function AppShell({ user, children }: { user: ShellUser; children: React.
         className="fixed inset-y-0 left-0 z-40 hidden w-72 flex-col border-r border-hairline bg-bg-2 md:flex"
         style={{ paddingTop: "env(safe-area-inset-top)" }}
       >
-        <div className="flex h-16 shrink-0 items-center px-5">
+        <div className="flex h-16 shrink-0 items-center justify-between px-5">
           <Link href="/" className="cursor-pointer">
             <Wordmark />
           </Link>
+          <NotificationsBell align="right" />
         </div>
 
         <div className="px-4 pb-5 pt-1">
@@ -68,13 +70,16 @@ export function AppShell({ user, children }: { user: ShellUser; children: React.
             GlaciaNav<span className="font-mono text-[12px] font-normal text-faint"> / notes</span>
           </span>
         </Link>
-        <Link
-          href="/settings"
-          aria-label="Account"
-          className="grid h-8 w-8 place-items-center rounded-full bg-accent text-[12px] font-semibold text-accent-ink"
-        >
-          {initial}
-        </Link>
+        <div className="flex items-center gap-1">
+          <NotificationsBell align="right" />
+          <Link
+            href="/settings"
+            aria-label="Account"
+            className="grid h-8 w-8 place-items-center rounded-full bg-accent text-[12px] font-semibold text-accent-ink"
+          >
+            {initial}
+          </Link>
+        </div>
       </header>
 
       <div className="md:pl-72">{children}</div>

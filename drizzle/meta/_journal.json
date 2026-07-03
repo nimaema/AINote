@@ -29,6 +29,13 @@
       "when": 1783010362060,
       "tag": "0003_cold_crystal",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1783089179466,
+      "tag": "0004_magenta_skullbuster",
+      "breakpoints": true
     }
   ]
 }

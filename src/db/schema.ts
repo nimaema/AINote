@@ -27,6 +27,17 @@ export const exportStatusEnum = pgEnum("export_status", ["pending", "done", "fai
 export const qaRoleEnum = pgEnum("qa_role", ["user", "assistant"]);
 export const integrationProviderEnum = pgEnum("integration_provider", ["google", "teams"]);
 
+// P10 — team layer
+export const projectRoleEnum = pgEnum("project_role", ["owner", "editor", "viewer"]);
+export const actionStatusEnum = pgEnum("action_status", ["open", "done"]);
+export const notifTypeEnum = pgEnum("notif_type", [
+  "assigned",
+  "mentioned",
+  "shared",
+  "commented",
+  "project_added",
+]);
+
 // ─── Auth.js core tables (+ our extensions on users) ──────────────────
 export const users = pgTable("users", {
   id: text("id")
@@ -255,6 +266,98 @@ export const exports = pgTable("exports", {
   createdAt: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
 });
 
+// ─── P10 team layer ───────────────────────────────────────────────────
+// A project can be worked by several members; the creator is `owner`.
+export const projectMembers = pgTable(
+  "project_members",
+  {
+    projectId: text("project_id")
+      .notNull()
+      .references(() => projects.id, { onDelete: "cascade" }),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    role: projectRoleEnum("role").notNull().default("editor"),
+    addedAt: timestamp("added_at", { mode: "date" }).notNull().defaultNow(),
+  },
+  (t) => [
+    primaryKey({ columns: [t.projectId, t.userId] }),
+    index("project_members_user_idx").on(t.userId),
+  ]
+);
+
+// Action items promoted from `results.actionItems` jsonb to real rows so they
+// can be assigned, completed, and gathered into a cross-recording worklist.
+export const actionItems = pgTable(
+  "action_items",
+  {
+    id: text("id")
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    recordingId: text("recording_id")
+      .notNull()
+      .references(() => recordings.id, { onDelete: "cascade" }),
+    task: text("task").notNull(),
+    ownerLabel: text("owner_label"), // raw name the model extracted
+    assigneeId: text("assignee_id").references(() => users.id, {
+      onDelete: "set null",
+    }),
+    dueLabel: text("due_label"),
+    status: actionStatusEnum("status").notNull().default("open"),
+    sourceMs: integer("source_ms"), // precomputed source-trace anchor
+    orderIdx: integer("order_idx").notNull().default(0),
+    createdAt: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
+  },
+  (t) => [
+    index("action_recording_idx").on(t.recordingId),
+    index("action_assignee_idx").on(t.assigneeId, t.status),
+  ]
+);
+
+// Timestamped discussion anchored to a moment in a recording.
+export const comments = pgTable(
+  "comments",
+  {
+    id: text("id")
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    recordingId: text("recording_id")
+      .notNull()
+      .references(() => recordings.id, { onDelete: "cascade" }),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    parentId: text("parent_id"),
+    startMs: integer("start_ms"), // optional transcript anchor
+    body: text("body").notNull(),
+    mentions: jsonb("mentions").$type<string[]>(), // userIds
+    createdAt: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
+  },
+  (t) => [index("comments_recording_idx").on(t.recordingId, t.createdAt)]
+);
+
+// Per-user inbox: assigned / mentioned / shared / commented / project_added.
+export const notifications = pgTable(
+  "notifications",
+  {
+    id: text("id")
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    type: notifTypeEnum("type").notNull(),
+    actorId: text("actor_id").references(() => users.id, { onDelete: "set null" }),
+    actorName: text("actor_name"), // denormalized so the bell needs no join
+    recordingId: text("recording_id"),
+    projectId: text("project_id"),
+    body: text("body").notNull(),
+    readAt: timestamp("read_at", { mode: "date" }),
+    createdAt: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
+  },
+  (t) => [index("notif_user_idx").on(t.userId, t.createdAt)]
+);
+
 // ─── Shared JSON shapes ───────────────────────────────────────────────
 export type Utterance = {
   speaker: string;
@@ -284,3 +387,7 @@ export type Project = typeof projects.$inferSelect;
 export type Recording = typeof recordings.$inferSelect;
 export type Transcript = typeof transcripts.$inferSelect;
 export type Result = typeof results.$inferSelect;
+export type ProjectMember = typeof projectMembers.$inferSelect;
+export type ActionItemRow = typeof actionItems.$inferSelect;
+export type CommentRow = typeof comments.$inferSelect;
+export type NotificationRow = typeof notifications.$inferSelect;
