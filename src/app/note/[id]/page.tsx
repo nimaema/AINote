@@ -182,6 +182,7 @@ export default async function NotePage({
             decisions={res?.decisions ?? []}
             topics={res?.topics ?? []}
             followUps={res?.followUps ?? []}
+            chapters={res?.chapters ?? []}
             speakerOrder={speakerOrder}
             speakerColors={speakerColors}
             history={history.map((m) => ({

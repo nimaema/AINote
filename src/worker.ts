@@ -63,6 +63,24 @@ async function handleProcess(job: Job<PipelineJob>) {
 
   // 1) Summary / action items / decisions / topics via DeepSeek.
   const analysis = await analyzeTranscriptOrFallback(text, recordingId);
+  // Anchor each chapter to a moment: prefer an exact quote match, fall back to
+  // the fuzzy trace matcher. Chapters that can't be located are dropped.
+  const chapters = analysis.chapters
+    .map((c) => {
+      const q = c.quote.toLowerCase().trim();
+      let startMs: number | null = null;
+      for (const u of utts) {
+        if (q && u.text.toLowerCase().includes(q)) {
+          startMs = u.start;
+          break;
+        }
+      }
+      if (startMs == null) startMs = traceMatch(c.quote, utts);
+      return startMs == null ? null : { title: c.title, summary: c.summary, startMs };
+    })
+    .filter((c): c is { title: string; summary: string; startMs: number } => c != null)
+    .sort((a, b) => a.startMs - b.startMs);
+
   await db.delete(results).where(eq(results.recordingId, recordingId));
   await db.insert(results).values({
     recordingId,
@@ -71,6 +89,7 @@ async function handleProcess(job: Job<PipelineJob>) {
     decisions: analysis.decisions,
     topics: analysis.topics,
     followUps: analysis.followUps,
+    chapters,
     model: analysis.model,
   });
 
@@ -148,6 +167,7 @@ async function analyzeTranscriptOrFallback(
       decisions: [],
       topics: ["Transcript processed", "Analysis retry needed"],
       followUps: ["Retry processing this recording to regenerate structured notes."],
+      chapters: [],
       model: `${MODEL} (fallback)`,
     };
   }

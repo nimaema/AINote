@@ -10,8 +10,9 @@ import {
   Flag,
   Hash,
   PencilLine,
+  ListBullets,
 } from "@phosphor-icons/react";
-import type { Utterance, Citation } from "@/db/schema";
+import type { Utterance, Citation, Chapter } from "@/db/schema";
 import { QAPanel } from "@/components/note/qa-panel";
 import { TranscriptPanel } from "@/components/note/transcript-panel";
 import { CommentsPanel } from "@/components/note/comments-panel";
@@ -48,6 +49,7 @@ export function NoteWorkspace({
   decisions,
   topics,
   followUps,
+  chapters,
   speakerOrder,
   speakerColors,
   history,
@@ -67,6 +69,7 @@ export function NoteWorkspace({
   decisions: string[];
   topics: string[];
   followUps: string[];
+  chapters: Chapter[];
   speakerOrder: string[];
   speakerColors: Record<string, string>;
   history: { id: string; role: "user" | "assistant"; content: string; citations?: Citation[] | null }[];
@@ -169,6 +172,7 @@ export function NoteWorkspace({
           utterances={utterances}
           speakerColors={speakerColors}
           markers={markers}
+          chapterMarks={chapters.map((c) => c.startMs)}
         />
 
         <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_410px]">
@@ -185,6 +189,30 @@ export function NoteWorkspace({
                 ))}
               </div>
             </section>
+
+            {chapters.length > 0 && (
+              <section className="rounded-[18px] border border-hairline bg-panel-solid p-5 sm:p-6">
+                <PanelHeading icon={<ListBullets size={16} weight="duotone" />}>Chapters</PanelHeading>
+                <ol className="mt-3 flex flex-col">
+                  {chapters.map((c, i) => (
+                    <li key={i}>
+                      <button
+                        onClick={() => seekTo(c.startMs)}
+                        className="group flex w-full items-start gap-3 rounded-[12px] px-2 py-2.5 text-left transition-colors duration-150 [transition-timing-function:var(--ease-out)] hover:bg-bg cursor-pointer"
+                      >
+                        <span className="mt-0.5 shrink-0 rounded-pill bg-accent-wash px-2 py-0.5 font-mono text-[11px] tabular text-accent-deep">
+                          {fmtMs(c.startMs)}
+                        </span>
+                        <span className="min-w-0">
+                          <span className="block text-[14px] font-semibold text-ink group-hover:text-accent-deep">{c.title}</span>
+                          {c.summary && <span className="mt-0.5 block text-[12.5px] leading-relaxed text-muted">{c.summary}</span>}
+                        </span>
+                      </button>
+                    </li>
+                  ))}
+                </ol>
+              </section>
+            )}
 
             {(summary || canEdit) && (
               <section className="rounded-[18px] border border-hairline bg-panel-solid p-5 sm:p-6">
@@ -310,10 +338,12 @@ function Scrubber({
   utterances,
   speakerColors,
   markers,
+  chapterMarks,
 }: {
   utterances: Utterance[];
   speakerColors: Record<string, string>;
   markers: number[];
+  chapterMarks: number[];
 }) {
   const { seekTo, currentMs, durationMs, playing, toggle } = useNoteAudio();
   const trackRef = useRef<HTMLDivElement>(null);
@@ -363,7 +393,16 @@ function Scrubber({
         aria-valuenow={Math.round(currentMs / 1000)}
         tabIndex={0}
       >
-        {/* Source-trace markers — where the notes came from. */}
+        {/* Chapter starts (vermilion) + source-trace markers (pine). */}
+        {durationMs > 0 &&
+          chapterMarks.map((m, i) => (
+            <span
+              key={`ch${i}`}
+              aria-hidden
+              className="absolute top-0 h-3.5 w-[1.5px] -translate-x-1/2 rounded-full bg-accent"
+              style={{ left: `${(m / durationMs) * 100}%` }}
+            />
+          ))}
         {durationMs > 0 &&
           markers.map((m, i) => (
             <span

@@ -43,6 +43,13 @@
       "when": 1783090921021,
       "tag": "0005_aromatic_speed_demon",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1783111977682,
+      "tag": "0006_jittery_sage",
+      "breakpoints": true
     }
   ]
 }

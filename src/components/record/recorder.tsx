@@ -15,10 +15,12 @@ import {
   CheckCircle,
 } from "@phosphor-icons/react";
 import { RealtimeWaveform } from "./realtime-waveform";
+import { LiveCaptions } from "./live-captions";
 import { Waveform } from "@/components/waveform";
 
 type Mode = "record" | "upload";
 type Rec = "idle" | "recording" | "paused" | "ready";
+type CaptureSource = "mic" | "system" | "both";
 
 const ACCEPT = ["audio/webm", "audio/ogg", "audio/mpeg", "audio/mp3", "audio/mp4", "audio/x-m4a", "audio/m4a", "audio/wav", "audio/x-wav", "audio/wave"];
 
@@ -53,11 +55,18 @@ export function Recorder({ initialMode }: { initialMode: Mode }) {
 
   const [stream, setStream] = useState<MediaStream | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [captureSource, setCaptureSource] = useState<CaptureSource>("mic");
+  const [canShareAudio, setCanShareAudio] = useState(false);
+  const [speechSupported, setSpeechSupported] = useState(false);
+  const [captionsOn, setCaptionsOn] = useState(false);
 
   const recorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const payloadRef = useRef<{ blob: Blob; mime: string; name?: string } | null>(null);
+  // Extra streams/context to tear down when a capture uses tab audio or mixing.
+  const extraStreamsRef = useRef<MediaStream[]>([]);
+  const audioCtxRef = useRef<AudioContext | null>(null);
 
   const stopTimer = () => {
     if (timerRef.current) clearInterval(timerRef.current);
@@ -81,6 +90,7 @@ export function Recorder({ initialMode }: { initialMode: Mode }) {
       s?.getTracks().forEach((t) => t.stop());
       return null;
     });
+    cleanupCapture();
     setPreviewUrl((u) => {
       if (u) URL.revokeObjectURL(u);
       return null;
@@ -90,10 +100,65 @@ export function Recorder({ initialMode }: { initialMode: Mode }) {
   // Clean up on unmount.
   useEffect(() => () => reset(), [reset]);
 
+  // Tab/system-audio capture is desktop-Chrome-first; detect after mount to
+  // avoid a hydration mismatch.
+  useEffect(() => {
+    setCanShareAudio(
+      typeof navigator !== "undefined" &&
+        typeof navigator.mediaDevices?.getDisplayMedia === "function"
+    );
+    setSpeechSupported(
+      typeof window !== "undefined" &&
+        !!(
+          (window as unknown as { SpeechRecognition?: unknown }).SpeechRecognition ||
+          (window as unknown as { webkitSpeechRecognition?: unknown }).webkitSpeechRecognition
+        )
+    );
+  }, []);
+
+  function cleanupCapture() {
+    extraStreamsRef.current.forEach((s) => s.getTracks().forEach((t) => t.stop()));
+    extraStreamsRef.current = [];
+    if (audioCtxRef.current) {
+      audioCtxRef.current.close().catch(() => {});
+      audioCtxRef.current = null;
+    }
+  }
+
+  // Build the audio stream to record from the chosen source. Mic uses the
+  // microphone; Meeting captures a shared tab/screen's audio; Both mixes them.
+  async function buildStream(source: CaptureSource): Promise<MediaStream> {
+    if (source === "mic") {
+      return navigator.mediaDevices.getUserMedia({ audio: true });
+    }
+    const display = await navigator.mediaDevices.getDisplayMedia({
+      video: true,
+      audio: true,
+    });
+    const displayAudio = display.getAudioTracks();
+    if (displayAudio.length === 0) {
+      display.getTracks().forEach((t) => t.stop());
+      throw new Error("no-system-audio");
+    }
+    extraStreamsRef.current.push(display); // torn down (incl. video) on cleanup
+    if (source === "system") {
+      return new MediaStream(displayAudio);
+    }
+    // Both: mix mic + tab audio into one recordable stream.
+    const mic = await navigator.mediaDevices.getUserMedia({ audio: true });
+    extraStreamsRef.current.push(mic);
+    const ctx = new AudioContext();
+    audioCtxRef.current = ctx;
+    const dest = ctx.createMediaStreamDestination();
+    ctx.createMediaStreamSource(mic).connect(dest);
+    ctx.createMediaStreamSource(new MediaStream(displayAudio)).connect(dest);
+    return dest.stream;
+  }
+
   async function startRecording() {
     setError(null);
     try {
-      const s = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const s = await buildStream(captureSource);
       const mime = pickMime();
       const mr = new MediaRecorder(s, { mimeType: mime });
       chunksRef.current = [];
@@ -105,19 +170,33 @@ export function Recorder({ initialMode }: { initialMode: Mode }) {
         payloadRef.current = { blob, mime };
         setPreviewUrl(URL.createObjectURL(blob));
         s.getTracks().forEach((t) => t.stop());
+        cleanupCapture();
         setStream(null);
         setRec("ready");
       };
+      // If the user ends screen/tab sharing from the browser bar, stop cleanly.
+      const watchStop = () => {
+        if (recorderRef.current && recorderRef.current.state !== "inactive") stopRecording();
+      };
+      s.getTracks().forEach((t) => (t.onended = watchStop));
+      extraStreamsRef.current.forEach((st) => st.getTracks().forEach((t) => (t.onended = watchStop)));
+
       recorderRef.current = mr;
       setStream(s);
       mr.start(250);
       setElapsed(0);
       startTimer();
       setRec("recording");
-    } catch {
-      setError(
-        "Microphone access was blocked. Allow it in your browser, or switch to Upload."
-      );
+    } catch (e) {
+      cleanupCapture();
+      const msg = e instanceof Error ? e.message : "";
+      if (msg === "no-system-audio") {
+        setError("No audio was shared. When prompted, choose a tab or screen and turn on “Share tab audio”.");
+      } else if (captureSource === "mic") {
+        setError("Microphone access was blocked. Allow it in your browser, or switch to Upload.");
+      } else {
+        setError("Screen capture was cancelled or blocked. Try again, choose a different source, or switch to Upload.");
+      }
     }
   }
 
@@ -249,6 +328,12 @@ export function Recorder({ initialMode }: { initialMode: Mode }) {
           elapsed={elapsed}
           stream={stream}
           previewUrl={previewUrl}
+          source={captureSource}
+          onSource={setCaptureSource}
+          canShareAudio={canShareAudio}
+          captionsOn={captionsOn}
+          onToggleCaptions={() => setCaptionsOn((v) => !v)}
+          speechSupported={speechSupported}
           onStart={startRecording}
           onStop={stopRecording}
           onPause={togglePause}
@@ -334,6 +419,12 @@ function RecordStage({
   elapsed,
   stream,
   previewUrl,
+  source,
+  onSource,
+  canShareAudio,
+  captionsOn,
+  onToggleCaptions,
+  speechSupported,
   onStart,
   onStop,
   onPause,
@@ -343,6 +434,12 @@ function RecordStage({
   elapsed: number;
   stream: MediaStream | null;
   previewUrl: string | null;
+  source: CaptureSource;
+  onSource: (s: CaptureSource) => void;
+  canShareAudio: boolean;
+  captionsOn: boolean;
+  onToggleCaptions: () => void;
+  speechSupported: boolean;
   onStart: () => void;
   onStop: () => void;
   onPause: () => void;
@@ -353,11 +450,51 @@ function RecordStage({
       {rec === "idle" && (
         <div className="flex flex-col items-center text-center">
           <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-faint">
-            Station 01 · microphone
+            Station 01 ·{" "}
+            {source === "mic" ? "microphone" : source === "system" ? "meeting audio" : "mic + meeting"}
           </p>
           <h2 className="mt-2 font-display text-[27px] leading-tight text-ink sm:text-[31px]">
             Ready to listen.
           </h2>
+          {canShareAudio && (
+            <>
+              <div className="mt-5 inline-flex rounded-btn border border-hairline bg-bg p-1">
+                {(
+                  [
+                    ["mic", "Mic"],
+                    ["system", "Meeting"],
+                    ["both", "Both"],
+                  ] as [CaptureSource, string][]
+                ).map(([val, label]) => (
+                  <button
+                    key={val}
+                    onClick={() => onSource(val)}
+                    className={`inline-flex h-8 items-center rounded-[8px] px-3.5 text-[12.5px] font-medium transition-colors duration-150 [transition-timing-function:var(--ease-out)] cursor-pointer ${
+                      source === val ? "bg-panel-lift text-ink" : "text-muted hover:text-ink"
+                    }`}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+              {source !== "mic" && (
+                <p className="mt-2 max-w-xs text-[12px] leading-relaxed text-faint">
+                  You&apos;ll pick a tab or screen and turn on “Share tab audio” — great for a call in Meet, Zoom, or a browser tab.
+                </p>
+              )}
+            </>
+          )}
+          {speechSupported && source !== "system" && (
+            <button
+              onClick={onToggleCaptions}
+              className={`mt-3 inline-flex items-center gap-2 rounded-pill border px-3 py-1.5 text-[12px] font-medium transition-colors duration-150 [transition-timing-function:var(--ease-out)] cursor-pointer ${
+                captionsOn ? "border-accent/50 bg-accent-wash text-accent-deep" : "border-hairline text-muted hover:text-ink"
+              }`}
+            >
+              <span className={`h-1.5 w-1.5 rounded-full ${captionsOn ? "bg-accent" : "bg-faint"}`} />
+              Live captions {captionsOn ? "on" : "off"}
+            </button>
+          )}
           <div className="relative mt-7 grid h-24 w-24 place-items-center">
             <span
               aria-hidden
@@ -392,11 +529,18 @@ function RecordStage({
             <span className="tabular font-mono text-[40px] font-medium leading-none text-ink">
               {fmt(elapsed)}
             </span>
+            {source !== "mic" && (
+              <span className="mt-1 rounded-pill bg-accent-wash px-2.5 py-0.5 font-mono text-[10.5px] uppercase tracking-[0.12em] text-accent-deep">
+                {source === "system" ? "Meeting audio" : "Mic + meeting"}
+              </span>
+            )}
           </div>
 
           <div className="h-24 w-full max-w-lg">
             <RealtimeWaveform stream={stream} active={rec === "recording"} />
           </div>
+
+          <LiveCaptions active={rec === "recording" && captionsOn && source !== "system"} />
 
           <div className="flex items-center gap-3">
             <button

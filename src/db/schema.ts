@@ -175,6 +175,8 @@ export const results = pgTable("results", {
   decisions: jsonb("decisions").$type<string[]>(),
   topics: jsonb("topics").$type<string[]>(),
   followUps: jsonb("follow_ups").$type<string[]>(),
+  // P12: navigable chapters, each anchored to a moment in the recording.
+  chapters: jsonb("chapters").$type<Chapter[]>(),
   model: text("model"),
   // P11: set when a person has curated the AI notes.
   editedBy: text("edited_by"),
@@ -379,6 +381,12 @@ export type ActionItem = {
   task: string;
   owner?: string | null;
   due?: string | null;
+};
+
+export type Chapter = {
+  title: string;
+  summary: string;
+  startMs: number;
 };
 
 export type Citation = {
