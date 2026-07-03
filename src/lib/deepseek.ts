@@ -60,7 +60,7 @@ const SYSTEM = `You are a meticulous meeting-notes analyst. You read a transcrip
   "topics": ["short topic labels covered"],
   "follow_ups": ["open questions or things to revisit"]
 }
-Keep arrays tight — omit filler. Use names exactly as they appear. If a field has nothing, use an empty array.`;
+Keep arrays tight. Omit filler. Use names exactly as they appear. If a field has nothing, use an empty array.`;
 
 // Models sometimes wrap JSON in ```json fences or add a sentence of prose even
 // in JSON mode. Pull the JSON object out before parsing.

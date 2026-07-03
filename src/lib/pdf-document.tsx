@@ -296,7 +296,7 @@ export function NotePdf({ note }: { note: NoteExport }) {
         </View>
 
         <View style={s.footer} fixed>
-          <Text style={s.footerText}>GlaciaNav Notes · {genDate}</Text>
+          <Text style={s.footerText}>GlaciaNav Notes / {genDate}</Text>
           <Text
             style={s.footerText}
             render={({ pageNumber, totalPages }) => `${pageNumber} / ${totalPages}`}

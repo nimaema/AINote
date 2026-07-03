@@ -31,9 +31,9 @@ export default async function LoginPage({
             <p className="font-mono text-[11px] text-faint">Voice capture</p>
             <h1
               aria-label="Talk it through. Get it back as clear notes."
-              className="mt-4 font-display text-[27px] font-bold leading-[1.12] tracking-tight text-ink min-[420px]:text-[34px] sm:text-[40px] sm:leading-[1.02] lg:text-[46px]"
+              className="mt-4 pb-1 font-display text-[27px] font-bold leading-[1.12] tracking-tight text-ink min-[420px]:text-[34px] sm:text-[38px] sm:leading-[1.06] lg:text-[42px]"
             >
-              <span className="sm:hidden">
+              <span aria-hidden className="sm:hidden">
                 Talk it
                 <br />
                 through.
@@ -42,7 +42,7 @@ export default async function LoginPage({
                 <br />
                 <span className="text-accent-deep">as clear notes</span>.
               </span>
-              <span className="hidden sm:inline">
+              <span aria-hidden className="hidden sm:inline">
                 Talk it through.{" "}
                 <br />
                 Get it back as{" "}

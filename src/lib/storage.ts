@@ -17,7 +17,7 @@ export const s3 = new S3Client({
   },
 });
 
-// Streamed upload — the audio body never has to be fully buffered in memory.
+// Streamed upload - the audio body never has to be fully buffered in memory.
 export async function putObject(
   key: string,
   body: Readable | Buffer | Uint8Array,

@@ -39,7 +39,7 @@ export function metaLine(n: NoteExport) {
   const dur = fmtDuration(n.durationSec);
   if (dur) parts.push(dur);
   if (n.language) parts.push(n.language);
-  return parts.join(" · ");
+  return parts.join(" / ");
 }
 
 export function actionItemLine(a: ActionItem) {
@@ -63,10 +63,10 @@ export function safeFilename(title: string) {
 }
 
 function mdCell(v?: string | null) {
-  return (v ?? "—").replace(/\|/g, "\\|").replace(/\n/g, " ");
+  return (v ?? "-").replace(/\|/g, "\\|").replace(/\n/g, " ");
 }
 
-// ─── Markdown ──────────────────────────────────────────────────────────
+// Markdown
 // Structured, front-matter'd Markdown that reads well raw and renders richly in
 // GitHub / Obsidian / Notion: a metadata table, callouts, task lists, badges,
 // and a collapsible transcript.
@@ -75,7 +75,7 @@ export function toMarkdown(n: NoteExport): string {
   const created = n.createdAt.toISOString();
   const roster = speakerRoster(n);
 
-  // YAML front matter — picked up by Obsidian, Notion imports, static gens.
+  // YAML front matter picked up by Obsidian, Notion imports, static gens.
   L.push("---");
   L.push(`title: ${JSON.stringify(n.title)}`);
   L.push(`date: ${created}`);
@@ -106,7 +106,7 @@ export function toMarkdown(n: NoteExport): string {
   if (n.actionItems.length) {
     L.push("## Action items", "");
     for (const a of n.actionItems) {
-      const meta = [a.owner, a.due].filter(Boolean).join(" · ");
+      const meta = [a.owner, a.due].filter(Boolean).join(" / ");
       L.push(`- [ ] ${a.task}${meta ? `  \`${meta}\`` : ""}`);
     }
     L.push("");
@@ -132,7 +132,7 @@ export function toMarkdown(n: NoteExport): string {
   // Transcript in a collapsible so long notes stay scannable.
   L.push("## Transcript", "");
   if (n.utterances.length) {
-    L.push("<details>", `<summary>${n.utterances.length} turns · click to expand</summary>`, "");
+    L.push("<details>", `<summary>${n.utterances.length} turns / click to expand</summary>`, "");
     for (const u of n.utterances) {
       L.push(`**${u.speaker}** &nbsp;\`${fmtClock(u.start)}\``, "");
       L.push(u.text, "");

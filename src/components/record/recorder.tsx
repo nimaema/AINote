@@ -296,9 +296,9 @@ export function Recorder({ initialMode }: { initialMode: Mode }) {
               </div>
               <div className="h-1.5 w-full overflow-hidden rounded-full bg-panel">
                 <div
-                  className="h-full rounded-full transition-[width] duration-150 [transition-timing-function:var(--ease-out)]"
+                  className="h-full origin-left rounded-full transition-transform duration-150 [transition-timing-function:var(--ease-out)]"
                   style={{
-                    width: `${Math.max(progress * 100, 4)}%`,
+                    transform: `scaleX(${Math.max(progress, 0.04)})`,
                     background:
                       "linear-gradient(90deg, var(--color-accent), var(--color-accent-deep))",
                   }}

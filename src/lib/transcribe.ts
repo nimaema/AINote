@@ -21,8 +21,8 @@ function useMock() {
 
 // Convert any audio buffer to 16kHz mono FLAC via ffmpeg. FLAC is lossless, so
 // the samples are identical to the equivalent WAV (which is what AssemblyAI
-// ingests) but the file is ~2x smaller — less worker memory and a faster upload,
-// with zero effect on transcription quality. Uses temp files instead of pipes —
+// ingests) but the file is ~2x smaller - less worker memory and a faster upload,
+// with zero effect on transcription quality. Uses temp files instead of pipes -
 // piping large buffers through stdin/stdout can produce truncated output because
 // of Node.js stream backpressure quirks.
 async function convertToFlac(
@@ -119,7 +119,7 @@ export async function transcribeAudio(
   const text = (t.text ?? "").trim();
   if (!text) {
     throw new Error(
-      "AssemblyAI returned an empty transcript — the audio may have no clear speech, or a zero-byte file may have been uploaded. Check the upload for a content-length mismatch."
+      "AssemblyAI returned an empty transcript. The audio may have no clear speech, or a zero-byte file may have been uploaded. Check the upload for a content-length mismatch."
     );
   }
 
@@ -141,13 +141,13 @@ export async function transcribeAudio(
 // A short, realistic product sync so downstream summaries / Q&A have substance.
 function mockTranscript(): TranscribeResult {
   const utterances: Utterance[] = [
-    { speaker: "Speaker A", start: 800, end: 9200, text: "Alright, thanks for hopping on. The main thing I want to close out today is the onboarding flow — we're still seeing people drop off right after they connect their calendar." },
+    { speaker: "Speaker A", start: 800, end: 9200, text: "Alright, thanks for hopping on. The main thing I want to close out today is the onboarding flow. We're still seeing people drop off right after they connect their calendar." },
     { speaker: "Speaker B", start: 9600, end: 18400, text: "Yeah, I dug into the funnel. About forty percent get to the calendar step, but only half of those finish. Most of the drop happens on the permissions screen." },
     { speaker: "Speaker A", start: 18800, end: 25200, text: "That tracks. The permissions copy is scary. It asks for full calendar access up front even though we only need read at first." },
     { speaker: "Speaker C", start: 25600, end: 34800, text: "I can rewrite that screen to request read-only first and ask for write access later, only when someone actually schedules something. That should cut the fear factor." },
     { speaker: "Speaker A", start: 35200, end: 41000, text: "Let's do that. Priya, can you own the copy and the scope change? I'd like it in the next release." },
     { speaker: "Speaker C", start: 41400, end: 44600, text: "Sure, I'll have a draft by Thursday and loop in design." },
-    { speaker: "Speaker B", start: 45000, end: 53200, text: "One more thing — we should add an event to track when people hit the permissions screen versus when they grant. Right now we're guessing at where exactly they leave." },
+    { speaker: "Speaker B", start: 45000, end: 53200, text: "One more thing: we should add an event to track when people hit the permissions screen versus when they grant. Right now we're guessing at where exactly they leave." },
     { speaker: "Speaker A", start: 53600, end: 59800, text: "Good call. Marcus, add the analytics events this sprint so we can measure the change after we ship the new copy." },
     { speaker: "Speaker B", start: 60200, end: 63400, text: "On it. I'll have the events in by end of week." },
     { speaker: "Speaker A", start: 63800, end: 71000, text: "Great. So decision is: read-only first, write on demand, plus proper funnel tracking. Let's reconvene next Tuesday and look at the numbers." },

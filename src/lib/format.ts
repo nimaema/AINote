@@ -15,7 +15,7 @@ export function relativeTime(date: Date, now = new Date()): string {
 }
 
 export function humanDuration(sec: number | null | undefined): string {
-  if (!sec || sec < 0) return "—";
+  if (!sec || sec < 0) return "-";
   const m = Math.floor(sec / 60);
   const s = Math.floor(sec % 60);
   if (m < 60) return `${m}:${s.toString().padStart(2, "0")}`;

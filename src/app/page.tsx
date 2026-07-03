@@ -1,15 +1,18 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
 import { desc, eq, sql } from "drizzle-orm";
 import { auth } from "@/lib/auth";
 import { db } from "@/db";
 import { recordings, results, transcripts, projects } from "@/db/schema";
-import { relativeTime, humanDuration, humanTotalTime } from "@/lib/format";
+import type { ActionItem } from "@/db/schema";
+import { relativeTime, humanDuration, humanTotalTime, humanBytes } from "@/lib/format";
 import { languageName } from "@/lib/language";
 import { AppShell } from "@/components/shell/app-shell";
-import { RecordingsList, type RecItem } from "@/components/dashboard/recordings-list";
-import { ProjectsSection } from "@/components/projects/projects-section";
-import { Microphone, UploadSimple } from "@phosphor-icons/react/dist/ssr";
+import {
+  WorkbenchV2,
+  type WorkbenchProject,
+  type WorkbenchRecording,
+  type WorkbenchStats,
+} from "@/components/dashboard/workbench-v2";
 
 export default async function DashboardPage() {
   const session = await auth();
@@ -22,6 +25,9 @@ export default async function DashboardPage() {
       totalDuration: sql<number>`coalesce(sum(${recordings.durationSec}), 0)::int`,
       ready: sql<number>`count(*) filter (where ${recordings.status} = 'done')::int`,
       failed: sql<number>`count(*) filter (where ${recordings.status} = 'failed')::int`,
+      active: sql<number>`count(*) filter (where ${recordings.status} in ('uploaded', 'transcribing', 'processing'))::int`,
+      publicCount: sql<number>`count(*) filter (where ${recordings.isPublic} = true)::int`,
+      unfiled: sql<number>`count(*) filter (where ${recordings.projectId} is null)::int`,
     })
     .from(recordings)
     .where(eq(recordings.userId, userId));
@@ -34,10 +40,15 @@ export default async function DashboardPage() {
       source: recordings.source,
       createdAt: recordings.createdAt,
       durationSec: recordings.durationSec,
+      sizeBytes: recordings.sizeBytes,
       isPublic: recordings.isPublic,
+      error: recordings.error,
       language: transcripts.language,
       summary: results.summary,
       topics: results.topics,
+      actionItems: results.actionItems,
+      decisions: results.decisions,
+      followUps: results.followUps,
       actionCount: sql<number>`coalesce(jsonb_array_length(${results.actionItems}), 0)::int`,
       projectId: recordings.projectId,
       projectName: projects.name,
@@ -58,98 +69,67 @@ export default async function DashboardPage() {
       name: projects.name,
       color: projects.color,
       count: sql<number>`count(${recordings.id})::int`,
+      readyCount: sql<number>`count(${recordings.id}) filter (where ${recordings.status} = 'done')::int`,
+      activeCount: sql<number>`count(${recordings.id}) filter (where ${recordings.status} in ('uploaded', 'transcribing', 'processing'))::int`,
+      actionCount: sql<number>`coalesce(sum(jsonb_array_length(${results.actionItems})), 0)::int`,
+      lastActivity: sql<Date | null>`max(${recordings.createdAt})`,
     })
     .from(projects)
     .leftJoin(recordings, eq(recordings.projectId, projects.id))
+    .leftJoin(results, eq(results.recordingId, recordings.id))
     .where(eq(projects.userId, userId))
     .groupBy(projects.id)
-    .orderBy(desc(projects.createdAt));
+    .orderBy(desc(sql`max(${recordings.createdAt})`), desc(projects.createdAt));
 
   const now = new Date();
-  const items: RecItem[] = rows.map((r) => ({
+  const items: WorkbenchRecording[] = rows.map((r) => ({
     id: r.id,
     title: r.title ?? "Untitled recording",
     status: r.status,
     source: r.source,
     dateLabel: relativeTime(r.createdAt, now),
+    createdAtLabel: r.createdAt.toLocaleString("en-US", { dateStyle: "medium", timeStyle: "short" }),
     durationLabel: humanDuration(r.durationSec),
+    sizeLabel: humanBytes(r.sizeBytes),
     isPublic: r.isPublic,
+    error: r.error,
     language: languageName(r.language),
     summary: r.summary,
     topics: r.topics ?? [],
-    actionCount: r.actionCount,
+    actionItems: (r.actionItems ?? []) as ActionItem[],
+    decisions: r.decisions ?? [],
+    followUps: r.followUps ?? [],
     projectId: r.projectId,
     projectName: r.projectName,
     projectColor: r.projectColor,
   }));
 
+  const projectItems: WorkbenchProject[] = projectRows.map((project) => ({
+    id: project.id,
+    name: project.name,
+    color: project.color,
+    count: project.count,
+    readyCount: project.readyCount,
+    activeCount: project.activeCount,
+    actionCount: project.actionCount,
+    lastActivityLabel: project.lastActivity ? relativeTime(project.lastActivity, now) : "empty",
+  }));
+
   const firstName = (session.user.name ?? session.user.email ?? "there").split(/[@ ]/)[0];
+  const dashboardStats: WorkbenchStats = {
+    total: stats.total,
+    ready: stats.ready,
+    active: stats.active,
+    failed: stats.failed,
+    publicCount: stats.publicCount,
+    unfiled: stats.unfiled,
+    actionCount: items.reduce((total, item) => total + item.actionItems.length, 0),
+    totalDurationLabel: humanTotalTime(stats.totalDuration),
+  };
 
   return (
     <AppShell user={session.user}>
-      <main className="mx-auto max-w-7xl px-4 pb-28 pt-5 sm:px-6 md:px-8 md:pb-12 md:pt-7">
-        {/* Page header */}
-        <div className="mb-5 flex flex-wrap items-end justify-between gap-3 border-b border-hairline pb-5">
-          <div>
-            <p className="font-mono text-[11px] text-faint">Workspace</p>
-            <h1 className="mt-1 text-[24px] font-semibold tracking-[-0.015em] text-ink">Overview</h1>
-            <p className="mt-1 text-[13px] text-muted">
-              Welcome back, {firstName}. Captures, projects, and notes are ready for review.
-            </p>
-          </div>
-          <div className="flex items-center gap-2">
-            <Link
-              href="/record?mode=upload"
-              className="glass inline-flex h-9 items-center gap-1.5 rounded-btn px-3.5 text-[13px] font-medium text-ink-soft transition-[background-color,color,transform] duration-150 [transition-timing-function:var(--ease-out)] hover:bg-panel-lift hover:text-ink active:scale-[0.98] cursor-pointer"
-            >
-              <UploadSimple size={15} /> Upload
-            </Link>
-            <Link
-              href="/record?mode=record"
-              className="inline-flex h-9 items-center gap-1.5 rounded-btn bg-accent px-3.5 text-[13px] font-semibold text-accent-ink shadow-[0_14px_30px_-18px_rgba(240,182,74,0.8)] transition-[transform,box-shadow] duration-150 [transition-timing-function:var(--ease-out)] hover:-translate-y-px active:scale-[0.98] cursor-pointer"
-            >
-              <Microphone size={15} weight="fill" /> Record
-            </Link>
-          </div>
-        </div>
-
-        {/* Stats strip */}
-        <div className="glass grid grid-cols-2 overflow-hidden rounded-card sm:grid-cols-4 sm:divide-x sm:divide-hairline max-sm:[&>*]:border-hairline max-sm:[&>*:nth-child(even)]:border-l max-sm:[&>*:nth-child(n+3)]:border-t">
-          <Stat label="Captures" value={String(stats.total)} />
-          <Stat label="Total time" value={humanTotalTime(stats.totalDuration)} />
-          <Stat label="Ready" value={String(stats.ready)} accent />
-          <Stat label="Failed" value={String(stats.failed)} alert={stats.failed > 0} />
-        </div>
-
-        <ProjectsSection projects={projectRows} />
-
-        <RecordingsList items={items} heading="Captures" />
-      </main>
+      <WorkbenchV2 userName={firstName} recordings={items} projects={projectItems} stats={dashboardStats} />
     </AppShell>
-  );
-}
-
-function Stat({
-  label,
-  value,
-  accent,
-  alert,
-}: {
-  label: string;
-  value: string;
-  accent?: boolean;
-  alert?: boolean;
-}) {
-  return (
-    <div className="px-4 py-3">
-      <p className="font-mono text-[10.5px] text-faint">{label}</p>
-      <p
-        className={`tabular mt-1 text-[22px] font-semibold tracking-[-0.01em] ${
-          alert ? "text-err" : accent ? "text-accent-deep" : "text-ink"
-        }`}
-      >
-        {value}
-      </p>
-    </div>
   );
 }

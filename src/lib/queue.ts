@@ -11,7 +11,7 @@ export const redisConnection =
   g._redis ??
   new IORedis(process.env.REDIS_URL ?? "redis://localhost:6379", {
     maxRetriesPerRequest: null,
-    // Don't connect at import — only when a job is actually enqueued. Keeps
+    // Don't connect at import - only when a job is actually enqueued. Keeps
     // `next build` from reaching for Redis while collecting page data.
     lazyConnect: true,
   });

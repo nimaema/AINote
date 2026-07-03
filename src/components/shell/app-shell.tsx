@@ -21,22 +21,26 @@ export function AppShell({ user, children }: { user: ShellUser; children: React.
     <div className="min-h-[100dvh]">
       {/* Desktop sidebar */}
       <aside
-        className="fixed inset-y-0 left-0 z-40 hidden w-64 flex-col border-r border-hairline bg-bg-2 md:flex"
+        className="fixed inset-y-0 left-0 z-40 hidden w-72 flex-col border-r border-hairline bg-bg-2 md:flex"
         style={{ paddingTop: "env(safe-area-inset-top)" }}
       >
-        <div className="flex h-16 shrink-0 items-center px-4">
+        <div className="flex h-16 shrink-0 items-center px-5">
           <Link href="/" className="cursor-pointer">
             <Wordmark />
           </Link>
         </div>
 
-        <div className="px-3 pb-4 pt-1">
+        <div className="px-4 pb-5 pt-1">
           <Link
             href="/record"
-            className="flex h-10 items-center justify-center gap-1.5 rounded-btn bg-accent text-[13.5px] font-semibold text-accent-ink shadow-[0_14px_30px_-18px_rgba(240,182,74,0.8)] transition-[transform,box-shadow] duration-150 [transition-timing-function:var(--ease-out)] hover:-translate-y-px active:scale-[0.98] cursor-pointer"
+            className="flex h-11 items-center justify-center gap-2 rounded-[12px] bg-accent text-[13.5px] font-semibold text-accent-ink shadow-[0_14px_30px_-18px_rgba(240,182,74,0.8)] transition-[transform,box-shadow] duration-150 [transition-timing-function:var(--ease-out)] hover:shadow-[0_16px_34px_-16px_rgba(240,182,74,0.85)] active:scale-[0.98] cursor-pointer"
           >
             <Plus size={15} weight="bold" /> New capture
           </Link>
+          <div className="mt-3 rounded-[14px] border border-hairline bg-bg px-3 py-2.5">
+            <p className="font-mono text-[10.5px] text-faint">Station</p>
+            <p className="mt-1 text-[12.5px] leading-relaxed text-muted">Local workspace</p>
+          </div>
         </div>
 
         <SidebarNav isAdmin={isAdmin} />
@@ -73,7 +77,7 @@ export function AppShell({ user, children }: { user: ShellUser; children: React.
         </Link>
       </header>
 
-      <div className="md:pl-64">{children}</div>
+      <div className="md:pl-72">{children}</div>
 
       <MobileTabBar isAdmin={isAdmin} />
     </div>

@@ -14,17 +14,16 @@ import { ProcessingView } from "@/components/note/processing-view";
 import { ExportMenu } from "@/components/note/export-menu";
 import { NoteActions } from "@/components/note/note-actions";
 import { VisibilityToggle } from "@/components/note/visibility-toggle";
-import { SpeakerEditor } from "@/components/note/speaker-editor";
+import { TranscriptPanel } from "@/components/note/transcript-panel";
 import {
   ArrowLeft,
   CheckCircle,
-  Circle,
   ListChecks,
   Flag,
   Hash,
-  Question,
   Globe,
   Translate,
+  FileText,
 } from "@phosphor-icons/react/dist/ssr";
 
 const SPEAKER_COLORS = [
@@ -76,7 +75,7 @@ export default async function NotePage({
 
   return (
     <AppShell user={session.user}>
-      <main className="mx-auto max-w-7xl px-4 pb-28 pt-5 sm:px-6 md:px-8 md:pb-12 md:pt-6">
+      <main className="mx-auto max-w-[1540px] px-3 pb-28 pt-3 sm:px-5 md:px-7 md:pb-12 md:pt-5">
         <Link
           href="/"
           className="inline-flex items-center gap-1.5 text-[13px] text-muted transition-colors duration-150 [transition-timing-function:var(--ease-out)] hover:text-ink"
@@ -84,33 +83,36 @@ export default async function NotePage({
           <ArrowLeft size={15} /> All captures
         </Link>
 
-        <div className="mt-3 mb-5 flex flex-wrap items-start justify-between gap-4 border-b border-hairline pb-5">
-          <div className="min-w-0">
-            <h1 className="text-[22px] font-semibold tracking-[-0.01em] text-ink sm:text-[24px]">
-              {rec.title ?? "Untitled recording"}
-            </h1>
-            <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1.5 font-mono text-[12px] text-faint">
-              <span>{new Date(rec.createdAt).toLocaleString("en-US", { dateStyle: "medium", timeStyle: "short" })}</span>
-              {rec.durationSec ? <span>{fmtMs(rec.durationSec * 1000)}</span> : null}
-              <span>{rec.source === "record" ? "Recorded" : "Uploaded"}</span>
-              {language && (
-                <span className="inline-flex items-center gap-1 rounded-btn bg-accent-wash px-2 py-0.5 text-accent-deep">
-                  <Translate size={12} weight="bold" /> {language}
-                </span>
-              )}
-              {!isOwner && (
-                <span className="inline-flex items-center gap-1 rounded-btn bg-panel px-2 py-0.5 text-muted">
-                  <Globe size={12} weight="bold" /> Shared with you
-                </span>
-              )}
+        <div className="mt-3 mb-5 overflow-hidden rounded-[18px] border border-hairline bg-panel-solid">
+          <div className="grid gap-px bg-hairline lg:grid-cols-[minmax(0,1fr)_auto]">
+            <div className="bg-panel-solid p-5 sm:p-6">
+              <p className="font-mono text-[11px] text-faint">Review workspace</p>
+              <h1 className="mt-2 max-w-5xl text-[28px] font-semibold leading-[1.02] tracking-[-0.035em] text-ink sm:text-[40px]">
+                {rec.title ?? "Untitled recording"}
+              </h1>
+              <div className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-1.5 font-mono text-[12px] text-faint">
+                <span>{new Date(rec.createdAt).toLocaleString("en-US", { dateStyle: "medium", timeStyle: "short" })}</span>
+                {rec.durationSec ? <span>{fmtMs(rec.durationSec * 1000)}</span> : null}
+                <span>{rec.source === "record" ? "Recorded" : "Uploaded"}</span>
+                {language && (
+                  <span className="inline-flex items-center gap-1 rounded-btn bg-accent-wash px-2 py-0.5 text-accent-deep">
+                    <Translate size={12} weight="bold" /> {language}
+                  </span>
+                )}
+                {!isOwner && (
+                  <span className="inline-flex items-center gap-1 rounded-btn bg-panel px-2 py-0.5 text-muted">
+                    <Globe size={12} weight="bold" /> Shared with you
+                  </span>
+                )}
+              </div>
             </div>
-          </div>
-          <div className="flex items-center gap-2">
-            {done && <ExportMenu recordingId={rec.id} />}
-            {isOwner && done && (
-              <VisibilityToggle recordingId={rec.id} initialPublic={rec.isPublic} />
-            )}
-            {isOwner && <NoteActions id={rec.id} title={rec.title ?? "Untitled recording"} />}
+            <div className="flex flex-wrap items-center gap-2 bg-bg p-4 sm:p-5 lg:min-w-[25rem] lg:justify-end">
+              {done && <ExportMenu recordingId={rec.id} />}
+              {isOwner && done && (
+                <VisibilityToggle recordingId={rec.id} initialPublic={rec.isPublic} />
+              )}
+              {isOwner && <NoteActions id={rec.id} title={rec.title ?? "Untitled recording"} />}
+            </div>
           </div>
         </div>
 
@@ -171,48 +173,65 @@ function NoteBody({
 }) {
   const speakerOrder = [...new Set(utterances.map((u) => u.speaker))];
   const colorFor = makeColorFor(speakerOrder);
-  const displayName = (raw: string) => speakerNames[raw] ?? raw;
+  const speakerColors = Object.fromEntries(speakerOrder.map((sp) => [sp, colorFor(sp)]));
+  const noteStats = [
+    { label: "Actions", value: String(actionItems.length) },
+    { label: "Decisions", value: String(decisions.length) },
+    { label: "Follow-ups", value: String(followUps.length) },
+    { label: "Speakers", value: String(speakerOrder.length || 1) },
+  ];
 
   return (
     <div className="flex flex-col gap-5">
       <AudioPlayer recordingId={recordingId} durationSec={durationSec} />
 
-      <div className="grid gap-5 lg:grid-cols-[1.55fr_1fr]">
-        {/* Left column: the notes */}
+      <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_410px]">
         <div className="flex flex-col gap-5">
+          <section className="rounded-[18px] border border-hairline bg-panel-solid">
+            <div className="grid gap-px bg-hairline sm:grid-cols-4">
+              {noteStats.map((item) => (
+                <div key={item.label} className="bg-panel-solid px-4 py-3">
+                  <p className="font-mono text-[10.5px] text-faint">{item.label}</p>
+                  <p className="tabular mt-1 text-[22px] font-semibold text-ink">{item.value}</p>
+                </div>
+              ))}
+            </div>
+          </section>
+
           {summary && (
-            <section className="glass rounded-panel p-6">
-              <h2 className="text-[13.5px] font-semibold text-ink">Summary</h2>
-              <p className="mt-2.5 text-[15px] leading-relaxed text-ink-soft">{summary}</p>
+            <section className="rounded-[18px] border border-hairline bg-panel-solid p-5 sm:p-6">
+              <PanelHeading icon={<FileText size={17} weight="duotone" />}>
+                Note brief
+              </PanelHeading>
+              <p className="mt-3 max-w-4xl text-[15px] leading-relaxed text-ink-soft">{summary}</p>
             </section>
           )}
 
           {actionItems.length > 0 && (
-            <section className="glass rounded-panel p-6">
+            <section className="rounded-[18px] border border-hairline bg-panel-solid p-5 sm:p-6">
               <PanelHeading icon={<ListChecks size={16} weight="duotone" />}>
-                Action items
+                Action board
               </PanelHeading>
-              <ul className="mt-3 flex flex-col gap-2.5">
+              <div className="mt-4 grid gap-2 lg:grid-cols-2">
                 {actionItems.map((a, i) => (
-                  <li key={i} className="flex items-start gap-3">
-                    <Circle size={18} className="mt-0.5 shrink-0 text-accent-deep" />
-                    <span className="text-[14.5px] text-ink-soft">
+                  <div key={i} className="rounded-[14px] border border-hairline bg-bg p-3">
+                    <p className="text-[14px] leading-relaxed text-ink-soft">
                       {a.task}
-                      {(a.owner || a.due) && (
-                        <span className="ml-2 inline-flex flex-wrap gap-1.5 align-middle">
-                          {a.owner && <Chip>{a.owner}</Chip>}
-                          {a.due && <Chip muted>{a.due}</Chip>}
-                        </span>
-                      )}
-                    </span>
-                  </li>
+                    </p>
+                    {(a.owner || a.due) && (
+                      <div className="mt-2 flex flex-wrap gap-1.5">
+                        {a.owner && <Chip>{a.owner}</Chip>}
+                        {a.due && <Chip muted>{a.due}</Chip>}
+                      </div>
+                    )}
+                  </div>
                 ))}
-              </ul>
+              </div>
             </section>
           )}
 
           {(decisions.length > 0 || topics.length > 0 || followUps.length > 0) && (
-            <section className="glass rounded-panel p-6">
+            <section className="rounded-[18px] border border-hairline bg-panel-solid p-5 sm:p-6">
               <div className="grid gap-6 sm:grid-cols-2">
                 {decisions.length > 0 && (
                   <div>
@@ -258,53 +277,18 @@ function NoteBody({
             </section>
           )}
 
-          {/* Transcript */}
-          <section className="glass rounded-panel p-6">
-            <div className="flex items-center justify-between gap-3">
-              <PanelHeading icon={<Question size={16} weight="duotone" />}>
-                Transcript
-              </PanelHeading>
-              {isOwner && speakerOrder.length > 0 && (
-                <SpeakerEditor
-                  recordingId={recordingId}
-                  speakers={speakerOrder}
-                  initialNames={speakerNames}
-                  colors={Object.fromEntries(speakerOrder.map((sp) => [sp, colorFor(sp)]))}
-                />
-              )}
-            </div>
-            {utterances.length > 0 ? (
-              <div className="mt-4 flex max-h-[520px] flex-col gap-4 overflow-y-auto pr-2">
-                {utterances.map((u, i) => {
-                  const color = colorFor(u.speaker);
-                  return (
-                    <div key={i} className="flex gap-3">
-                      <div className="w-24 shrink-0 pt-0.5">
-                        <div className="flex items-center gap-1.5">
-                          <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: color }} />
-                          <span className="truncate text-[12.5px] font-medium text-ink">
-                            {displayName(u.speaker)}
-                          </span>
-                        </div>
-                        <span className="tabular font-mono text-[11px] text-faint">
-                          {fmtMs(u.start)}
-                        </span>
-                      </div>
-                      <p className="flex-1 text-[14.5px] leading-relaxed text-ink-soft">{u.text}</p>
-                    </div>
-                  );
-                })}
-              </div>
-            ) : (
-              <p className="mt-3 whitespace-pre-wrap text-[14.5px] leading-relaxed text-ink-soft">
-                {transcriptText}
-              </p>
-            )}
-          </section>
+          <TranscriptPanel
+            recordingId={recordingId}
+            isOwner={isOwner}
+            utterances={utterances}
+            transcriptText={transcriptText}
+            speakerNames={speakerNames}
+            speakerOrder={speakerOrder}
+            speakerColors={speakerColors}
+          />
         </div>
 
-        {/* Right column: Q&A (sticky on desktop) */}
-        <div className="lg:sticky lg:top-24 lg:self-start">
+        <div className="xl:sticky xl:top-6 xl:self-start">
           <QAPanel
             endpoint={`/api/recordings/${recordingId}/qa`}
             initialMessages={history.map((m) => ({
