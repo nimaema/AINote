@@ -4,7 +4,7 @@ import { auth } from "@/lib/auth";
 import { db } from "@/db";
 import { recordings, results, transcripts, projects } from "@/db/schema";
 import type { ActionItem } from "@/db/schema";
-import { relativeTime, humanDuration, humanTotalTime, humanBytes } from "@/lib/format";
+import { relativeTime, dateTimeLabel, humanDuration, humanTotalTime, humanBytes } from "@/lib/format";
 import { languageName } from "@/lib/language";
 import { AppShell } from "@/components/shell/app-shell";
 import {
@@ -72,7 +72,7 @@ export default async function DashboardPage() {
       readyCount: sql<number>`count(${recordings.id}) filter (where ${recordings.status} = 'done')::int`,
       activeCount: sql<number>`count(${recordings.id}) filter (where ${recordings.status} in ('uploaded', 'transcribing', 'processing'))::int`,
       actionCount: sql<number>`coalesce(sum(jsonb_array_length(${results.actionItems})), 0)::int`,
-      lastActivity: sql<Date | null>`max(${recordings.createdAt})`,
+      lastActivity: sql<Date | string | null>`max(${recordings.createdAt})`,
     })
     .from(projects)
     .leftJoin(recordings, eq(recordings.projectId, projects.id))
@@ -88,7 +88,7 @@ export default async function DashboardPage() {
     status: r.status,
     source: r.source,
     dateLabel: relativeTime(r.createdAt, now),
-    createdAtLabel: r.createdAt.toLocaleString("en-US", { dateStyle: "medium", timeStyle: "short" }),
+    createdAtLabel: dateTimeLabel(r.createdAt),
     durationLabel: humanDuration(r.durationSec),
     sizeLabel: humanBytes(r.sizeBytes),
     isPublic: r.isPublic,

@@ -1,4 +1,5 @@
 import type { ActionItem, Utterance } from "../db/schema";
+import { asDate, dateTimeLabel, type DateInput } from "./format";
 
 // Pure formatting helpers shared by the Markdown and PDF exporters. No DB / no
 // server-only imports, so this module is safe to import from the PDF renderer
@@ -6,7 +7,7 @@ import type { ActionItem, Utterance } from "../db/schema";
 
 export type NoteExport = {
   title: string;
-  createdAt: Date;
+  createdAt: DateInput;
   durationSec: number | null;
   language: string | null; // friendly name
   summary: string;
@@ -31,10 +32,7 @@ export function fmtClock(ms: number) {
 }
 
 export function metaLine(n: NoteExport) {
-  const date = n.createdAt.toLocaleString("en-US", {
-    dateStyle: "medium",
-    timeStyle: "short",
-  });
+  const date = dateTimeLabel(n.createdAt);
   const parts = [date];
   const dur = fmtDuration(n.durationSec);
   if (dur) parts.push(dur);
@@ -72,13 +70,13 @@ function mdCell(v?: string | null) {
 // and a collapsible transcript.
 export function toMarkdown(n: NoteExport): string {
   const L: string[] = [];
-  const created = n.createdAt.toISOString();
+  const created = asDate(n.createdAt)?.toISOString();
   const roster = speakerRoster(n);
 
   // YAML front matter picked up by Obsidian, Notion imports, static gens.
   L.push("---");
   L.push(`title: ${JSON.stringify(n.title)}`);
-  L.push(`date: ${created}`);
+  if (created) L.push(`date: ${created}`);
   if (n.durationSec) L.push(`duration: ${fmtDuration(n.durationSec)}`);
   if (n.language) L.push(`language: ${n.language}`);
   if (n.topics.length) L.push(`topics: [${n.topics.map((t) => JSON.stringify(t)).join(", ")}]`);
@@ -88,7 +86,7 @@ export function toMarkdown(n: NoteExport): string {
   L.push(`# ${n.title}`, "");
 
   // Metadata table.
-  const dateStr = n.createdAt.toLocaleString("en-US", { dateStyle: "medium", timeStyle: "short" });
+  const dateStr = dateTimeLabel(n.createdAt);
   const rows: [string, string][] = [["Date", dateStr]];
   if (n.durationSec) rows.push(["Duration", fmtDuration(n.durationSec)]);
   if (n.language) rows.push(["Language", n.language]);

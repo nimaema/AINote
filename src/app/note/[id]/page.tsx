@@ -7,6 +7,7 @@ import { transcripts, results, qaMessages } from "@/db/schema";
 import type { Utterance } from "@/db/schema";
 import { getAccessibleRecording } from "@/lib/access";
 import { languageName } from "@/lib/language";
+import { dateTimeLabel } from "@/lib/format";
 import { AppShell } from "@/components/shell/app-shell";
 import { AudioPlayer } from "@/components/note/audio-player";
 import { QAPanel } from "@/components/note/qa-panel";
@@ -91,7 +92,7 @@ export default async function NotePage({
                 {rec.title ?? "Untitled recording"}
               </h1>
               <div className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-1.5 font-mono text-[12px] text-faint">
-                <span>{new Date(rec.createdAt).toLocaleString("en-US", { dateStyle: "medium", timeStyle: "short" })}</span>
+                <span>{dateTimeLabel(rec.createdAt)}</span>
                 {rec.durationSec ? <span>{fmtMs(rec.durationSec * 1000)}</span> : null}
                 <span>{rec.source === "record" ? "Recorded" : "Uploaded"}</span>
                 {language && (

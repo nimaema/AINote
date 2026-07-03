@@ -7,6 +7,7 @@ import {
 } from "@react-pdf/renderer";
 import type { NoteExport } from "./note-format";
 import { metaLine, fmtClock, speakerRoster } from "./note-format";
+import { asDate } from "./format";
 
 // Aurora Glass, translated to print.
 const C = {
@@ -177,7 +178,7 @@ function Section({ label, children }: { label: string; children: React.ReactNode
 
 export function NotePdf({ note }: { note: NoteExport }) {
   const roster = speakerRoster(note);
-  const genDate = note.createdAt.toLocaleDateString("en-US", { dateStyle: "long" });
+  const genDate = asDate(note.createdAt)?.toLocaleDateString("en-US", { dateStyle: "long" }) ?? "Unknown date";
 
   return (
     <Document

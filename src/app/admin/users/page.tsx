@@ -43,7 +43,7 @@ export default async function AdminUsersPage() {
       recordings: usg?.count ?? 0,
       timeLabel: humanTotalTime(usg?.duration ?? 0),
       storageLabel: humanBytes(usg?.bytes ?? 0),
-      lastActiveLabel: usg?.lastAt ? relativeTime(new Date(usg.lastAt), now) : "never",
+      lastActiveLabel: usg?.lastAt ? relativeTime(usg.lastAt, now) : "never",
     };
   });
 

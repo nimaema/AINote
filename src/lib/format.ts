@@ -2,7 +2,18 @@
 // passed as strings so client components don't re-derive them (avoids hydration
 // drift from Date.now()).
 
-export function relativeTime(date: Date, now = new Date()): string {
+export type DateInput = Date | string | number | null | undefined;
+
+export function asDate(value: DateInput): Date | null {
+  if (value == null) return null;
+  const date = value instanceof Date ? value : new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
+export function relativeTime(value: DateInput, now = new Date()): string {
+  const date = asDate(value);
+  if (!date) return "unknown";
+
   const s = Math.max(0, Math.floor((now.getTime() - date.getTime()) / 1000));
   if (s < 60) return "just now";
   const m = Math.floor(s / 60);
@@ -12,6 +23,12 @@ export function relativeTime(date: Date, now = new Date()): string {
   const d = Math.floor(h / 24);
   if (d < 7) return `${d}d ago`;
   return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+}
+
+export function dateTimeLabel(value: DateInput): string {
+  const date = asDate(value);
+  if (!date) return "Unknown date";
+  return date.toLocaleString("en-US", { dateStyle: "medium", timeStyle: "short" });
 }
 
 export function humanDuration(sec: number | null | undefined): string {
