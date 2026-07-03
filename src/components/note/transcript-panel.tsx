@@ -1,9 +1,10 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { MagnifyingGlass, SlidersHorizontal, TextAlignLeft } from "@phosphor-icons/react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { MagnifyingGlass, SlidersHorizontal, TextAlignLeft, Play } from "@phosphor-icons/react";
 import type { Utterance } from "@/db/schema";
 import { SpeakerEditor } from "@/components/note/speaker-editor";
+import { useNoteAudio } from "@/components/note/note-audio";
 
 function fmtMs(ms: number) {
   const s = Math.floor(ms / 1000);
@@ -27,22 +28,67 @@ export function TranscriptPanel({
   speakerOrder: string[];
   speakerColors: Record<string, string>;
 }) {
+  const { currentMs, focus, seekTo } = useNoteAudio();
   const [query, setQuery] = useState("");
   const [speaker, setSpeaker] = useState<string>("all");
+  const [flashIndex, setFlashIndex] = useState<number | null>(null);
+  const [pendingMs, setPendingMs] = useState<number | null>(null);
+  const itemRefs = useRef(new Map<number, HTMLButtonElement | null>());
 
   const displayName = (raw: string) => speakerNames[raw] ?? raw;
   const normalized = query.trim().toLowerCase();
 
-  const filteredUtterances = useMemo(() => {
-    return utterances.filter((utterance) => {
-      const speakerMatch = speaker === "all" || utterance.speaker === speaker;
+  const filtered = useMemo(() => {
+    const list: { u: Utterance; i: number }[] = [];
+    utterances.forEach((u, i) => {
+      const speakerMatch = speaker === "all" || u.speaker === speaker;
       const textMatch =
         !normalized ||
-        utterance.text.toLowerCase().includes(normalized) ||
-        displayName(utterance.speaker).toLowerCase().includes(normalized);
-      return speakerMatch && textMatch;
+        u.text.toLowerCase().includes(normalized) ||
+        displayName(u.speaker).toLowerCase().includes(normalized);
+      if (speakerMatch && textMatch) list.push({ u, i });
     });
+    return list;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [normalized, speaker, utterances, speakerNames]);
+
+  const activeIndex = useMemo(() => {
+    let idx = -1;
+    for (let i = 0; i < utterances.length; i++) {
+      const u = utterances[i];
+      if (currentMs >= u.start && currentMs < u.end) return i;
+    }
+    return idx;
+  }, [currentMs, utterances]);
+
+  // A trace was requested: clear filters so the target is present, then scroll.
+  useEffect(() => {
+    if (!focus) return;
+    setQuery("");
+    setSpeaker("all");
+    setPendingMs(focus.ms);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [focus?.token]);
+
+  useEffect(() => {
+    if (pendingMs == null) return;
+    let target = -1;
+    for (let i = 0; i < utterances.length; i++) {
+      if (utterances[i].start <= pendingMs + 1) target = i;
+    }
+    if (target < 0) {
+      setPendingMs(null);
+      return;
+    }
+    const el = itemRefs.current.get(target);
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth", block: "center" });
+      setFlashIndex(target);
+      const t = setTimeout(() => setFlashIndex(null), 1600);
+      setPendingMs(null);
+      return () => clearTimeout(t);
+    }
+  }, [pendingMs, filtered, utterances]);
 
   const hasUtterances = utterances.length > 0;
 
@@ -55,7 +101,7 @@ export function TranscriptPanel({
             <h2 className="text-[14px] font-semibold text-ink">Transcript</h2>
             {hasUtterances && (
               <span className="rounded-[7px] bg-bg px-2 py-0.5 font-mono text-[10.5px] text-faint">
-                {filteredUtterances.length}/{utterances.length}
+                {filtered.length}/{utterances.length}
               </span>
             )}
           </div>
@@ -116,29 +162,50 @@ export function TranscriptPanel({
       </div>
 
       {hasUtterances ? (
-        filteredUtterances.length > 0 ? (
+        filtered.length > 0 ? (
           <div className="max-h-[620px] overflow-y-auto p-3 sm:p-4">
-            <div className="flex flex-col gap-2">
-              {filteredUtterances.map((utterance, index) => {
-                const color = speakerColors[utterance.speaker];
+            <div className="flex flex-col gap-1.5">
+              {filtered.map(({ u, i }) => {
+                const color = speakerColors[u.speaker];
+                const active = i === activeIndex;
+                const flash = i === flashIndex;
                 return (
-                  <div
-                    key={`${utterance.start}-${index}`}
-                    className="grid gap-2 rounded-[14px] border border-transparent px-3 py-2.5 transition-colors duration-150 [transition-timing-function:var(--ease-out)] hover:border-hairline hover:bg-bg md:grid-cols-[8rem_minmax(0,1fr)]"
+                  <button
+                    key={`${u.start}-${i}`}
+                    ref={(el) => {
+                      itemRefs.current.set(i, el);
+                    }}
+                    onClick={() => seekTo(u.start)}
+                    className={`group grid gap-2 rounded-[14px] border px-3 py-2.5 text-left transition-colors duration-150 [transition-timing-function:var(--ease-out)] md:grid-cols-[8rem_minmax(0,1fr)] cursor-pointer ${
+                      flash
+                        ? "border-lock/50 bg-lock-wash"
+                        : active
+                          ? "border-accent/40 bg-accent-wash"
+                          : "border-transparent hover:border-hairline hover:bg-bg"
+                    }`}
                   >
                     <div className="flex min-w-0 items-center gap-2 md:block">
                       <div className="flex min-w-0 items-center gap-1.5">
                         <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: color }} />
                         <span className="truncate text-[12.5px] font-semibold text-ink">
-                          {displayName(utterance.speaker)}
+                          {displayName(u.speaker)}
                         </span>
                       </div>
-                      <span className="tabular font-mono text-[11px] text-faint md:mt-1 md:block">
-                        {fmtMs(utterance.start)}
+                      <span
+                        className={`tabular inline-flex items-center gap-1 font-mono text-[11px] md:mt-1 ${
+                          active ? "text-accent-deep" : "text-faint group-hover:text-accent-deep"
+                        }`}
+                      >
+                        <Play
+                          size={9}
+                          weight="fill"
+                          className="opacity-0 transition-opacity group-hover:opacity-100"
+                        />
+                        {fmtMs(u.start)}
                       </span>
                     </div>
-                    <p className="text-[14.5px] leading-relaxed text-ink-soft">{utterance.text}</p>
-                  </div>
+                    <p className="text-[14.5px] leading-relaxed text-ink-soft">{u.text}</p>
+                  </button>
                 );
               })}
             </div>

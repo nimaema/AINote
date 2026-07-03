@@ -7,6 +7,7 @@ import {
   Microphone,
   UsersThree,
   GearSix,
+  ShareNetwork,
   type Icon,
 } from "@phosphor-icons/react";
 
@@ -24,6 +25,7 @@ const ITEMS: Item[] = [
     icon: SquaresFour,
     match: (p) => p === "/" || p.startsWith("/note") || p.startsWith("/project"),
   },
+  { href: "/team", label: "Team", icon: ShareNetwork, match: (p) => p.startsWith("/team") },
   { href: "/record", label: "Record", icon: Microphone, match: (p) => p.startsWith("/record") },
 ];
 

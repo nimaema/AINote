@@ -114,8 +114,8 @@ export default async function ProjectPage({
                   <FolderSimple size={24} weight="fill" />
                 </span>
                 <div className="min-w-0">
-                  <p className="font-mono text-[11px] text-faint">Project workspace</p>
-                  <h1 className="mt-1 truncate text-[30px] font-semibold leading-none tracking-[-0.035em] text-ink sm:text-[42px]">
+                  <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-faint">Project workspace</p>
+                  <h1 className="mt-1 truncate font-display text-[32px] font-normal leading-none tracking-[-0.01em] text-ink sm:text-[44px]">
                     {project.name}
                   </h1>
                 </div>
@@ -188,8 +188,8 @@ export default async function ProjectPage({
 
             <QAPanel
               endpoint={`/api/projects/${id}/qa`}
-              title="Ask across this project"
-              emptyHint="Ask anything spanning every recording in this project."
+              title="Ask everything"
+              emptyHint="One question across every recording here — answers cite the exact meeting and moment."
               suggestions={["Summarize this project", "What decisions were made?", "What's still open across all of these?"]}
               initialMessages={history.map((m) => ({
                 id: m.id,
@@ -216,7 +216,7 @@ function ProjectMetric({
 }) {
   return (
     <div className="bg-panel-solid px-4 py-3">
-      <p className="font-mono text-[10.5px] text-faint">{label}</p>
+      <p className="font-mono text-[10.5px] uppercase tracking-[0.14em] text-faint">{label}</p>
       <p
         className={`tabular mt-1 text-[22px] font-semibold tracking-[-0.01em] ${
           tone === "accent" ? "text-accent-deep" : tone === "err" ? "text-err" : "text-ink"

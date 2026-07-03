@@ -1,73 +1,78 @@
 @import "tailwindcss";
 
 /*
-  GlaciaNav Notes, field console.
-  A dark capture workspace inspired by recorder hardware: graphite body,
-  warm paper text, amber signal light, dense ledgers, and quiet motion.
+  GlaciaNav Notes — SIGNAL.
+  A warm-daylight field instrument: bone-paper field, warm ink, a vermilion
+  signal light, and pine green for the moment a capture resolves and becomes
+  yours. Editorial serif for the voice, grotesque for the interface, mono for
+  the machine. Class names are kept so existing usage re-skins in place.
 */
 
 @theme {
-  /* Field */
-  --color-bg: #10110f;
-  --color-bg-2: #151713;
-  --color-ink: #f4eddd;
-  --color-ink-soft: #d5ccba;
-  --color-muted: #a49b89;
-  --color-faint: #77705f;
+  /* Field — warm bone paper, never cold white */
+  --color-bg: #efe9dc;
+  --color-bg-2: #f5f1e8;
+  --color-ink: #221d15;
+  --color-ink-soft: #433c2d;
+  --color-muted: #6b6353;
+  --color-faint: #948b77;
 
-  /* Surfaces */
-  --color-panel: #191b17;
-  --color-panel-solid: #1f211c;
-  --color-panel-lift: #25271f;
-  --color-hairline: rgba(244, 237, 221, 0.1);
-  --color-hairline-strong: rgba(244, 237, 221, 0.18);
+  /* Surfaces — near-white faces that sit on the paper */
+  --color-panel: #f2ede1;
+  --color-panel-solid: #fcfaf5;
+  --color-panel-lift: #e8e1d2;
+  --color-hairline: rgba(34, 29, 21, 0.1);
+  --color-hairline-strong: rgba(34, 29, 21, 0.17);
 
-  /* Accent: amber signal light */
-  --color-accent: #f0b64a;
-  --color-accent-deep: #ffd27a;
-  --color-accent-ink: #17140d;
-  --color-accent-wash: rgba(240, 182, 74, 0.14);
+  /* Accent — vermilion signal light */
+  --color-accent: #d6461f;
+  --color-accent-deep: #a5350f; /* text-on-paper, AA */
+  --color-accent-ink: #fff6ee; /* text on the vermilion fill */
+  --color-accent-wash: rgba(214, 70, 31, 0.1);
 
-  /* Secondary signal colors for speakers and projects only */
-  --color-aurora-teal: #6fb7a8;
-  --color-aurora-violet: #8ea0c7;
-  --color-aurora-rose: #c67676;
-  --color-aurora-amber: #dca85a;
+  /* Lock — pine green, the earned "resolved / yours" color */
+  --color-lock: #1e6b47;
+  --color-lock-wash: rgba(30, 107, 71, 0.12);
+
+  /* Secondary signal colors — speakers and projects only */
+  --color-aurora-teal: #2e7d74;
+  --color-aurora-violet: #4f5d9e;
+  --color-aurora-rose: #b14a5a;
+  --color-aurora-amber: #b5730f;
 
   /* Semantic */
-  --color-ok: #83b983;
-  --color-warn: #dca85a;
-  --color-err: #e26a57;
-  --color-rec: #e74f3d;
+  --color-ok: #1e6b47;
+  --color-warn: #b5730f;
+  --color-err: #c0392b;
+  --color-rec: #d6461f;
 
   /* Shape: compact product radii. Inputs 8, buttons/cards 10, panels 12.
-     Pills are reserved for status dots/avatars via --radius-pill. */
+     Pills reserved for status dots/avatars via --radius-pill. */
   --radius-input: 8px;
   --radius-btn: 10px;
   --radius-card: 10px;
   --radius-panel: 12px;
   --radius-pill: 999px;
 
-  /* Motion: strong custom curves */
+  /* Motion */
   --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
   --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
   --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
 
-  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
-  --font-display: var(--font-bricolage), var(--font-geist-sans), sans-serif;
-  --font-mono: var(--font-geist-mono), ui-monospace, "SF Mono", monospace;
+  --font-sans: var(--font-space-grotesk), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-fraunces), Georgia, "Times New Roman", serif;
+  --font-mono: var(--font-plex-mono), ui-monospace, "SF Mono", monospace;
 }
 
 html {
-  color-scheme: dark;
+  color-scheme: light;
   -webkit-text-size-adjust: 100%;
 }
 
 body {
-  /* Recorder body: flat graphite with a calibrated top signal wash. */
+  /* Paper field with a calibrated vermilion signal wash at the top edge. */
   background:
-    radial-gradient(900px 340px at 84% -14%, rgba(240, 182, 74, 0.08), transparent 60%),
-    linear-gradient(180deg, #141610 0%, var(--color-bg) 42%),
+    radial-gradient(920px 380px at 86% -16%, rgba(214, 70, 31, 0.05), transparent 60%),
     var(--color-bg);
   color: var(--color-ink-soft);
   font-family: var(--font-sans);
@@ -77,7 +82,7 @@ body {
 
 .font-display {
   font-family: var(--font-display);
-  letter-spacing: -0.02em;
+  letter-spacing: -0.015em;
 }
 
 .tabular {
@@ -86,16 +91,14 @@ body {
 }
 
 /* ─── Surfaces ────────────────────────────────────────────────────────
-   Product panels: dark face plates, amber edge response, no glossy blobs.
-   Old class names are kept so existing usage re-skins in place. */
+   Product panels: near-white faces, hairline edges, soft daylight lift.
+   Old class names kept so existing usage re-skins in place. */
 .glass {
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.025), transparent 36%),
-    var(--color-panel-solid);
+  background: var(--color-panel-solid);
   border: 1px solid var(--color-hairline);
   box-shadow:
-    inset 0 1px 0 rgba(244, 237, 221, 0.04),
-    0 18px 50px -36px rgba(0, 0, 0, 0.72);
+    0 1px 2px rgba(34, 29, 21, 0.04),
+    0 16px 40px -30px rgba(34, 29, 21, 0.28);
 }
 
 .glass-soft {
@@ -103,24 +106,21 @@ body {
   border: 1px solid var(--color-hairline);
 }
 
-/* Floating menus and popovers. */
+/* Floating menus and popovers — the only truly elevated layer. */
 .glass-menu {
-  background: var(--color-panel-solid);
+  background: #ffffff;
   border: 1px solid var(--color-hairline-strong);
   box-shadow:
-    inset 0 1px 0 rgba(244, 237, 221, 0.05),
-    0 22px 60px -18px rgba(0, 0, 0, 0.68);
+    0 1px 2px rgba(34, 29, 21, 0.06),
+    0 24px 60px -22px rgba(34, 29, 21, 0.34);
 }
 
 .workbench-hero {
   position: relative;
   isolation: isolate;
   background:
-    linear-gradient(135deg, rgba(240, 182, 74, 0.09), transparent 28%),
+    linear-gradient(135deg, rgba(214, 70, 31, 0.06), transparent 30%),
     var(--color-panel-solid);
-  box-shadow:
-    inset 0 1px 0 rgba(244, 237, 221, 0.05),
-    0 26px 80px -54px rgba(0, 0, 0, 0.9);
 }
 
 .workbench-hero::before {
@@ -129,11 +129,19 @@ body {
   inset: 0;
   z-index: -1;
   background-image:
-    linear-gradient(rgba(244, 237, 221, 0.045) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(244, 237, 221, 0.04) 1px, transparent 1px);
-  background-size: 48px 48px;
-  mask-image: linear-gradient(120deg, black, transparent 72%);
+    linear-gradient(rgba(34, 29, 21, 0.045) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(34, 29, 21, 0.04) 1px, transparent 1px);
+  background-size: 46px 46px;
+  mask-image: linear-gradient(120deg, black, transparent 70%);
   pointer-events: none;
+}
+
+/* Measurement grid for capture / instrument surfaces. */
+.signal-grid {
+  background-image:
+    linear-gradient(rgba(34, 29, 21, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(34, 29, 21, 0.045) 1px, transparent 1px);
+  background-size: 30px 30px;
 }
 
 ::selection {
@@ -147,7 +155,7 @@ body {
   border-radius: 6px;
 }
 
-/* Motion keyframes */
+/* ─── Motion ──────────────────────────────────────────────────────── */
 @keyframes signal-drift {
   0% {
     transform: translate3d(0, 0, 0) scale(1);
@@ -184,8 +192,25 @@ body {
   animation: rise 220ms var(--ease-out) both;
 }
 
-/* Menu and popover entrance. Scales up from near-full (never from nothing),
-   fast and responsive per the ease-out curve. */
+/* Resolve: blur → sharp, the signal locking into focus. */
+@keyframes resolveIn {
+  from {
+    opacity: 0;
+    filter: blur(7px);
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    filter: blur(0);
+    transform: translateY(0);
+  }
+}
+
+.resolve-in {
+  animation: resolveIn 620ms var(--ease-out) both;
+}
+
+/* Menu and popover entrance — scales up from near-full, never from nothing. */
 @keyframes popIn {
   from {
     opacity: 0;
@@ -199,6 +224,19 @@ body {
 
 .pop-in {
   animation: popIn 150ms var(--ease-out) both;
+}
+
+/* Recording pulse for the capture dial. */
+@keyframes signal-ping {
+  0% {
+    transform: scale(1);
+    opacity: 0.5;
+  }
+  70%,
+  100% {
+    transform: scale(1.6);
+    opacity: 0;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

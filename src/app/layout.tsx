@@ -1,14 +1,31 @@
 import type { Metadata, Viewport } from "next";
-import { GeistSans } from "geist/font/sans";
-import { GeistMono } from "geist/font/mono";
-import { Bricolage_Grotesque } from "next/font/google";
+import { Fraunces, Space_Grotesk, IBM_Plex_Mono } from "next/font/google";
 import { Pwa } from "@/components/pwa";
 import "./globals.css";
 
-const bricolage = Bricolage_Grotesque({
+// SIGNAL type system:
+//  - Fraunces  → editorial voice (headlines, the emotional beats)
+//  - Space Grotesk → interface (labels, body, controls)
+//  - IBM Plex Mono → the machine signal (timers, speaker tags, metadata)
+const fraunces = Fraunces({
   subsets: ["latin"],
-  weight: ["500", "600", "700", "800"],
-  variable: "--font-bricolage",
+  weight: ["400", "500", "600"],
+  style: ["normal", "italic"],
+  variable: "--font-fraunces",
+  display: "swap",
+});
+
+const spaceGrotesk = Space_Grotesk({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+  variable: "--font-space-grotesk",
+  display: "swap",
+});
+
+const plexMono = IBM_Plex_Mono({
+  subsets: ["latin"],
+  weight: ["400", "500"],
+  variable: "--font-plex-mono",
   display: "swap",
 });
 
@@ -16,7 +33,7 @@ export const metadata: Metadata = {
   applicationName: "GlaciaNav Notes",
   title: "GlaciaNav Notes",
   description:
-    "Record or upload audio, transcribe it, and turn it into summaries, action items, and answers.",
+    "Capture a conversation and watch it resolve into notes you own — transcript, summary, actions, and answers, each traceable to the moment it was said.",
   robots: { index: false, follow: false },
   manifest: "/manifest.webmanifest",
   appleWebApp: {
@@ -34,7 +51,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#10110f",
+  themeColor: "#efe9dc",
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
@@ -47,7 +64,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${GeistSans.variable} ${GeistMono.variable} ${bricolage.variable}`}
+      className={`${fraunces.variable} ${spaceGrotesk.variable} ${plexMono.variable}`}
     >
       <body className="min-h-[100dvh] antialiased">
         {children}

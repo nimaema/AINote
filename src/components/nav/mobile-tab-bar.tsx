@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { House, Microphone, GearSix, UsersThree } from "@phosphor-icons/react";
+import { House, Microphone, GearSix, UsersThree, ShareNetwork } from "@phosphor-icons/react";
 
 // App-style fixed bottom navigation, shown only on small screens.
 export function MobileTabBar({ isAdmin }: { isAdmin: boolean }) {
@@ -10,6 +10,7 @@ export function MobileTabBar({ isAdmin }: { isAdmin: boolean }) {
 
   const tabs = [
     { href: "/", label: "Home", icon: House, match: (p: string) => p === "/" || p.startsWith("/note") },
+    { href: "/team", label: "Team", icon: ShareNetwork, match: (p: string) => p.startsWith("/team") },
     { href: "/record", label: "Record", icon: Microphone, match: (p: string) => p.startsWith("/record") },
     ...(isAdmin
       ? [{ href: "/admin/users", label: "Users", icon: UsersThree, match: (p: string) => p.startsWith("/admin") }]

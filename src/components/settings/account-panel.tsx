@@ -109,7 +109,7 @@ export function AccountPanel({
           <button
             type="submit"
             disabled={!canSubmit}
-            className="inline-flex h-11 items-center justify-center rounded-btn bg-accent px-5 text-[14px] font-semibold text-accent-ink shadow-[0_14px_30px_-18px_rgba(240,182,74,0.8)] transition-[transform,box-shadow,opacity] duration-150 [transition-timing-function:var(--ease-out)] hover:-translate-y-0.5 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-40 cursor-pointer"
+            className="inline-flex h-11 items-center justify-center rounded-btn bg-accent px-5 text-[14px] font-semibold text-accent-ink shadow-[0_10px_24px_-14px_rgba(214,70,31,0.7)] transition-[transform,box-shadow,opacity] duration-150 [transition-timing-function:var(--ease-out)] hover:-translate-y-0.5 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-40 cursor-pointer"
           >
             {busy ? "Updating…" : "Update password"}
           </button>

@@ -297,8 +297,8 @@ export function WorkbenchV2({
             <div className="bg-panel-solid p-5 sm:p-6 lg:p-7">
               <div className="flex flex-wrap items-start justify-between gap-4">
                 <div className="min-w-0">
-                  <p className="font-mono text-[11px] text-faint">Workbench</p>
-                  <h1 className="mt-2 max-w-3xl text-[31px] font-semibold leading-[0.98] tracking-[-0.035em] text-ink sm:text-[44px] lg:text-[56px]">
+                  <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-faint">Workbench</p>
+                  <h1 className="mt-2.5 max-w-3xl font-display text-[33px] font-normal leading-[1.0] tracking-[-0.01em] text-ink sm:text-[46px] lg:text-[56px]">
                     Review the room, route the work.
                   </h1>
                   <p className="mt-4 max-w-xl text-[14.5px] leading-relaxed text-muted">
@@ -315,7 +315,7 @@ export function WorkbenchV2({
                   </Link>
                   <Link
                     href="/record?mode=record"
-                    className="inline-flex h-9 items-center justify-center gap-2 whitespace-nowrap rounded-btn bg-accent px-4 text-[13px] font-medium text-accent-ink shadow-[0_14px_30px_-18px_rgba(240,182,74,0.8)] transition-[transform,box-shadow] duration-150 [transition-timing-function:var(--ease-out)] hover:shadow-[0_16px_34px_-16px_rgba(240,182,74,0.85)] active:scale-[0.97] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent cursor-pointer"
+                    className="inline-flex h-9 items-center justify-center gap-2 whitespace-nowrap rounded-btn bg-accent px-4 text-[13px] font-medium text-accent-ink shadow-[0_10px_24px_-14px_rgba(214,70,31,0.7)] transition-[transform,box-shadow] duration-150 [transition-timing-function:var(--ease-out)] hover:shadow-[0_14px_30px_-14px_rgba(214,70,31,0.85)] active:scale-[0.97] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent cursor-pointer"
                   >
                     <Microphone size={15} weight="fill" />
                     Record

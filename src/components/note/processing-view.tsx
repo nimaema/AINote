@@ -6,10 +6,10 @@ import { CircleNotch, Check, WarningCircle, ArrowClockwise } from "@phosphor-ico
 import { Waveform } from "@/components/waveform";
 
 const STEPS = [
-  { key: "uploaded", label: "Uploaded" },
-  { key: "transcribing", label: "Transcribing" },
-  { key: "processing", label: "Summarizing" },
-  { key: "done", label: "Ready" },
+  { key: "uploaded", label: "Captured" },
+  { key: "transcribing", label: "Transcribing speech" },
+  { key: "processing", label: "Analyzing the room" },
+  { key: "done", label: "Locked" },
 ];
 
 export function ProcessingView({
@@ -81,27 +81,40 @@ export function ProcessingView({
   );
 
   return (
-    <div className="glass rounded-panel p-8 sm:p-10">
-      <div className="mx-auto mb-8 w-full max-w-md rounded-card border border-hairline bg-bg px-5 py-4">
-        <Waveform bars={52} height={56} />
-      </div>
-      <h2 className="text-center text-[17px] font-semibold text-ink">
-        Working on your notes
+    <div className="glass rounded-panel p-8 sm:p-12">
+      <p className="text-center font-mono text-[11px] uppercase tracking-[0.22em] text-accent-deep">
+        <span className="mr-1.5 inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-accent align-middle" />
+        Resolving signal
+      </p>
+      <h2 className="mt-3 text-center font-display text-[27px] font-normal leading-tight text-ink sm:text-[32px]">
+        Tuning your conversation into focus.
       </h2>
-      <p className="mt-1.5 text-center text-sm text-muted">
-        Transcribing and summarizing. This page updates itself when it&apos;s ready.
+      <p className="mx-auto mt-2 max-w-md text-center text-[13.5px] text-muted">
+        Noise becomes signal — transcript, speakers, and notes. This page updates
+        itself the moment it&apos;s yours.
       </p>
 
-      <ol className="mx-auto mt-8 flex max-w-md flex-col gap-3">
+      <div className="mx-auto mt-9 w-full max-w-md rounded-card border border-hairline bg-bg px-5 py-5">
+        <Waveform bars={52} height={56} />
+      </div>
+
+      <ol className="mx-auto mt-8 flex max-w-md flex-col gap-2.5">
         {STEPS.map((step, i) => {
           const state =
             i < activeIdx ? "done" : i === activeIdx ? "active" : "pending";
           return (
-            <li key={step.key} className="flex items-center gap-3">
+            <li
+              key={step.key}
+              className={`flex items-center gap-3 rounded-[12px] border px-3.5 py-2.5 transition-colors duration-300 ${
+                state === "active"
+                  ? "border-accent/40 bg-accent-wash"
+                  : "border-transparent"
+              }`}
+            >
               <span
                 className={`grid h-7 w-7 shrink-0 place-items-center rounded-full ${
                   state === "done"
-                    ? "bg-accent-wash text-accent-deep"
+                    ? "bg-lock-wash text-lock"
                     : state === "active"
                       ? "bg-accent text-accent-ink"
                       : "border border-hairline text-faint"
@@ -116,12 +129,19 @@ export function ProcessingView({
                 )}
               </span>
               <span
-                className={`text-sm ${
-                  state === "pending" ? "text-faint" : "text-ink"
+                className={`font-mono text-[12.5px] uppercase tracking-[0.12em] ${
+                  state === "pending"
+                    ? "text-faint"
+                    : state === "active"
+                      ? "text-ink"
+                      : "text-muted"
                 }`}
               >
                 {step.label}
               </span>
+              {state === "done" && (
+                <span className="ml-auto font-mono text-[11px] text-lock">ok</span>
+              )}
             </li>
           );
         })}

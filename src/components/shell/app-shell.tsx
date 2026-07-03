@@ -33,7 +33,7 @@ export function AppShell({ user, children }: { user: ShellUser; children: React.
         <div className="px-4 pb-5 pt-1">
           <Link
             href="/record"
-            className="flex h-11 items-center justify-center gap-2 rounded-[12px] bg-accent text-[13.5px] font-semibold text-accent-ink shadow-[0_14px_30px_-18px_rgba(240,182,74,0.8)] transition-[transform,box-shadow] duration-150 [transition-timing-function:var(--ease-out)] hover:shadow-[0_16px_34px_-16px_rgba(240,182,74,0.85)] active:scale-[0.98] cursor-pointer"
+            className="flex h-11 items-center justify-center gap-2 rounded-[12px] bg-accent text-[13.5px] font-semibold text-accent-ink shadow-[0_10px_24px_-14px_rgba(214,70,31,0.7)] transition-[transform,box-shadow] duration-150 [transition-timing-function:var(--ease-out)] hover:shadow-[0_14px_30px_-14px_rgba(214,70,31,0.85)] active:scale-[0.98] cursor-pointer"
           >
             <Plus size={15} weight="bold" /> New capture
           </Link>

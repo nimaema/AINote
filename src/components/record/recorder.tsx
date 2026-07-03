@@ -309,7 +309,7 @@ export function Recorder({ initialMode }: { initialMode: Mode }) {
             <button
               onClick={save}
               disabled={!canSave}
-              className="mt-5 inline-flex h-12 w-full items-center justify-center gap-2 rounded-btn bg-accent px-6 text-[15px] font-semibold text-accent-ink shadow-[0_14px_30px_-18px_rgba(240,182,74,0.8)] transition-[transform,box-shadow] duration-150 [transition-timing-function:var(--ease-out)] hover:-translate-y-0.5 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50 cursor-pointer"
+              className="mt-5 inline-flex h-12 w-full items-center justify-center gap-2 rounded-btn bg-accent px-6 text-[15px] font-semibold text-accent-ink shadow-[0_12px_28px_-16px_rgba(214,70,31,0.75)] transition-[transform,box-shadow] duration-150 [transition-timing-function:var(--ease-out)] hover:-translate-y-0.5 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50 cursor-pointer"
             >
               <CheckCircle size={18} weight="fill" />
               Save &amp; process
@@ -352,29 +352,44 @@ function RecordStage({
     <Stage>
       {rec === "idle" && (
         <div className="flex flex-col items-center text-center">
-          <button
-            onClick={onStart}
-            className="grid h-20 w-20 place-items-center rounded-full bg-accent text-accent-ink shadow-[0_18px_40px_-22px_rgba(240,182,74,0.95)] transition-transform duration-150 [transition-timing-function:var(--ease-out)] hover:-translate-y-0.5 active:scale-95 cursor-pointer"
-            aria-label="Start recording"
-          >
-            <Microphone size={30} weight="fill" />
-          </button>
-          <p className="mt-5 text-[15px] font-medium text-ink">Ready when you are</p>
-          <p className="mt-1 text-[13px] text-muted">
-            Tap to start recording from your microphone.
+          <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-faint">
+            Station 01 · microphone
+          </p>
+          <h2 className="mt-2 font-display text-[27px] leading-tight text-ink sm:text-[31px]">
+            Ready to listen.
+          </h2>
+          <div className="relative mt-7 grid h-24 w-24 place-items-center">
+            <span
+              aria-hidden
+              className="pointer-events-none absolute inset-0 rounded-full border border-accent/40"
+              style={{ animation: "signal-ping 2.4s var(--ease-out) infinite" }}
+            />
+            <button
+              onClick={onStart}
+              className="relative grid h-20 w-20 place-items-center rounded-full bg-accent text-accent-ink shadow-[0_16px_36px_-18px_rgba(214,70,31,0.85)] transition-transform duration-150 [transition-timing-function:var(--ease-out)] hover:-translate-y-0.5 active:scale-95 cursor-pointer"
+              aria-label="Start recording"
+            >
+              <Microphone size={30} weight="fill" />
+            </button>
+          </div>
+          <p className="mt-6 font-mono text-[11px] uppercase tracking-[0.16em] text-muted">
+            Tap to capture
           </p>
         </div>
       )}
 
       {(rec === "recording" || rec === "paused") && (
         <div className="flex w-full flex-col items-center gap-6">
-          <div className="flex items-center gap-2.5">
-            <span
-              className={`h-2.5 w-2.5 rounded-full ${
-                rec === "recording" ? "bg-rec animate-pulse" : "bg-faint"
-              }`}
-            />
-            <span className="tabular font-mono text-[26px] font-semibold text-ink">
+          <div className="flex flex-col items-center gap-1.5">
+            <span className="inline-flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.2em] text-rec">
+              <span
+                className={`h-2 w-2 rounded-full bg-rec ${
+                  rec === "recording" ? "animate-pulse" : "opacity-40"
+                }`}
+              />
+              {rec === "recording" ? "Recording" : "Paused"}
+            </span>
+            <span className="tabular font-mono text-[40px] font-medium leading-none text-ink">
               {fmt(elapsed)}
             </span>
           </div>

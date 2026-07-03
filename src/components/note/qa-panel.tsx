@@ -24,12 +24,16 @@ export function QAPanel({
   title = "Ask about this recording",
   suggestions = ["Summarize the decisions", "What are my action items?", "What's still open?"],
   emptyHint = "Ask anything about what was said.",
+  onSeek,
 }: {
   endpoint: string;
   initialMessages: Msg[];
   title?: string;
   suggestions?: string[];
   emptyHint?: string;
+  // When provided, a citation for this same recording scrubs the audio to its
+  // moment instead of navigating — the answer shows its work.
+  onSeek?: (ms: number) => void;
 }) {
   const [messages, setMessages] = useState<Msg[]>(initialMessages);
   const [input, setInput] = useState("");
@@ -108,17 +112,31 @@ export function QAPanel({
                       const label = [c.recordingTitle, c.speaker ?? (c.recordingTitle ? null : "clip"), time]
                         .filter(Boolean)
                         .join(" / ");
-                      const chip = (
-                        <span className="inline-block rounded-btn bg-accent-wash px-2 py-0.5 font-mono text-[10.5px] text-accent-deep">
+                      const chipClass =
+                        "inline-block rounded-btn bg-accent-wash px-2 py-0.5 font-mono text-[10.5px] text-accent-deep";
+                      if (c.recordingId) {
+                        return (
+                          <Link key={j} href={`/note/${c.recordingId}`} className="hover:opacity-80">
+                            <span className={chipClass}>{label}</span>
+                          </Link>
+                        );
+                      }
+                      if (onSeek && c.startMs != null) {
+                        return (
+                          <button
+                            key={j}
+                            onClick={() => onSeek(c.startMs!)}
+                            className={`${chipClass} cursor-pointer transition-colors hover:bg-lock-wash hover:text-lock`}
+                            title="Play the moment this came from"
+                          >
+                            ↳ {label}
+                          </button>
+                        );
+                      }
+                      return (
+                        <span key={j} className={chipClass}>
                           {label}
                         </span>
-                      );
-                      return c.recordingId ? (
-                        <Link key={j} href={`/note/${c.recordingId}`} className="hover:opacity-80">
-                          {chip}
-                        </Link>
-                      ) : (
-                        <span key={j}>{chip}</span>
                       );
                     })}
                   </div>

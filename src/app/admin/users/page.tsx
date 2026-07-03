@@ -58,8 +58,8 @@ export default async function AdminUsersPage() {
     <AppShell user={session.user}>
       <main className="mx-auto max-w-4xl px-4 pb-28 pt-5 sm:px-6 md:px-8 md:pb-12 md:pt-7">
         <div className="mb-5 border-b border-hairline px-1 pb-5">
-          <p className="font-mono text-[11px] text-faint">Administration</p>
-          <h1 className="mt-1 text-[24px] font-semibold tracking-[-0.015em] text-ink">Users</h1>
+          <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-faint">Administration</p>
+          <h1 className="mt-1.5 font-display text-[30px] font-normal leading-none tracking-[-0.01em] text-ink">Users</h1>
           <p className="mt-0.5 text-[13px] text-muted">
             Manage access and see how the workspace is being used.
           </p>
