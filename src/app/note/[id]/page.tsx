@@ -74,7 +74,14 @@ export default async function NotePage({
 
   const language = languageName(tr?.language);
 
-  const utterances = (tr?.utterances ?? []) as Utterance[];
+  const utterances = (tr?.editedUtterances ?? tr?.utterances ?? []) as Utterance[];
+  const transcriptText = tr?.editedText ?? tr?.text ?? "";
+  // The re-resolve prompt only matters while the transcript has been edited
+  // *since* the notes were last generated.
+  const transcriptEdited =
+    tr?.editedAt != null &&
+    (!res?.createdAt || tr.editedAt.getTime() > res.createdAt.getTime());
+  const notesEditedBy = res?.editedAt ? res?.editedBy ?? "a teammate" : null;
   const speakerOrder = [...new Set(utterances.map((u) => u.speaker))];
   const colorFor = makeColorFor(speakerOrder);
   const speakerColors = Object.fromEntries(speakerOrder.map((sp) => [sp, colorFor(sp)]));
@@ -163,10 +170,13 @@ export default async function NotePage({
             recordingId={rec.id}
             durationSec={rec.durationSec}
             isOwner={isOwner}
+            canEdit={isOwner}
             meId={session.user.id}
             utterances={utterances}
             speakerNames={tr?.speakerNames ?? {}}
-            transcriptText={tr?.text ?? ""}
+            transcriptText={transcriptText}
+            transcriptEdited={transcriptEdited}
+            notesEditedBy={notesEditedBy}
             summary={res?.summary ?? null}
             actions={actionRows}
             decisions={res?.decisions ?? []}

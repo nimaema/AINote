@@ -1,10 +1,23 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { MagnifyingGlass, SlidersHorizontal, TextAlignLeft, Play } from "@phosphor-icons/react";
+import { useRouter } from "next/navigation";
+import {
+  MagnifyingGlass,
+  SlidersHorizontal,
+  TextAlignLeft,
+  Play,
+  PencilSimple,
+  Gauge,
+  ArrowClockwise,
+  Check,
+  X,
+} from "@phosphor-icons/react";
 import type { Utterance } from "@/db/schema";
 import { SpeakerEditor } from "@/components/note/speaker-editor";
 import { useNoteAudio } from "@/components/note/note-audio";
+
+const LOW_CONFIDENCE = 0.7;
 
 function fmtMs(ms: number) {
   const s = Math.floor(ms / 1000);
@@ -14,6 +27,8 @@ function fmtMs(ms: number) {
 export function TranscriptPanel({
   recordingId,
   isOwner,
+  canEdit,
+  transcriptEdited,
   utterances,
   transcriptText,
   speakerNames,
@@ -22,25 +37,35 @@ export function TranscriptPanel({
 }: {
   recordingId: string;
   isOwner: boolean;
+  canEdit: boolean;
+  transcriptEdited: boolean;
   utterances: Utterance[];
   transcriptText: string;
   speakerNames: Record<string, string>;
   speakerOrder: string[];
   speakerColors: Record<string, string>;
 }) {
+  const router = useRouter();
   const { currentMs, focus, seekTo } = useNoteAudio();
+  const [utts, setUtts] = useState<Utterance[]>(utterances);
   const [query, setQuery] = useState("");
   const [speaker, setSpeaker] = useState<string>("all");
   const [flashIndex, setFlashIndex] = useState<number | null>(null);
   const [pendingMs, setPendingMs] = useState<number | null>(null);
-  const itemRefs = useRef(new Map<number, HTMLButtonElement | null>());
+  const [showConfidence, setShowConfidence] = useState(false);
+  const [editMode, setEditMode] = useState(false);
+  const [editingIndex, setEditingIndex] = useState<number | null>(null);
+  const [draft, setDraft] = useState("");
+  const [edited, setEdited] = useState(transcriptEdited);
+  const [reResolving, setReResolving] = useState(false);
+  const itemRefs = useRef(new Map<number, HTMLDivElement | null>());
 
   const displayName = (raw: string) => speakerNames[raw] ?? raw;
   const normalized = query.trim().toLowerCase();
 
   const filtered = useMemo(() => {
     const list: { u: Utterance; i: number }[] = [];
-    utterances.forEach((u, i) => {
+    utts.forEach((u, i) => {
       const speakerMatch = speaker === "all" || u.speaker === speaker;
       const textMatch =
         !normalized ||
@@ -50,18 +75,20 @@ export function TranscriptPanel({
     });
     return list;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [normalized, speaker, utterances, speakerNames]);
+  }, [normalized, speaker, utts, speakerNames]);
 
   const activeIndex = useMemo(() => {
-    let idx = -1;
-    for (let i = 0; i < utterances.length; i++) {
-      const u = utterances[i];
-      if (currentMs >= u.start && currentMs < u.end) return i;
+    for (let i = 0; i < utts.length; i++) {
+      if (currentMs >= utts[i].start && currentMs < utts[i].end) return i;
     }
-    return idx;
-  }, [currentMs, utterances]);
+    return -1;
+  }, [currentMs, utts]);
 
-  // A trace was requested: clear filters so the target is present, then scroll.
+  const lowCount = useMemo(
+    () => utts.filter((u) => u.confidence != null && u.confidence < LOW_CONFIDENCE).length,
+    [utts]
+  );
+
   useEffect(() => {
     if (!focus) return;
     setQuery("");
@@ -73,9 +100,7 @@ export function TranscriptPanel({
   useEffect(() => {
     if (pendingMs == null) return;
     let target = -1;
-    for (let i = 0; i < utterances.length; i++) {
-      if (utterances[i].start <= pendingMs + 1) target = i;
-    }
+    for (let i = 0; i < utts.length; i++) if (utts[i].start <= pendingMs + 1) target = i;
     if (target < 0) {
       setPendingMs(null);
       return;
@@ -88,9 +113,28 @@ export function TranscriptPanel({
       setPendingMs(null);
       return () => clearTimeout(t);
     }
-  }, [pendingMs, filtered, utterances]);
+  }, [pendingMs, filtered, utts]);
 
-  const hasUtterances = utterances.length > 0;
+  async function saveEdit(index: number) {
+    const text = draft.trim();
+    setEditingIndex(null);
+    if (!text || text === utts[index].text) return;
+    setUtts((u) => u.map((x, j) => (j === index ? { ...x, text } : x)));
+    setEdited(true);
+    await fetch(`/api/recordings/${recordingId}/transcript`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ index, text }),
+    }).catch(() => {});
+  }
+
+  async function reResolve() {
+    setReResolving(true);
+    await fetch(`/api/recordings/${recordingId}/reprocess`, { method: "POST" }).catch(() => {});
+    router.refresh();
+  }
+
+  const hasUtterances = utts.length > 0;
 
   return (
     <section className="rounded-[18px] border border-hairline bg-panel-solid">
@@ -101,27 +145,66 @@ export function TranscriptPanel({
             <h2 className="text-[14px] font-semibold text-ink">Transcript</h2>
             {hasUtterances && (
               <span className="rounded-[7px] bg-bg px-2 py-0.5 font-mono text-[10.5px] text-faint">
-                {filtered.length}/{utterances.length}
+                {filtered.length}/{utts.length}
               </span>
             )}
           </div>
-          {isOwner && speakerOrder.length > 0 && (
-            <SpeakerEditor
-              recordingId={recordingId}
-              speakers={speakerOrder}
-              initialNames={speakerNames}
-              colors={speakerColors}
-            />
-          )}
+          <div className="flex items-center gap-1.5">
+            {lowCount > 0 && (
+              <button
+                onClick={() => setShowConfidence((s) => !s)}
+                className={`inline-flex h-8 items-center gap-1.5 rounded-btn border px-2.5 text-[12px] font-medium transition-colors duration-150 cursor-pointer ${
+                  showConfidence ? "border-warn/50 bg-warn/10 text-warn" : "border-hairline text-muted hover:text-ink"
+                }`}
+                title="Highlight low-confidence speech"
+              >
+                <Gauge size={14} /> {lowCount}
+              </button>
+            )}
+            {canEdit && (
+              <button
+                onClick={() => {
+                  setEditMode((e) => !e);
+                  setEditingIndex(null);
+                }}
+                className={`inline-flex h-8 items-center gap-1.5 rounded-btn border px-2.5 text-[12px] font-medium transition-colors duration-150 cursor-pointer ${
+                  editMode ? "border-accent/50 bg-accent-wash text-accent-deep" : "border-hairline text-muted hover:text-ink"
+                }`}
+              >
+                <PencilSimple size={14} /> {editMode ? "Done" : "Edit"}
+              </button>
+            )}
+            {isOwner && speakerOrder.length > 0 && (
+              <SpeakerEditor
+                recordingId={recordingId}
+                speakers={speakerOrder}
+                initialNames={speakerNames}
+                colors={speakerColors}
+              />
+            )}
+          </div>
         </div>
+
+        {edited && (
+          <div className="mt-3 flex flex-wrap items-center justify-between gap-3 rounded-[12px] border border-accent/30 bg-accent-wash px-3.5 py-2.5">
+            <p className="text-[12.5px] text-accent-deep">
+              Transcript edited — the notes still reflect the original. Re-resolve to refresh them.
+            </p>
+            <button
+              onClick={reResolve}
+              disabled={reResolving}
+              className="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-btn bg-accent px-3 text-[12.5px] font-semibold text-accent-ink transition-transform duration-150 active:scale-95 disabled:opacity-60 cursor-pointer"
+            >
+              <ArrowClockwise size={14} weight="bold" className={reResolving ? "animate-spin" : ""} />
+              {reResolving ? "Resolving…" : "Re-resolve"}
+            </button>
+          </div>
+        )}
 
         <div className="mt-4 flex flex-col gap-2 lg:flex-row">
           <label className="relative min-w-0 flex-1">
             <span className="sr-only">Search transcript</span>
-            <MagnifyingGlass
-              size={15}
-              className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-faint"
-            />
+            <MagnifyingGlass size={15} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-faint" />
             <input
               value={query}
               onChange={(event) => setQuery(event.target.value)}
@@ -148,11 +231,7 @@ export function TranscriptPanel({
                     speaker === raw ? "bg-panel-lift text-ink" : "text-muted hover:text-ink"
                   }`}
                 >
-                  <span
-                    className="h-1.5 w-1.5 rounded-full"
-                    style={{ background: speakerColors[raw] }}
-                    aria-hidden
-                  />
+                  <span className="h-1.5 w-1.5 rounded-full" style={{ background: speakerColors[raw] }} aria-hidden />
                   {displayName(raw)}
                 </button>
               ))}
@@ -169,43 +248,84 @@ export function TranscriptPanel({
                 const color = speakerColors[u.speaker];
                 const active = i === activeIndex;
                 const flash = i === flashIndex;
+                const low = showConfidence && u.confidence != null && u.confidence < LOW_CONFIDENCE;
+                const isEditingRow = editingIndex === i;
                 return (
-                  <button
+                  <div
                     key={`${u.start}-${i}`}
                     ref={(el) => {
                       itemRefs.current.set(i, el);
                     }}
-                    onClick={() => seekTo(u.start)}
-                    className={`group grid gap-2 rounded-[14px] border px-3 py-2.5 text-left transition-colors duration-150 [transition-timing-function:var(--ease-out)] md:grid-cols-[8rem_minmax(0,1fr)] cursor-pointer ${
+                    className={`grid gap-2 rounded-[14px] border px-3 py-2.5 transition-colors duration-150 [transition-timing-function:var(--ease-out)] md:grid-cols-[8rem_minmax(0,1fr)] ${
                       flash
                         ? "border-lock/50 bg-lock-wash"
                         : active
                           ? "border-accent/40 bg-accent-wash"
-                          : "border-transparent hover:border-hairline hover:bg-bg"
+                          : low
+                            ? "border-warn/30 bg-warn/5"
+                            : "border-transparent hover:border-hairline hover:bg-bg"
                     }`}
                   >
                     <div className="flex min-w-0 items-center gap-2 md:block">
                       <div className="flex min-w-0 items-center gap-1.5">
                         <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: color }} />
-                        <span className="truncate text-[12.5px] font-semibold text-ink">
-                          {displayName(u.speaker)}
-                        </span>
+                        <span className="truncate text-[12.5px] font-semibold text-ink">{displayName(u.speaker)}</span>
                       </div>
-                      <span
-                        className={`tabular inline-flex items-center gap-1 font-mono text-[11px] md:mt-1 ${
-                          active ? "text-accent-deep" : "text-faint group-hover:text-accent-deep"
+                      <button
+                        onClick={() => seekTo(u.start)}
+                        className={`group tabular inline-flex items-center gap-1 font-mono text-[11px] md:mt-1 cursor-pointer ${
+                          active ? "text-accent-deep" : "text-faint hover:text-accent-deep"
                         }`}
                       >
-                        <Play
-                          size={9}
-                          weight="fill"
-                          className="opacity-0 transition-opacity group-hover:opacity-100"
-                        />
+                        <Play size={9} weight="fill" className="opacity-0 transition-opacity group-hover:opacity-100" />
                         {fmtMs(u.start)}
-                      </span>
+                      </button>
+                      {low && (
+                        <span className="ml-1 rounded-[5px] bg-warn/15 px-1.5 py-0.5 font-mono text-[9.5px] uppercase tracking-wide text-warn md:ml-0 md:mt-1 md:inline-block">
+                          low
+                        </span>
+                      )}
                     </div>
-                    <p className="text-[14.5px] leading-relaxed text-ink-soft">{u.text}</p>
-                  </button>
+
+                    {editMode && canEdit ? (
+                      isEditingRow ? (
+                        <div>
+                          <textarea
+                            autoFocus
+                            value={draft}
+                            onChange={(e) => setDraft(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === "Escape") setEditingIndex(null);
+                              if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) saveEdit(i);
+                            }}
+                            rows={2}
+                            className="w-full resize-y rounded-input border border-accent bg-bg px-2.5 py-1.5 text-[14.5px] leading-relaxed text-ink focus:outline-none focus:shadow-[0_0_0_3px_var(--color-accent-wash)]"
+                          />
+                          <div className="mt-1.5 flex items-center gap-1.5">
+                            <button onClick={() => saveEdit(i)} className="inline-flex h-7 items-center gap-1 rounded-btn bg-accent px-2.5 text-[12px] font-semibold text-accent-ink active:scale-95 cursor-pointer">
+                              <Check size={12} weight="bold" /> Save
+                            </button>
+                            <button onClick={() => setEditingIndex(null)} className="inline-flex h-7 items-center gap-1 rounded-btn px-2.5 text-[12px] text-muted hover:bg-panel-lift hover:text-ink cursor-pointer">
+                              <X size={12} /> Cancel
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <p
+                          onClick={() => {
+                            setEditingIndex(i);
+                            setDraft(u.text);
+                          }}
+                          className="cursor-text rounded-[8px] px-1 py-0.5 text-[14.5px] leading-relaxed text-ink-soft hover:bg-bg"
+                          title="Click to correct"
+                        >
+                          {u.text}
+                        </p>
+                      )
+                    ) : (
+                      <p className="text-[14.5px] leading-relaxed text-ink-soft">{u.text}</p>
+                    )}
+                  </div>
                 );
               })}
             </div>
@@ -221,9 +341,7 @@ export function TranscriptPanel({
           </div>
         )
       ) : (
-        <p className="whitespace-pre-wrap p-5 text-[14.5px] leading-relaxed text-ink-soft">
-          {transcriptText}
-        </p>
+        <p className="whitespace-pre-wrap p-5 text-[14.5px] leading-relaxed text-ink-soft">{transcriptText}</p>
       )}
     </section>
   );

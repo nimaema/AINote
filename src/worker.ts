@@ -55,10 +55,14 @@ async function handleProcess(job: Job<PipelineJob>) {
   const tr = await db.query.transcripts.findFirst({
     where: eq(transcripts.recordingId, recordingId),
   });
-  if (!tr?.text) throw new Error("no transcript to process");
+  if (!tr) throw new Error("no transcript to process");
+  // Prefer the user-corrected transcript when present (re-resolve after edits).
+  const text = tr.editedText ?? tr.text;
+  const utts = tr.editedUtterances ?? tr.utterances ?? [];
+  if (!text) throw new Error("no transcript to process");
 
   // 1) Summary / action items / decisions / topics via DeepSeek.
-  const analysis = await analyzeTranscriptOrFallback(tr.text, recordingId);
+  const analysis = await analyzeTranscriptOrFallback(text, recordingId);
   await db.delete(results).where(eq(results.recordingId, recordingId));
   await db.insert(results).values({
     recordingId,
@@ -79,7 +83,6 @@ async function handleProcess(job: Job<PipelineJob>) {
   const priorByTask = new Map(prior.map((p) => [p.task, p]));
   await db.delete(actionItems).where(eq(actionItems.recordingId, recordingId));
   if (analysis.actionItems.length > 0) {
-    const utts = tr.utterances ?? [];
     await db.insert(actionItems).values(
       analysis.actionItems.map((a, i) => {
         const kept = priorByTask.get(a.task);
@@ -99,8 +102,8 @@ async function handleProcess(job: Job<PipelineJob>) {
 
   // 2) Embeddings for Q&A retrieval — only worth it for long transcripts.
   //    Short ones get answered by stuffing the full transcript into context.
-  if (tr.text.length > QA_THRESHOLD) {
-    const chunks = chunkTranscript(tr.utterances, tr.text);
+  if (text.length > QA_THRESHOLD) {
+    const chunks = chunkTranscript(utts, text);
     const vectors = await embed(chunks.map((c) => c.content));
     await db
       .delete(transcriptChunks)

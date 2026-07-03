@@ -9,13 +9,14 @@ import {
   CheckCircle,
   Flag,
   Hash,
-  ArrowElbowDownRight,
+  PencilLine,
 } from "@phosphor-icons/react";
 import type { Utterance, Citation } from "@/db/schema";
 import { QAPanel } from "@/components/note/qa-panel";
 import { TranscriptPanel } from "@/components/note/transcript-panel";
 import { CommentsPanel } from "@/components/note/comments-panel";
 import { ActionBoard, type ActionRow } from "@/components/note/action-board";
+import { EditableText, EditableList } from "@/components/note/editable";
 import {
   NoteAudioContext,
   useNoteAudio,
@@ -35,6 +36,9 @@ export function NoteWorkspace({
   recordingId,
   durationSec,
   isOwner,
+  canEdit,
+  transcriptEdited,
+  notesEditedBy,
   meId,
   utterances,
   speakerNames,
@@ -51,6 +55,9 @@ export function NoteWorkspace({
   recordingId: string;
   durationSec: number | null;
   isOwner: boolean;
+  canEdit: boolean;
+  transcriptEdited: boolean;
+  notesEditedBy: string | null;
   meId: string;
   utterances: Utterance[];
   speakerNames: Record<string, string>;
@@ -100,6 +107,17 @@ export function NoteWorkspace({
   const ctxValue = useMemo<NoteAudioValue>(
     () => ({ seekTo, currentMs, durationMs, playing, toggle, focus }),
     [seekTo, currentMs, durationMs, playing, toggle, focus]
+  );
+
+  const saveResults = useCallback(
+    async (body: Record<string, unknown>) => {
+      await fetch(`/api/recordings/${recordingId}/results`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+    },
+    [recordingId]
   );
 
   // Trace anchors for the section chips + waveform markers. Action items carry
@@ -168,12 +186,24 @@ export function NoteWorkspace({
               </div>
             </section>
 
-            {summary && (
+            {(summary || canEdit) && (
               <section className="rounded-[18px] border border-hairline bg-panel-solid p-5 sm:p-6">
-                <PanelHeading icon={<FileText size={17} weight="duotone" />}>Note brief</PanelHeading>
-                <p className="mt-3 max-w-4xl font-display text-[19px] leading-[1.5] text-ink-soft">
-                  {summary}
-                </p>
+                <div className="flex items-center justify-between gap-3">
+                  <PanelHeading icon={<FileText size={17} weight="duotone" />}>Note brief</PanelHeading>
+                  {notesEditedBy && (
+                    <span className="inline-flex items-center gap-1 font-mono text-[10.5px] uppercase tracking-[0.12em] text-faint">
+                      <PencilLine size={11} /> Edited by {notesEditedBy}
+                    </span>
+                  )}
+                </div>
+                <div className="mt-3 max-w-4xl">
+                  <EditableText
+                    value={summary ?? ""}
+                    canEdit={canEdit}
+                    onSave={(v) => saveResults({ summary: v })}
+                    className="font-display text-[19px] leading-[1.5] text-ink-soft"
+                  />
+                </div>
               </section>
             )}
 
@@ -186,57 +216,53 @@ export function NoteWorkspace({
               </section>
             )}
 
-            {(decisions.length > 0 || topics.length > 0 || followUps.length > 0) && (
+            {(decisions.length > 0 || topics.length > 0 || followUps.length > 0 || canEdit) && (
               <section className="rounded-[18px] border border-hairline bg-panel-solid p-5 sm:p-6">
                 <div className="grid gap-6 sm:grid-cols-2">
-                  {decisions.length > 0 && (
+                  {(decisions.length > 0 || canEdit) && (
                     <div>
                       <PanelHeading icon={<CheckCircle size={16} weight="duotone" />}>Decisions</PanelHeading>
-                      <ul className="mt-3 flex flex-col gap-2.5 text-[14px] text-ink-soft">
-                        {decisions.map((d, i) => (
-                          <li key={i} className="flex flex-col gap-1.5">
-                            <span className="flex gap-2">
-                              <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-lock" />
-                              {d}
-                            </span>
-                            {decisionTraces[i] != null && (
-                              <span className="pl-4">
-                                <TraceChip ms={decisionTraces[i]!} />
-                              </span>
-                            )}
-                          </li>
-                        ))}
-                      </ul>
+                      <div className="mt-3">
+                        <EditableList
+                          items={decisions}
+                          canEdit={canEdit}
+                          tone="lock"
+                          traces={decisionTraces}
+                          onSeek={seekTo}
+                          onSave={(next) => saveResults({ decisions: next })}
+                          addLabel="Add decision"
+                        />
+                      </div>
                     </div>
                   )}
-                  {followUps.length > 0 && (
+                  {(followUps.length > 0 || canEdit) && (
                     <div>
                       <PanelHeading icon={<Flag size={16} weight="duotone" />}>Follow-ups</PanelHeading>
-                      <ul className="mt-3 flex flex-col gap-2.5 text-[14px] text-ink-soft">
-                        {followUps.map((f, i) => (
-                          <li key={i} className="flex flex-col gap-1.5">
-                            <span className="flex gap-2">
-                              <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-warn" />
-                              {f}
-                            </span>
-                            {followTraces[i] != null && (
-                              <span className="pl-4">
-                                <TraceChip ms={followTraces[i]!} />
-                              </span>
-                            )}
-                          </li>
-                        ))}
-                      </ul>
+                      <div className="mt-3">
+                        <EditableList
+                          items={followUps}
+                          canEdit={canEdit}
+                          tone="warn"
+                          traces={followTraces}
+                          onSeek={seekTo}
+                          onSave={(next) => saveResults({ followUps: next })}
+                          addLabel="Add follow-up"
+                        />
+                      </div>
                     </div>
                   )}
                 </div>
-                {topics.length > 0 && (
+                {(topics.length > 0 || canEdit) && (
                   <div className="mt-5 border-t border-hairline pt-5">
                     <PanelHeading icon={<Hash size={16} weight="duotone" />}>Topics</PanelHeading>
-                    <div className="mt-3 flex flex-wrap gap-2">
-                      {topics.map((t, i) => (
-                        <Chip key={i}>{t}</Chip>
-                      ))}
+                    <div className="mt-3">
+                      <EditableList
+                        items={topics}
+                        canEdit={canEdit}
+                        variant="chips"
+                        onSave={(next) => saveResults({ topics: next })}
+                        addLabel="Add topic"
+                      />
                     </div>
                   </div>
                 )}
@@ -246,6 +272,8 @@ export function NoteWorkspace({
             <TranscriptPanel
               recordingId={recordingId}
               isOwner={isOwner}
+              canEdit={canEdit}
+              transcriptEdited={transcriptEdited}
               utterances={utterances}
               transcriptText={transcriptText}
               speakerNames={speakerNames}
@@ -380,20 +408,6 @@ function Scrubber({
 
 // ─── Small parts ──────────────────────────────────────────────────────
 
-function TraceChip({ ms }: { ms: number }) {
-  const { seekTo } = useNoteAudio();
-  return (
-    <button
-      onClick={() => seekTo(ms)}
-      className="group inline-flex items-center gap-1 rounded-pill border border-lock/30 px-2 py-0.5 font-mono text-[11px] text-lock transition-colors duration-150 [transition-timing-function:var(--ease-out)] hover:border-lock/60 hover:bg-lock-wash cursor-pointer"
-      title="Play the moment this came from"
-    >
-      <ArrowElbowDownRight size={11} weight="bold" />
-      {fmtMs(ms)}
-    </button>
-  );
-}
-
 function PanelHeading({ icon, children }: { icon: React.ReactNode; children: React.ReactNode }) {
   return (
     <div className="flex items-center gap-2 text-accent-deep">
@@ -403,14 +417,3 @@ function PanelHeading({ icon, children }: { icon: React.ReactNode; children: Rea
   );
 }
 
-function Chip({ children, muted }: { children: React.ReactNode; muted?: boolean }) {
-  return (
-    <span
-      className={`inline-flex items-center rounded-btn px-2.5 py-0.5 text-[12px] font-medium ${
-        muted ? "bg-panel text-muted" : "bg-accent-wash text-accent-deep"
-      }`}
-    >
-      {children}
-    </span>
-  );
-}

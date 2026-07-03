@@ -155,6 +155,11 @@ export const transcripts = pgTable("transcripts", {
   // Owner-defined display names for raw speaker labels, e.g. { "A": "Nima" }.
   // Applied at render/export time; original labels stay in `utterances`.
   speakerNames: jsonb("speaker_names").$type<Record<string, string>>(),
+  // P11: user corrections. The originals above are never destroyed; edited
+  // versions are preferred for display, export, and re-analysis when present.
+  editedUtterances: jsonb("edited_utterances").$type<Utterance[]>(),
+  editedText: text("edited_text"),
+  editedAt: timestamp("edited_at", { mode: "date" }),
   createdAt: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
 });
 
@@ -171,6 +176,9 @@ export const results = pgTable("results", {
   topics: jsonb("topics").$type<string[]>(),
   followUps: jsonb("follow_ups").$type<string[]>(),
   model: text("model"),
+  // P11: set when a person has curated the AI notes.
+  editedBy: text("edited_by"),
+  editedAt: timestamp("edited_at", { mode: "date" }),
   createdAt: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
 });
 
@@ -364,6 +372,7 @@ export type Utterance = {
   text: string;
   start: number; // ms
   end: number; // ms
+  confidence?: number; // 0..1 from ASR; low values are flagged in the UI
 };
 
 export type ActionItem = {
