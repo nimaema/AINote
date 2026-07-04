@@ -3,10 +3,11 @@ import { Worker, type Job, type ConnectionOptions } from "bullmq";
 import IORedis from "ioredis";
 import { eq } from "drizzle-orm";
 import { db } from "./db";
-import { recordings, transcripts, results, transcriptChunks } from "./db/schema";
+import { recordings, transcripts, results, transcriptChunks, actionItems } from "./db/schema";
 import { transcribeAudio } from "./lib/transcribe";
 import { analyzeTranscript, DeepSeekJsonError, MODEL, type Analysis } from "./lib/deepseek";
 import { chunkTranscript, embed } from "./lib/embeddings";
+import { traceMatch } from "./lib/trace";
 import { enqueueProcess, PIPELINE_QUEUE, type PipelineJob } from "./lib/queue";
 
 const QA_THRESHOLD = Number(process.env.QA_RETRIEVAL_THRESHOLD ?? 12000);
@@ -54,10 +55,32 @@ async function handleProcess(job: Job<PipelineJob>) {
   const tr = await db.query.transcripts.findFirst({
     where: eq(transcripts.recordingId, recordingId),
   });
-  if (!tr?.text) throw new Error("no transcript to process");
+  if (!tr) throw new Error("no transcript to process");
+  // Prefer the user-corrected transcript when present (re-resolve after edits).
+  const text = tr.editedText ?? tr.text;
+  const utts = tr.editedUtterances ?? tr.utterances ?? [];
+  if (!text) throw new Error("no transcript to process");
 
   // 1) Summary / action items / decisions / topics via DeepSeek.
-  const analysis = await analyzeTranscriptOrFallback(tr.text, recordingId);
+  const analysis = await analyzeTranscriptOrFallback(text, recordingId);
+  // Anchor each chapter to a moment: prefer an exact quote match, fall back to
+  // the fuzzy trace matcher. Chapters that can't be located are dropped.
+  const chapters = analysis.chapters
+    .map((c) => {
+      const q = c.quote.toLowerCase().trim();
+      let startMs: number | null = null;
+      for (const u of utts) {
+        if (q && u.text.toLowerCase().includes(q)) {
+          startMs = u.start;
+          break;
+        }
+      }
+      if (startMs == null) startMs = traceMatch(c.quote, utts);
+      return startMs == null ? null : { title: c.title, summary: c.summary, startMs };
+    })
+    .filter((c): c is { title: string; summary: string; startMs: number } => c != null)
+    .sort((a, b) => a.startMs - b.startMs);
+
   await db.delete(results).where(eq(results.recordingId, recordingId));
   await db.insert(results).values({
     recordingId,
@@ -66,13 +89,40 @@ async function handleProcess(job: Job<PipelineJob>) {
     decisions: analysis.decisions,
     topics: analysis.topics,
     followUps: analysis.followUps,
+    chapters,
     model: analysis.model,
   });
 
+  // Promote action items to real rows (assignable, completable) and precompute
+  // each one's source-trace anchor. Preserves existing assignments on retry by
+  // keeping done-state where the task text is unchanged.
+  const prior = await db.query.actionItems.findMany({
+    where: eq(actionItems.recordingId, recordingId),
+  });
+  const priorByTask = new Map(prior.map((p) => [p.task, p]));
+  await db.delete(actionItems).where(eq(actionItems.recordingId, recordingId));
+  if (analysis.actionItems.length > 0) {
+    await db.insert(actionItems).values(
+      analysis.actionItems.map((a, i) => {
+        const kept = priorByTask.get(a.task);
+        return {
+          recordingId,
+          task: a.task,
+          ownerLabel: a.owner ?? null,
+          dueLabel: a.due ?? null,
+          assigneeId: kept?.assigneeId ?? null,
+          status: kept?.status ?? "open",
+          sourceMs: traceMatch(a.task, utts),
+          orderIdx: i,
+        };
+      })
+    );
+  }
+
   // 2) Embeddings for Q&A retrieval — only worth it for long transcripts.
   //    Short ones get answered by stuffing the full transcript into context.
-  if (tr.text.length > QA_THRESHOLD) {
-    const chunks = chunkTranscript(tr.utterances, tr.text);
+  if (text.length > QA_THRESHOLD) {
+    const chunks = chunkTranscript(utts, text);
     const vectors = await embed(chunks.map((c) => c.content));
     await db
       .delete(transcriptChunks)
@@ -92,7 +142,7 @@ async function handleProcess(job: Job<PipelineJob>) {
 
   await db
     .update(recordings)
-    .set({ status: "done" })
+    .set({ status: "done", searchText: `${analysis.summary}\n\n${text}` })
     .where(eq(recordings.id, recordingId));
 }
 
@@ -117,6 +167,7 @@ async function analyzeTranscriptOrFallback(
       decisions: [],
       topics: ["Transcript processed", "Analysis retry needed"],
       followUps: ["Retry processing this recording to regenerate structured notes."],
+      chapters: [],
       model: `${MODEL} (fallback)`,
     };
   }

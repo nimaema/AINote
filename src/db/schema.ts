@@ -25,7 +25,18 @@ export const recordingStatusEnum = pgEnum("recording_status", [
 export const exportTargetEnum = pgEnum("export_target", ["google_docs", "teams"]);
 export const exportStatusEnum = pgEnum("export_status", ["pending", "done", "failed"]);
 export const qaRoleEnum = pgEnum("qa_role", ["user", "assistant"]);
-export const integrationProviderEnum = pgEnum("integration_provider", ["google", "teams"]);
+export const integrationProviderEnum = pgEnum("integration_provider", ["google", "teams", "slack"]);
+
+// P10 — team layer
+export const projectRoleEnum = pgEnum("project_role", ["owner", "editor", "viewer"]);
+export const actionStatusEnum = pgEnum("action_status", ["open", "done"]);
+export const notifTypeEnum = pgEnum("notif_type", [
+  "assigned",
+  "mentioned",
+  "shared",
+  "commented",
+  "project_added",
+]);
 
 // ─── Auth.js core tables (+ our extensions on users) ──────────────────
 export const users = pgTable("users", {
@@ -124,9 +135,16 @@ export const recordings = pgTable(
     // When true, any signed-in user (not just the owner) can view the
     // transcript, notes, and chat for this recording.
     isPublic: boolean("is_public").notNull().default(false),
+    // P13: opt-in read-only external link (no sign-in), distinct from isPublic.
+    shareToken: text("share_token"),
+    // P13: denormalized summary + transcript text for full-text search.
+    searchText: text("search_text"),
     createdAt: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
   },
-  (t) => [index("recordings_user_idx").on(t.userId, t.createdAt)]
+  (t) => [
+    index("recordings_user_idx").on(t.userId, t.createdAt),
+    uniqueIndex("recordings_share_token_idx").on(t.shareToken),
+  ]
 );
 
 export const transcripts = pgTable("transcripts", {
@@ -144,6 +162,11 @@ export const transcripts = pgTable("transcripts", {
   // Owner-defined display names for raw speaker labels, e.g. { "A": "Nima" }.
   // Applied at render/export time; original labels stay in `utterances`.
   speakerNames: jsonb("speaker_names").$type<Record<string, string>>(),
+  // P11: user corrections. The originals above are never destroyed; edited
+  // versions are preferred for display, export, and re-analysis when present.
+  editedUtterances: jsonb("edited_utterances").$type<Utterance[]>(),
+  editedText: text("edited_text"),
+  editedAt: timestamp("edited_at", { mode: "date" }),
   createdAt: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
 });
 
@@ -159,7 +182,12 @@ export const results = pgTable("results", {
   decisions: jsonb("decisions").$type<string[]>(),
   topics: jsonb("topics").$type<string[]>(),
   followUps: jsonb("follow_ups").$type<string[]>(),
+  // P12: navigable chapters, each anchored to a moment in the recording.
+  chapters: jsonb("chapters").$type<Chapter[]>(),
   model: text("model"),
+  // P11: set when a person has curated the AI notes.
+  editedBy: text("edited_by"),
+  editedAt: timestamp("edited_at", { mode: "date" }),
   createdAt: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
 });
 
@@ -216,6 +244,24 @@ export const projectQaMessages = pgTable("project_qa_messages", {
   createdAt: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
 });
 
+// A per-user, workspace-wide Q&A thread ("ask everything you can access").
+export const workspaceQaMessages = pgTable(
+  "workspace_qa_messages",
+  {
+    id: text("id")
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    role: qaRoleEnum("role").notNull(),
+    content: text("content").notNull(),
+    citations: jsonb("citations").$type<Citation[]>(),
+    createdAt: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
+  },
+  (t) => [index("workspace_qa_user_idx").on(t.userId, t.createdAt)]
+);
+
 // Per-user connections for exporting notes (Google Docs OAuth, Teams webhook).
 export const integrations = pgTable(
   "integrations",
@@ -255,18 +301,117 @@ export const exports = pgTable("exports", {
   createdAt: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
 });
 
+// ─── P10 team layer ───────────────────────────────────────────────────
+// A project can be worked by several members; the creator is `owner`.
+export const projectMembers = pgTable(
+  "project_members",
+  {
+    projectId: text("project_id")
+      .notNull()
+      .references(() => projects.id, { onDelete: "cascade" }),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    role: projectRoleEnum("role").notNull().default("editor"),
+    addedAt: timestamp("added_at", { mode: "date" }).notNull().defaultNow(),
+  },
+  (t) => [
+    primaryKey({ columns: [t.projectId, t.userId] }),
+    index("project_members_user_idx").on(t.userId),
+  ]
+);
+
+// Action items promoted from `results.actionItems` jsonb to real rows so they
+// can be assigned, completed, and gathered into a cross-recording worklist.
+export const actionItems = pgTable(
+  "action_items",
+  {
+    id: text("id")
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    recordingId: text("recording_id")
+      .notNull()
+      .references(() => recordings.id, { onDelete: "cascade" }),
+    task: text("task").notNull(),
+    ownerLabel: text("owner_label"), // raw name the model extracted
+    assigneeId: text("assignee_id").references(() => users.id, {
+      onDelete: "set null",
+    }),
+    dueLabel: text("due_label"),
+    status: actionStatusEnum("status").notNull().default("open"),
+    sourceMs: integer("source_ms"), // precomputed source-trace anchor
+    orderIdx: integer("order_idx").notNull().default(0),
+    createdAt: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
+  },
+  (t) => [
+    index("action_recording_idx").on(t.recordingId),
+    index("action_assignee_idx").on(t.assigneeId, t.status),
+  ]
+);
+
+// Timestamped discussion anchored to a moment in a recording.
+export const comments = pgTable(
+  "comments",
+  {
+    id: text("id")
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    recordingId: text("recording_id")
+      .notNull()
+      .references(() => recordings.id, { onDelete: "cascade" }),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    parentId: text("parent_id"),
+    startMs: integer("start_ms"), // optional transcript anchor
+    body: text("body").notNull(),
+    mentions: jsonb("mentions").$type<string[]>(), // userIds
+    createdAt: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
+  },
+  (t) => [index("comments_recording_idx").on(t.recordingId, t.createdAt)]
+);
+
+// Per-user inbox: assigned / mentioned / shared / commented / project_added.
+export const notifications = pgTable(
+  "notifications",
+  {
+    id: text("id")
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    type: notifTypeEnum("type").notNull(),
+    actorId: text("actor_id").references(() => users.id, { onDelete: "set null" }),
+    actorName: text("actor_name"), // denormalized so the bell needs no join
+    recordingId: text("recording_id"),
+    projectId: text("project_id"),
+    body: text("body").notNull(),
+    readAt: timestamp("read_at", { mode: "date" }),
+    createdAt: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
+  },
+  (t) => [index("notif_user_idx").on(t.userId, t.createdAt)]
+);
+
 // ─── Shared JSON shapes ───────────────────────────────────────────────
 export type Utterance = {
   speaker: string;
   text: string;
   start: number; // ms
   end: number; // ms
+  confidence?: number; // 0..1 from ASR; low values are flagged in the UI
 };
 
 export type ActionItem = {
   task: string;
   owner?: string | null;
   due?: string | null;
+};
+
+export type Chapter = {
+  title: string;
+  summary: string;
+  startMs: number;
 };
 
 export type Citation = {
@@ -284,3 +429,7 @@ export type Project = typeof projects.$inferSelect;
 export type Recording = typeof recordings.$inferSelect;
 export type Transcript = typeof transcripts.$inferSelect;
 export type Result = typeof results.$inferSelect;
+export type ProjectMember = typeof projectMembers.$inferSelect;
+export type ActionItemRow = typeof actionItems.$inferSelect;
+export type CommentRow = typeof comments.$inferSelect;
+export type NotificationRow = typeof notifications.$inferSelect;

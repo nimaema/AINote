@@ -1,5 +1,5 @@
-// Console background used on unauthenticated screens. It is intentionally flat:
-// no decorative blobs, just recorder-panel texture and one signal wash.
+// Field background for unauthenticated screens: the ice field with faint
+// topographic contour lines — the map before anything is charted.
 export function AuroraBackground() {
   return (
     <div
@@ -7,24 +7,22 @@ export function AuroraBackground() {
       className="pointer-events-none fixed inset-0 -z-10 overflow-hidden"
       style={{
         background:
-          "radial-gradient(900px 320px at 70% -10%, rgba(240,182,74,0.12), transparent 62%), linear-gradient(180deg, #171912 0%, var(--color-bg) 48%)",
+          "radial-gradient(1000px 420px at 78% -14%, rgba(10,125,149,0.09), transparent 60%), var(--color-bg)",
       }}
     >
-      <span
-        className="absolute inset-0"
-        style={{
-          background:
-            "linear-gradient(rgba(244,237,221,0.035) 1px, transparent 1px), linear-gradient(90deg, rgba(244,237,221,0.025) 1px, transparent 1px)",
-          backgroundSize: "44px 44px",
-        }}
-      />
-      <span
-        className="absolute inset-0"
-        style={{
-          background:
-            "linear-gradient(180deg, transparent 0%, rgba(16,17,15,0.72) 100%)",
-        }}
-      />
+      <svg
+        className="absolute inset-0 h-full w-full"
+        viewBox="0 0 1440 900"
+        preserveAspectRatio="xMidYMid slice"
+      >
+        <g fill="none" stroke="#0a7d95" strokeWidth="1" opacity="0.09">
+          <path d="M-60 180 C 240 100, 480 260, 760 170 S 1240 60, 1520 140" />
+          <path d="M-60 240 C 240 160, 500 320, 780 230 S 1240 120, 1520 200" />
+          <path d="M-60 300 C 250 230, 520 380, 800 290 S 1250 190, 1520 260" />
+          <path d="M-80 640 C 200 730, 520 560, 820 680 S 1240 780, 1520 700" />
+          <path d="M-80 710 C 210 800, 540 630, 840 750 S 1250 850, 1520 770" />
+        </g>
+      </svg>
     </div>
   );
 }

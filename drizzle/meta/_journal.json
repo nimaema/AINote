@@ -29,6 +29,34 @@
       "when": 1783010362060,
       "tag": "0003_cold_crystal",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1783089179466,
+      "tag": "0004_magenta_skullbuster",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1783090921021,
+      "tag": "0005_aromatic_speed_demon",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1783111977682,
+      "tag": "0006_jittery_sage",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1783113831779,
+      "tag": "0007_sweet_hercules",
+      "breakpoints": true
     }
   ]
 }

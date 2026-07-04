@@ -128,6 +128,7 @@ export async function transcribeAudio(
     text: u.text,
     start: u.start,
     end: u.end,
+    confidence: u.confidence,
   }));
 
   return {
@@ -140,7 +141,7 @@ export async function transcribeAudio(
 
 // A short, realistic product sync so downstream summaries / Q&A have substance.
 function mockTranscript(): TranscribeResult {
-  const utterances: Utterance[] = [
+  const base: Utterance[] = [
     { speaker: "Speaker A", start: 800, end: 9200, text: "Alright, thanks for hopping on. The main thing I want to close out today is the onboarding flow. We're still seeing people drop off right after they connect their calendar." },
     { speaker: "Speaker B", start: 9600, end: 18400, text: "Yeah, I dug into the funnel. About forty percent get to the calendar step, but only half of those finish. Most of the drop happens on the permissions screen." },
     { speaker: "Speaker A", start: 18800, end: 25200, text: "That tracks. The permissions copy is scary. It asks for full calendar access up front even though we only need read at first." },
@@ -152,6 +153,12 @@ function mockTranscript(): TranscribeResult {
     { speaker: "Speaker B", start: 60200, end: 63400, text: "On it. I'll have the events in by end of week." },
     { speaker: "Speaker A", start: 63800, end: 71000, text: "Great. So decision is: read-only first, write on demand, plus proper funnel tracking. Let's reconvene next Tuesday and look at the numbers." },
   ];
+  // Fabricate plausible confidences, with one deliberately low line so the
+  // confidence-shading UI has something to flag in dev.
+  const utterances: Utterance[] = base.map((u, i) => ({
+    ...u,
+    confidence: i === 2 ? 0.58 : 0.9 + ((i % 4) * 0.02),
+  }));
   const text = utterances.map((u) => `${u.speaker}: ${u.text}`).join("\n");
   return { assemblyaiId: null, text, language: "en", utterances };
 }

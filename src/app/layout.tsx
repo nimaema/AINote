@@ -1,14 +1,30 @@
 import type { Metadata, Viewport } from "next";
-import { GeistSans } from "geist/font/sans";
-import { GeistMono } from "geist/font/mono";
-import { Bricolage_Grotesque } from "next/font/google";
+import { Archivo, Archivo_Black, Space_Mono } from "next/font/google";
 import { Pwa } from "@/components/pwa";
 import "./globals.css";
 
-const bricolage = Bricolage_Grotesque({
+// ATLAS type system:
+//  - Archivo Black → expedition signage (display headlines, always uppercase)
+//  - Archivo       → the working interface
+//  - Space Mono    → machine truth (T+ timestamps, coordinates, speaker tags)
+const archivo = Archivo({
   subsets: ["latin"],
-  weight: ["500", "600", "700", "800"],
-  variable: "--font-bricolage",
+  weight: ["400", "500", "600", "700"],
+  variable: "--font-archivo",
+  display: "swap",
+});
+
+const archivoBlack = Archivo_Black({
+  subsets: ["latin"],
+  weight: "400",
+  variable: "--font-archivo-black",
+  display: "swap",
+});
+
+const spaceMono = Space_Mono({
+  subsets: ["latin"],
+  weight: ["400", "700"],
+  variable: "--font-space-mono",
   display: "swap",
 });
 
@@ -16,7 +32,7 @@ export const metadata: Metadata = {
   applicationName: "GlaciaNav Notes",
   title: "GlaciaNav Notes",
   description:
-    "Record or upload audio, transcribe it, and turn it into summaries, action items, and answers.",
+    "Survey a conversation and watch it get charted — route, waypoints, flags. Every claim traceable to the moment it was said.",
   robots: { index: false, follow: false },
   manifest: "/manifest.webmanifest",
   appleWebApp: {
@@ -34,7 +50,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#10110f",
+  themeColor: "#edf2f1",
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
@@ -47,7 +63,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${GeistSans.variable} ${GeistMono.variable} ${bricolage.variable}`}
+      className={`${archivo.variable} ${archivoBlack.variable} ${spaceMono.variable}`}
     >
       <body className="min-h-[100dvh] antialiased">
         {children}

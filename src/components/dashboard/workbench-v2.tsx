@@ -22,10 +22,13 @@ import {
   Trash,
   UploadSimple,
   WaveSawtooth,
+  MapTrifold,
   X,
 } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
 import { ProjectPicker } from "@/components/projects/project-picker";
+import { AtlasField } from "@/components/dashboard/atlas-field";
+import { DropMenu } from "@/components/ui/drop-menu";
 import { PROJECT_COLORS, projectColor, type ProjectColor } from "@/lib/projects";
 
 export type WorkbenchAction = {
@@ -127,14 +130,16 @@ function cleanText(value: string | null | undefined) {
 
 export function WorkbenchV2({
   userName,
-  recordings,
+  recordings: initialRecordings,
   projects,
   stats,
+  initialHasMore,
 }: {
   userName: string;
   recordings: WorkbenchRecording[];
   projects: WorkbenchProject[];
   stats: WorkbenchStats;
+  initialHasMore: boolean;
 }) {
   const router = useRouter();
   const [query, setQuery] = useState("");
@@ -145,6 +150,39 @@ export function WorkbenchV2({
   const [projectColorKey, setProjectColorKey] = useState<ProjectColor>("sky");
   const [projectBusy, setProjectBusy] = useState(false);
   const commandInputRef = useRef<HTMLInputElement>(null);
+
+  // Pagination: the server sends the first page; "Load more" appends the rest.
+  const [extra, setExtra] = useState<WorkbenchRecording[]>([]);
+  const [hasMore, setHasMore] = useState(initialHasMore);
+  const [loadingMore, setLoadingMore] = useState(false);
+
+  const recordings = useMemo(() => {
+    const seen = new Set<string>();
+    return [...initialRecordings, ...extra].filter((r) =>
+      seen.has(r.id) ? false : (seen.add(r.id), true)
+    );
+  }, [initialRecordings, extra]);
+
+  useEffect(() => {
+    setExtra([]);
+    setHasMore(initialHasMore);
+  }, [initialRecordings, initialHasMore]);
+
+  async function loadMore() {
+    setLoadingMore(true);
+    try {
+      const res = await fetch(`/api/recordings?offset=${recordings.length}&limit=50`, {
+        cache: "no-store",
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setExtra((prev) => [...prev, ...(data.items ?? [])]);
+        setHasMore(!!data.hasMore);
+      }
+    } finally {
+      setLoadingMore(false);
+    }
+  }
 
   const actionItems = useMemo(
     () =>
@@ -292,106 +330,54 @@ export function WorkbenchV2({
   return (
     <>
       <main className="mx-auto flex max-w-[1540px] flex-col gap-5 px-3 pb-28 pt-3 sm:px-5 md:px-7 md:pb-12 md:pt-5">
-        <section className="workbench-hero overflow-hidden rounded-[18px] border border-hairline">
-          <div className="grid gap-px bg-hairline lg:grid-cols-[minmax(0,1.45fr)_minmax(320px,0.75fr)]">
-            <div className="bg-panel-solid p-5 sm:p-6 lg:p-7">
-              <div className="flex flex-wrap items-start justify-between gap-4">
-                <div className="min-w-0">
-                  <p className="font-mono text-[11px] text-faint">Workbench</p>
-                  <h1 className="mt-2 max-w-3xl text-[31px] font-semibold leading-[0.98] tracking-[-0.035em] text-ink sm:text-[44px] lg:text-[56px]">
-                    Review the room, route the work.
-                  </h1>
-                  <p className="mt-4 max-w-xl text-[14.5px] leading-relaxed text-muted">
-                    Welcome back, {userName}. Your captures now open into action, review, and project lanes.
-                  </p>
-                </div>
-                <div className="flex shrink-0 items-center gap-2">
-                  <Link
-                    href="/record?mode=upload"
-                    className="glass inline-flex h-9 items-center justify-center gap-2 whitespace-nowrap rounded-btn px-4 text-[13px] font-medium text-ink transition-[transform,background-color,box-shadow,color,opacity] duration-150 [transition-timing-function:var(--ease-out)] hover:bg-panel-lift active:scale-[0.97] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent cursor-pointer"
-                  >
-                    <UploadSimple size={15} weight="bold" />
-                    Upload
-                  </Link>
-                  <Link
-                    href="/record?mode=record"
-                    className="inline-flex h-9 items-center justify-center gap-2 whitespace-nowrap rounded-btn bg-accent px-4 text-[13px] font-medium text-accent-ink shadow-[0_14px_30px_-18px_rgba(240,182,74,0.8)] transition-[transform,box-shadow] duration-150 [transition-timing-function:var(--ease-out)] hover:shadow-[0_16px_34px_-16px_rgba(240,182,74,0.85)] active:scale-[0.97] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent cursor-pointer"
-                  >
-                    <Microphone size={15} weight="fill" />
-                    Record
-                  </Link>
-                </div>
-              </div>
-
-              <div className="mt-7 grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
-                <WorkbenchMetric label="Ready notes" value={String(stats.ready)} detail={`${stats.total} total`} />
-                <WorkbenchMetric label="Open actions" value={String(stats.actionCount)} detail="From processed notes" />
-                <WorkbenchMetric label="Queue health" value={`${stats.active}/${stats.failed}`} detail="Active / failed" tone={stats.failed > 0 ? "warn" : "ok"} />
-                <WorkbenchMetric label="Recorded time" value={stats.totalDurationLabel} detail={`${stats.publicCount} shared`} />
-              </div>
-            </div>
-
-            <aside className="bg-bg p-5 sm:p-6 lg:p-7">
-              <div className="flex items-center justify-between gap-3">
-                <div>
-                  <p className="text-[13px] font-semibold text-ink">Command search</p>
-                  <p className="mt-1 text-[12.5px] text-muted">Find notes, projects, and action items.</p>
-                </div>
-                <button
-                  onClick={() => setCommandOpen(true)}
-                  className="rounded-btn border border-hairline bg-panel px-2.5 py-1.5 font-mono text-[11px] text-faint transition-[border-color,color,transform] duration-150 [transition-timing-function:var(--ease-out)] hover:border-hairline-strong hover:text-ink active:scale-[0.98] cursor-pointer"
-                >
-                  Ctrl K
-                </button>
-              </div>
-              <button
-                onClick={() => setCommandOpen(true)}
-                className="mt-4 flex h-12 w-full items-center gap-3 rounded-[12px] border border-hairline bg-panel-solid px-4 text-left text-[14px] text-muted transition-[border-color,background-color,transform] duration-150 [transition-timing-function:var(--ease-out)] hover:border-hairline-strong hover:bg-panel-lift active:scale-[0.99] cursor-pointer"
-              >
-                <MagnifyingGlass size={17} className="text-faint" />
-                Jump to anything...
-              </button>
-
-              <div className="mt-5 grid gap-2">
-                <TriageLink
-                  label="Needs attention"
-                  value={String(triage.failed.length)}
-                  href="#queue"
-                  active={triage.failed.length > 0}
-                />
-                <TriageLink
-                  label="Currently processing"
-                  value={String(triage.active.length)}
-                  href="#queue"
-                  active={triage.active.length > 0}
-                />
-                <TriageLink
-                  label="Unfiled captures"
-                  value={String(triage.unfiled.length)}
-                  onClick={() => setView("unfiled")}
-                  active={triage.unfiled.length > 0}
-                />
-              </div>
-            </aside>
+        <header className="flex flex-wrap items-center gap-2.5">
+          <div className="mr-auto min-w-0">
+            <p className="font-mono text-[10.5px] uppercase tracking-[0.18em] text-faint">
+              The Atlas · welcome back, {userName}
+            </p>
+            <h1 className="mt-1 font-display text-[19px] leading-none text-ink">Base camp</h1>
           </div>
-        </section>
+          <div className="relative order-last w-full sm:order-none sm:w-72">
+            <MagnifyingGlass
+              size={15}
+              className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-faint"
+            />
+            <input
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+              placeholder="Search captures, topics, flags"
+              className="h-10 w-full rounded-[12px] border border-hairline bg-panel-solid pl-9 pr-3 text-[14px] text-ink placeholder:text-faint transition-[border-color,box-shadow] duration-150 [transition-timing-function:var(--ease-out)] focus:border-accent focus:outline-none focus:shadow-[0_0_0_4px_var(--color-accent-wash)]"
+            />
+          </div>
+          <button
+            onClick={() => setCommandOpen(true)}
+            className="hidden h-10 shrink-0 items-center rounded-btn border border-hairline bg-panel-solid px-3 font-mono text-[11px] text-faint transition-[border-color,color] duration-150 [transition-timing-function:var(--ease-out)] hover:border-hairline-strong hover:text-ink sm:inline-flex cursor-pointer"
+            title="Jump to anything"
+          >
+            Ctrl K
+          </button>
+          <Link
+            href="/record?mode=upload"
+            className="glass inline-flex h-10 shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-btn px-4 text-[13px] font-medium text-ink transition-[transform,background-color] duration-150 [transition-timing-function:var(--ease-out)] hover:bg-panel-lift active:scale-[0.97] cursor-pointer"
+          >
+            <UploadSimple size={15} weight="bold" />
+            Upload
+          </Link>
+          <Link
+            href="/record?mode=record"
+            className="inline-flex h-10 shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-btn bg-accent px-4 text-[13px] font-medium text-accent-ink shadow-[0_10px_24px_-14px_rgba(255,79,0,0.7)] transition-[transform,box-shadow] duration-150 [transition-timing-function:var(--ease-out)] hover:shadow-[0_14px_30px_-14px_rgba(255,79,0,0.85)] active:scale-[0.97] cursor-pointer"
+          >
+            <Microphone size={15} weight="fill" />
+            Record
+          </Link>
+        </header>
 
-        <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_390px]">
+        <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_340px]">
+          <div className="flex min-w-0 flex-col gap-4">
           <section className="min-w-0 rounded-[18px] border border-hairline bg-panel-solid">
             <div className="border-b border-hairline p-3 sm:p-4">
-              <div className="flex flex-wrap items-center gap-2">
-                <div className="relative min-w-[15rem] flex-1">
-                  <MagnifyingGlass
-                    size={15}
-                    className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-faint"
-                  />
-                  <input
-                    value={query}
-                    onChange={(event) => setQuery(event.target.value)}
-                    placeholder="Search library, topics, action items"
-                    className="h-10 w-full rounded-[12px] border border-hairline bg-bg pl-9 pr-3 text-[14px] text-ink placeholder:text-faint transition-[border-color,box-shadow] duration-150 [transition-timing-function:var(--ease-out)] focus:border-accent focus:outline-none focus:shadow-[0_0_0_4px_var(--color-accent-wash)]"
-                  />
-                </div>
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <h2 className="px-1 text-[14px] font-semibold text-ink">Captures</h2>
                 <div className="flex max-w-full gap-1 overflow-x-auto rounded-[12px] border border-hairline bg-bg p-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                   {views.map((item) => (
                     <button
@@ -414,9 +400,43 @@ export function WorkbenchV2({
             ) : (
               <RecordingLibrary items={filteredRecordings} query={query} />
             )}
+            {hasMore && (
+              <div className="border-t border-hairline p-3 text-center">
+                <button
+                  onClick={loadMore}
+                  disabled={loadingMore}
+                  className="inline-flex h-9 items-center gap-2 rounded-btn border border-hairline bg-bg px-4 text-[13px] font-medium text-ink-soft transition-colors duration-150 [transition-timing-function:var(--ease-out)] hover:border-hairline-strong hover:text-ink disabled:opacity-60 cursor-pointer"
+                >
+                  {loadingMore ? "Loading…" : "Load more captures"}
+                </button>
+              </div>
+            )}
           </section>
 
-          <aside className="flex min-w-0 flex-col gap-5">
+          <section className="rounded-[18px] border border-hairline bg-panel-solid p-4">
+            <div className="flex items-center justify-between gap-3">
+              <PanelTitle icon={<MapTrifold size={17} weight="duotone" />} title="The map" />
+              <span className="font-mono text-[10.5px] uppercase tracking-[0.14em] text-faint">
+                {projects.length} {projects.length === 1 ? "territory" : "territories"}
+              </span>
+            </div>
+            <div className="mt-3">
+              <AtlasField
+                territories={projects.map((p) => ({ id: p.id, name: p.name, color: p.color, count: p.count }))}
+                unfiled={stats.unfiled}
+              />
+            </div>
+          </section>
+          </div>
+
+          <aside className="flex min-w-0 flex-col gap-4">
+            <div className="grid grid-cols-2 gap-2">
+              <WorkbenchMetric label="Charted" value={String(stats.ready)} detail={`${stats.total} surveys`} />
+              <WorkbenchMetric label="Flags open" value={String(stats.actionCount)} detail="All routes" />
+              <WorkbenchMetric label="In the field" value={`${stats.active}/${stats.failed}`} detail="Charting / failed" tone={stats.failed > 0 ? "warn" : "ok"} />
+              <WorkbenchMetric label="Ground covered" value={stats.totalDurationLabel} detail={`${stats.publicCount} shared`} />
+            </div>
+
             <section id="queue" className="rounded-[18px] border border-hairline bg-panel-solid p-4">
               <PanelTitle icon={<Pulse size={17} weight="duotone" />} title="Processing queue" />
               <div className="mt-4 flex flex-col gap-2">
@@ -431,7 +451,7 @@ export function WorkbenchV2({
 
             <section className="rounded-[18px] border border-hairline bg-panel-solid p-4">
               <div className="flex items-center justify-between gap-3">
-                <PanelTitle icon={<FolderSimple size={17} weight="duotone" />} title="Project lanes" />
+                <PanelTitle icon={<FolderSimple size={17} weight="duotone" />} title="Territories" />
                 {!creatingProject && (
                   <button
                     onClick={() => setCreatingProject(true)}
@@ -526,7 +546,12 @@ export function WorkbenchV2({
 
       {commandOpen && (
         <div className="fixed inset-0 z-50 grid place-items-start bg-bg/72 px-3 py-16 backdrop-blur-md sm:px-6">
-          <div className="mx-auto w-full max-w-2xl overflow-hidden rounded-[18px] border border-hairline-strong bg-panel-solid shadow-[0_30px_90px_-28px_rgba(0,0,0,0.85)]">
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-label="Search everything"
+            className="mx-auto w-full max-w-2xl overflow-hidden rounded-[18px] border border-hairline-strong bg-panel-solid shadow-[0_30px_90px_-28px_rgba(0,0,0,0.85)]"
+          >
             <div className="flex items-center gap-3 border-b border-hairline px-4 py-3">
               <MagnifyingGlass size={18} className="text-faint" />
               <input
@@ -619,41 +644,6 @@ function WorkbenchMetric({
   );
 }
 
-function TriageLink({
-  label,
-  value,
-  href,
-  onClick,
-  active,
-}: {
-  label: string;
-  value: string;
-  href?: string;
-  onClick?: () => void;
-  active?: boolean;
-}) {
-  const className =
-    "flex items-center justify-between rounded-[12px] border border-hairline bg-panel-solid px-3 py-2.5 text-[13px] transition-[border-color,background-color,transform] duration-150 [transition-timing-function:var(--ease-out)] hover:border-hairline-strong hover:bg-panel-lift active:scale-[0.99] cursor-pointer";
-  const body = (
-    <>
-      <span className={active ? "text-ink" : "text-muted"}>{label}</span>
-      <span className={`tabular font-mono text-[12px] ${active ? "text-accent-deep" : "text-faint"}`}>{value}</span>
-    </>
-  );
-  if (href) {
-    return (
-      <a href={href} className={className}>
-        {body}
-      </a>
-    );
-  }
-  return (
-    <button onClick={onClick} className={className}>
-      {body}
-    </button>
-  );
-}
-
 function RecordingLibrary({ items, query }: { items: WorkbenchRecording[]; query: string }) {
   if (items.length === 0) {
     return (
@@ -689,6 +679,7 @@ function WorkbenchRow({ rec }: { rec: WorkbenchRecording }) {
   const [title, setTitle] = useState(rec.title);
   const [busy, setBusy] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  const kebabRef = useRef<HTMLButtonElement>(null);
   const meta = statusMeta(rec.status);
 
   async function mutate(fn: () => Promise<Response>) {
@@ -806,45 +797,41 @@ function WorkbenchRow({ rec }: { rec: WorkbenchRecording }) {
       {!editing && (
         <div className="pointer-events-auto relative z-10 flex items-center gap-1 sm:self-center">
           <ProjectPicker recordingId={rec.id} currentProjectId={rec.projectId} variant="icon" />
-          <div className="relative">
-            <button
-              onClick={() => setMenu((open) => !open)}
-              disabled={busy}
-              className="grid h-9 w-9 place-items-center rounded-input text-muted transition-colors duration-150 hover:bg-panel-lift hover:text-ink disabled:opacity-50 cursor-pointer"
-              aria-label="Recording actions"
-            >
-              <DotsThreeVertical size={18} weight="bold" />
-            </button>
-            {menu && (
-              <>
-                <div className="fixed inset-0 z-30" onClick={() => setMenu(false)} />
-                <div className="glass-menu pop-in absolute right-0 top-full z-50 mt-1 w-44 overflow-hidden rounded-card p-1">
-                  <RowMenuItem icon={<PencilSimple size={15} />} label="Rename" onClick={() => { setMenu(false); setEditing(true); }} />
-                  {rec.status === "failed" && (
-                    <RowMenuItem
-                      icon={<ArrowClockwise size={15} />}
-                      label="Retry"
-                      onClick={() => {
-                        setMenu(false);
-                        void mutate(() => fetch(`/api/recordings/${rec.id}/retry`, { method: "POST" }));
-                      }}
-                    />
-                  )}
-                  <RowMenuItem
-                    icon={<Trash size={15} />}
-                    label="Delete"
-                    danger
-                    onClick={() => {
-                      setMenu(false);
-                      if (confirm(`Delete "${rec.title}"? This can't be undone.`)) {
-                        void mutate(() => fetch(`/api/recordings/${rec.id}`, { method: "DELETE" }));
-                      }
-                    }}
-                  />
-                </div>
-              </>
+          <button
+            ref={kebabRef}
+            onClick={() => setMenu((open) => !open)}
+            disabled={busy}
+            className="grid h-9 w-9 place-items-center rounded-input text-muted transition-colors duration-150 hover:bg-panel-lift hover:text-ink disabled:opacity-50 cursor-pointer"
+            aria-label="Recording actions"
+            aria-haspopup="menu"
+            aria-expanded={menu}
+          >
+            <DotsThreeVertical size={18} weight="bold" />
+          </button>
+          <DropMenu open={menu} onClose={() => setMenu(false)} anchor={kebabRef} align="end" width={176} className="p-1">
+            <RowMenuItem icon={<PencilSimple size={15} />} label="Rename" onClick={() => { setMenu(false); setEditing(true); }} />
+            {rec.status === "failed" && (
+              <RowMenuItem
+                icon={<ArrowClockwise size={15} />}
+                label="Retry"
+                onClick={() => {
+                  setMenu(false);
+                  void mutate(() => fetch(`/api/recordings/${rec.id}/retry`, { method: "POST" }));
+                }}
+              />
             )}
-          </div>
+            <RowMenuItem
+              icon={<Trash size={15} />}
+              label="Delete"
+              danger
+              onClick={() => {
+                setMenu(false);
+                if (confirm(`Delete "${rec.title}"? This can't be undone.`)) {
+                  void mutate(() => fetch(`/api/recordings/${rec.id}`, { method: "DELETE" }));
+                }
+              }}
+            />
+          </DropMenu>
         </div>
       )}
     </article>

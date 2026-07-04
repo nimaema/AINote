@@ -11,6 +11,9 @@ export default auth((req) => {
   const isLoggedIn = !!req.auth;
   const isAuthRoute = nextUrl.pathname.startsWith("/login");
 
+  // Public, read-only external share links — no sign-in required.
+  if (nextUrl.pathname.startsWith("/share")) return NextResponse.next();
+
   if (isAuthRoute) {
     if (isLoggedIn) return NextResponse.redirect(new URL("/", nextUrl));
     return NextResponse.next();

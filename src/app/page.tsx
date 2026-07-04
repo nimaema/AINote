@@ -1,8 +1,8 @@
 import { redirect } from "next/navigation";
-import { desc, eq, sql } from "drizzle-orm";
+import { desc, eq, inArray, or, sql } from "drizzle-orm";
 import { auth } from "@/lib/auth";
 import { db } from "@/db";
-import { recordings, results, transcripts, projects } from "@/db/schema";
+import { recordings, results, transcripts, projects, projectMembers } from "@/db/schema";
 import type { ActionItem } from "@/db/schema";
 import { relativeTime, dateTimeLabel, humanDuration, humanTotalTime, humanBytes } from "@/lib/format";
 import { languageName } from "@/lib/language";
@@ -28,8 +28,10 @@ export default async function DashboardPage() {
       active: sql<number>`count(*) filter (where ${recordings.status} in ('uploaded', 'transcribing', 'processing'))::int`,
       publicCount: sql<number>`count(*) filter (where ${recordings.isPublic} = true)::int`,
       unfiled: sql<number>`count(*) filter (where ${recordings.projectId} is null)::int`,
+      actionCount: sql<number>`coalesce(sum(jsonb_array_length(${results.actionItems})), 0)::int`,
     })
     .from(recordings)
+    .leftJoin(results, eq(results.recordingId, recordings.id))
     .where(eq(recordings.userId, userId));
 
   const rows = await db
@@ -60,7 +62,18 @@ export default async function DashboardPage() {
     .leftJoin(projects, eq(projects.id, recordings.projectId))
     .where(eq(recordings.userId, userId))
     .orderBy(desc(recordings.createdAt))
-    .limit(200);
+    .limit(50);
+
+  // Projects the user owns or is a member of.
+  const memberProjectIds = (
+    await db
+      .select({ id: projectMembers.projectId })
+      .from(projectMembers)
+      .where(eq(projectMembers.userId, userId))
+  ).map((r) => r.id);
+  const projectScope = memberProjectIds.length
+    ? or(eq(projects.userId, userId), inArray(projects.id, memberProjectIds))
+    : eq(projects.userId, userId);
 
   // Projects with their recording counts.
   const projectRows = await db
@@ -77,7 +90,7 @@ export default async function DashboardPage() {
     .from(projects)
     .leftJoin(recordings, eq(recordings.projectId, projects.id))
     .leftJoin(results, eq(results.recordingId, recordings.id))
-    .where(eq(projects.userId, userId))
+    .where(projectScope)
     .groupBy(projects.id)
     .orderBy(desc(sql`max(${recordings.createdAt})`), desc(projects.createdAt));
 
@@ -123,13 +136,19 @@ export default async function DashboardPage() {
     failed: stats.failed,
     publicCount: stats.publicCount,
     unfiled: stats.unfiled,
-    actionCount: items.reduce((total, item) => total + item.actionItems.length, 0),
+    actionCount: stats.actionCount,
     totalDurationLabel: humanTotalTime(stats.totalDuration),
   };
 
   return (
     <AppShell user={session.user}>
-      <WorkbenchV2 userName={firstName} recordings={items} projects={projectItems} stats={dashboardStats} />
+      <WorkbenchV2
+        userName={firstName}
+        recordings={items}
+        projects={projectItems}
+        stats={dashboardStats}
+        initialHasMore={stats.total > items.length}
+      />
     </AppShell>
   );
 }

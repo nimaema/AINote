@@ -1,10 +1,13 @@
 import { NextResponse } from "next/server";
 import { Readable } from "node:stream";
+import { desc, eq, sql } from "drizzle-orm";
 import { auth } from "@/lib/auth";
 import { db } from "@/db";
-import { recordings } from "@/db/schema";
+import { recordings, results, transcripts, projects } from "@/db/schema";
 import { putObject } from "@/lib/storage";
 import { enqueueTranscribe } from "@/lib/queue";
+import { relativeTime, dateTimeLabel, humanDuration, humanBytes } from "@/lib/format";
+import { languageName } from "@/lib/language";
 
 export const runtime = "nodejs";
 export const maxDuration = 300;
@@ -66,6 +69,21 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "File is too large (max 300 MB)." }, { status: 413 });
   }
 
+  // Optional per-user storage quota (opt-in via env).
+  const quotaMb = Number(process.env.USER_STORAGE_QUOTA_MB);
+  if (quotaMb > 0 && sizeBytes != null) {
+    const [{ used }] = await db
+      .select({ used: sql<number>`coalesce(sum(${recordings.sizeBytes}), 0)::bigint` })
+      .from(recordings)
+      .where(eq(recordings.userId, session.user.id));
+    if (Number(used) + sizeBytes > quotaMb * 1024 * 1024) {
+      return NextResponse.json(
+        { error: `Storage quota reached (${quotaMb} MB). Delete some recordings and try again.` },
+        { status: 413 }
+      );
+    }
+  }
+
   const rawTitle = params.get("title")?.trim();
   const fallbackTitle =
     source === "upload" && filename
@@ -114,4 +132,72 @@ export async function POST(req: Request) {
   }
 
   return NextResponse.json({ id: row.id }, { status: 201 });
+}
+
+// GET /api/recordings?offset=&limit= : a page of the user's recordings, shaped
+// for the dashboard's "load more". Keeps the dashboard from silently capping.
+export async function GET(req: Request) {
+  const session = await auth();
+  if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const userId = session.user.id;
+
+  const params = new URL(req.url).searchParams;
+  const offset = Math.max(0, Number(params.get("offset")) || 0);
+  const limit = Math.min(100, Math.max(1, Number(params.get("limit")) || 50));
+
+  const rows = await db
+    .select({
+      id: recordings.id,
+      title: recordings.title,
+      status: recordings.status,
+      source: recordings.source,
+      createdAt: recordings.createdAt,
+      durationSec: recordings.durationSec,
+      sizeBytes: recordings.sizeBytes,
+      isPublic: recordings.isPublic,
+      error: recordings.error,
+      language: transcripts.language,
+      summary: results.summary,
+      topics: results.topics,
+      actionItems: results.actionItems,
+      decisions: results.decisions,
+      followUps: results.followUps,
+      projectId: recordings.projectId,
+      projectName: projects.name,
+      projectColor: projects.color,
+    })
+    .from(recordings)
+    .leftJoin(results, eq(results.recordingId, recordings.id))
+    .leftJoin(transcripts, eq(transcripts.recordingId, recordings.id))
+    .leftJoin(projects, eq(projects.id, recordings.projectId))
+    .where(eq(recordings.userId, userId))
+    .orderBy(desc(recordings.createdAt))
+    .limit(limit + 1)
+    .offset(offset);
+
+  const hasMore = rows.length > limit;
+  const now = new Date();
+  const items = rows.slice(0, limit).map((r) => ({
+    id: r.id,
+    title: r.title ?? "Untitled recording",
+    status: r.status,
+    source: r.source,
+    dateLabel: relativeTime(r.createdAt, now),
+    createdAtLabel: dateTimeLabel(r.createdAt),
+    durationLabel: humanDuration(r.durationSec),
+    sizeLabel: humanBytes(r.sizeBytes),
+    isPublic: r.isPublic,
+    error: r.error,
+    language: languageName(r.language),
+    summary: r.summary,
+    topics: r.topics ?? [],
+    actionItems: r.actionItems ?? [],
+    decisions: r.decisions ?? [],
+    followUps: r.followUps ?? [],
+    projectId: r.projectId,
+    projectName: r.projectName,
+    projectColor: r.projectColor,
+  }));
+
+  return NextResponse.json({ items, hasMore });
 }

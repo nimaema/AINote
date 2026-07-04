@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { FolderSimple, Plus, Check, X } from "@phosphor-icons/react";
-import { PROJECT_COLORS, projectColor } from "@/lib/projects";
+import { projectColor } from "@/lib/projects";
+import { DropMenu } from "@/components/ui/drop-menu";
 
 type Project = { id: string; name: string; color: string };
 
@@ -66,9 +67,12 @@ export function ProjectPicker({
     }
   }
 
+  const btnRef = useRef<HTMLButtonElement>(null);
+
   const trigger =
     variant === "icon" ? (
       <button
+        ref={btnRef}
         onClick={() => setOpen((o) => !o)}
         className="grid h-8 w-8 place-items-center rounded-input text-muted transition-colors duration-150 hover:bg-panel-lift hover:text-ink cursor-pointer"
         aria-label="Move to project"
@@ -78,6 +82,7 @@ export function ProjectPicker({
       </button>
     ) : variant === "chip" ? (
       <button
+        ref={btnRef}
         onClick={() => setOpen((o) => !o)}
         className="inline-flex h-10 items-center gap-1.5 rounded-btn glass px-3.5 text-[13px] font-medium text-ink-soft transition-transform duration-150 [transition-timing-function:var(--ease-out)] active:scale-[0.97] cursor-pointer"
       >
@@ -85,6 +90,7 @@ export function ProjectPicker({
       </button>
     ) : (
       <button
+        ref={btnRef}
         onClick={() => setOpen((o) => !o)}
         className="flex w-full items-center gap-2.5 rounded-input px-2.5 py-2 text-left text-[13.5px] text-ink-soft transition-colors duration-150 [transition-timing-function:var(--ease-out)] hover:bg-panel-lift cursor-pointer"
       >
@@ -93,12 +99,10 @@ export function ProjectPicker({
     );
 
   return (
-    <div className="relative">
+    <>
       {trigger}
-      {open && (
-        <>
-          <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
-          <div className="glass-menu pop-in absolute right-0 top-full z-50 mt-1 w-56 overflow-hidden rounded-card p-1.5">
+      <DropMenu open={open} onClose={() => setOpen(false)} anchor={btnRef} align="end" width={224}>
+        <div>
             <div className="max-h-64 overflow-y-auto">
               {currentProjectId && (
                 <button
@@ -161,9 +165,8 @@ export function ProjectPicker({
                 </button>
               )}
             </div>
-          </div>
-        </>
-      )}
-    </div>
+        </div>
+      </DropMenu>
+    </>
   );
 }

@@ -1,12 +1,13 @@
 import Link from "next/link";
 import { redirect, notFound } from "next/navigation";
-import { and, asc, desc, eq, sql } from "drizzle-orm";
+import { asc, desc, eq, sql } from "drizzle-orm";
 import { auth } from "@/lib/auth";
 import { db } from "@/db";
 import { recordings, results, transcripts, projectQaMessages } from "@/db/schema";
 import type { ActionItem } from "@/db/schema";
-import { getOwnedProject } from "@/lib/projects-server";
+import { getAccessibleProject, roleAtLeast } from "@/lib/projects-server";
 import { projectColor } from "@/lib/projects";
+import { MembersPanel } from "@/components/projects/members-panel";
 import { relativeTime, humanDuration, humanTotalTime } from "@/lib/format";
 import { languageName } from "@/lib/language";
 import { AppShell } from "@/components/shell/app-shell";
@@ -31,8 +32,10 @@ export default async function ProjectPage({
   const userId = session.user.id;
 
   const { id } = await params;
-  const project = await getOwnedProject(id, userId);
-  if (!project) notFound();
+  const access = await getAccessibleProject(id, userId);
+  if (!access) notFound();
+  const project = access.project;
+  const canEdit = roleAtLeast(access.role, "editor");
 
   const [rows, history] = await Promise.all([
     db
@@ -53,7 +56,7 @@ export default async function ProjectPage({
       .from(recordings)
       .leftJoin(results, eq(results.recordingId, recordings.id))
       .leftJoin(transcripts, eq(transcripts.recordingId, recordings.id))
-      .where(and(eq(recordings.userId, userId), eq(recordings.projectId, id)))
+      .where(eq(recordings.projectId, id))
       .orderBy(desc(recordings.createdAt)),
     db.query.projectQaMessages.findMany({
       where: eq(projectQaMessages.projectId, id),
@@ -114,15 +117,21 @@ export default async function ProjectPage({
                   <FolderSimple size={24} weight="fill" />
                 </span>
                 <div className="min-w-0">
-                  <p className="font-mono text-[11px] text-faint">Project workspace</p>
-                  <h1 className="mt-1 truncate text-[30px] font-semibold leading-none tracking-[-0.035em] text-ink sm:text-[42px]">
+                  <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-faint">Project workspace</p>
+                  <h1 className="mt-1 truncate font-display text-[22px] font-normal leading-tight text-ink sm:text-[28px]">
                     {project.name}
                   </h1>
                 </div>
               </div>
             </div>
             <div className="flex items-center bg-bg p-4 sm:p-5 lg:min-w-[18rem] lg:justify-end">
-              <ProjectActions id={project.id} name={project.name} color={project.color} />
+              {canEdit ? (
+                <ProjectActions id={project.id} name={project.name} color={project.color} />
+              ) : (
+                <span className="rounded-pill bg-panel px-2.5 py-1 font-mono text-[11px] uppercase tracking-[0.1em] text-muted">
+                  {access.role}
+                </span>
+              )}
             </div>
           </div>
         </div>
@@ -150,6 +159,8 @@ export default async function ProjectPage({
           </div>
 
           <div className="flex min-w-0 flex-col gap-5 xl:sticky xl:top-6 xl:self-start">
+            <MembersPanel projectId={id} canManage={access.role === "owner"} />
+
             <section className="rounded-[18px] border border-hairline bg-panel-solid p-4">
               <div className="flex items-center gap-2 text-accent-deep">
                 <ListChecks size={17} weight="duotone" />
@@ -188,8 +199,8 @@ export default async function ProjectPage({
 
             <QAPanel
               endpoint={`/api/projects/${id}/qa`}
-              title="Ask across this project"
-              emptyHint="Ask anything spanning every recording in this project."
+              title="Ask everything"
+              emptyHint="One question across every recording here — answers cite the exact meeting and moment."
               suggestions={["Summarize this project", "What decisions were made?", "What's still open across all of these?"]}
               initialMessages={history.map((m) => ({
                 id: m.id,
@@ -216,7 +227,7 @@ function ProjectMetric({
 }) {
   return (
     <div className="bg-panel-solid px-4 py-3">
-      <p className="font-mono text-[10.5px] text-faint">{label}</p>
+      <p className="font-mono text-[10.5px] uppercase tracking-[0.14em] text-faint">{label}</p>
       <p
         className={`tabular mt-1 text-[22px] font-semibold tracking-[-0.01em] ${
           tone === "accent" ? "text-accent-deep" : tone === "err" ? "text-err" : "text-ink"

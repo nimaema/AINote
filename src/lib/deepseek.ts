@@ -1,11 +1,14 @@
 import type { ActionItem } from "../db/schema";
 
+export type AnalysisChapter = { title: string; summary: string; quote: string };
+
 export type Analysis = {
   summary: string;
   actionItems: ActionItem[];
   decisions: string[];
   topics: string[];
   followUps: string[];
+  chapters: AnalysisChapter[];
 };
 
 export class DeepSeekJsonError extends Error {
@@ -58,9 +61,10 @@ const SYSTEM = `You are a meticulous meeting-notes analyst. You read a transcrip
   "action_items": [{"task": "what needs doing", "owner": "person or null", "due": "when or null"}],
   "decisions": ["each concrete decision made"],
   "topics": ["short topic labels covered"],
-  "follow_ups": ["open questions or things to revisit"]
+  "follow_ups": ["open questions or things to revisit"],
+  "chapters": [{"title": "short section title (2-4 words)", "summary": "one-line description of the section", "quote": "a short exact phrase (4-8 words) copied verbatim from the transcript where this section begins"}]
 }
-Keep arrays tight. Omit filler. Use names exactly as they appear. If a field has nothing, use an empty array.`;
+Keep arrays tight. Omit filler. Use names exactly as they appear. If a field has nothing, use an empty array. Chapters should cover the conversation in order; each quote MUST be copied word-for-word from the transcript so it can be located.`;
 
 // Models sometimes wrap JSON in ```json fences or add a sentence of prose even
 // in JSON mode. Pull the JSON object out before parsing.
@@ -186,6 +190,16 @@ function normalize(p: Record<string, unknown>): Analysis {
     decisions: arr(p.decisions).map(String).filter(Boolean),
     topics: arr(p.topics).map(String).filter(Boolean),
     followUps: arr(p.follow_ups ?? p.followUps).map(String).filter(Boolean),
+    chapters: arr(p.chapters)
+      .map((it) => {
+        const o = (it ?? {}) as Record<string, unknown>;
+        return {
+          title: String(o.title ?? "").trim(),
+          summary: String(o.summary ?? "").trim(),
+          quote: String(o.quote ?? "").trim(),
+        };
+      })
+      .filter((c) => c.title && c.quote),
   };
 }
 
@@ -206,6 +220,70 @@ export async function answerQuestion(
     ],
     { temperature: 0.3 }
   );
+}
+
+// Streaming variant: yields answer text deltas. The mock chunks its extractive
+// answer so the UI streams uniformly whether or not a real key is configured.
+export async function* answerQuestionStream(
+  question: string,
+  context: string
+): AsyncGenerator<string> {
+  if (useMock()) {
+    const full = mockAnswer(question, context);
+    for (const chunk of full.match(/\S+\s*/g) ?? [full]) {
+      await new Promise((r) => setTimeout(r, 12)); // make the dev mock visibly stream
+      yield chunk;
+    }
+    return;
+  }
+
+  const res = await fetch(`${BASE}/chat/completions`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${apiKey()}`,
+    },
+    body: JSON.stringify({
+      model: MODEL,
+      temperature: 0.3,
+      stream: true,
+      messages: [
+        { role: "system", content: QA_SYSTEM },
+        {
+          role: "user",
+          content: `Transcript context:\n"""\n${context}\n"""\n\nQuestion: ${question}`,
+        },
+      ],
+    }),
+  });
+  if (!res.ok || !res.body) {
+    const body = await res.text().catch(() => "");
+    throw new Error(`DeepSeek ${res.status}: ${body.slice(0, 200)}`);
+  }
+
+  const reader = res.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = "";
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buffer += decoder.decode(value, { stream: true });
+    const lines = buffer.split("\n");
+    buffer = lines.pop() ?? "";
+    for (const line of lines) {
+      const trimmed = line.trim();
+      if (!trimmed.startsWith("data:")) continue;
+      const payload = trimmed.slice(5).trim();
+      if (payload === "[DONE]") return;
+      try {
+        const json = JSON.parse(payload);
+        const delta = json.choices?.[0]?.delta?.content;
+        if (delta) yield delta as string;
+      } catch {
+        /* ignore partial frames */
+      }
+    }
+  }
 }
 
 // Extractive stand-in for local dev: returns the transcript lines that overlap
@@ -241,5 +319,11 @@ function mockAnalysis(): Analysis {
     ],
     topics: ["Onboarding drop-off", "Calendar permissions", "Analytics & funnel tracking"],
     followUps: ["Review the new funnel numbers at next Tuesday's sync"],
+    chapters: [
+      { title: "Onboarding drop-off", summary: "Where users leave the funnel", quote: "we're still seeing people drop off" },
+      { title: "Permissions rewrite", summary: "Read-only first, write on demand", quote: "rewrite that screen to request read-only first" },
+      { title: "Funnel tracking", summary: "Instrument the permissions step", quote: "add an event to track when people hit the permissions" },
+      { title: "Wrap-up", summary: "Decision and next steps", quote: "So decision is: read-only first" },
+    ],
   };
 }

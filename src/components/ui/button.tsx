@@ -14,12 +14,12 @@ const base =
   "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent";
 
 const variants: Record<Variant, string> = {
-  // Amber fill: the primary action and the app's only signal color.
+  // Vermilion fill: the primary action and the app's signal color.
   primary:
-    "bg-accent text-accent-ink shadow-[0_14px_30px_-18px_rgba(240,182,74,0.8)] hover:shadow-[0_16px_34px_-16px_rgba(240,182,74,0.85)]",
-  // Dark fill for secondary committed actions.
+    "bg-accent text-accent-ink shadow-[0_10px_24px_-14px_rgba(255,79,0,0.7)] hover:shadow-[0_14px_30px_-14px_rgba(255,79,0,0.85)]",
+  // Ink fill for secondary committed actions.
   accent:
-    "bg-panel-lift text-ink shadow-[inset_0_0_0_1px_var(--color-hairline-strong)] hover:bg-panel",
+    "bg-ink text-bg-2 hover:bg-ink-soft",
   glass:
     "glass text-ink hover:bg-panel-lift",
   ghost: "text-muted hover:text-ink hover:bg-panel",

@@ -1,4 +1,4 @@
-// Brand mark: a compact spectral waveform glyph built from elements.
+// Brand mark: a compact seismic trace glyph built from elements.
 // `live` breathes the bars for recording and sign-in surfaces.
 export function SignalMark({
   size = 22,
@@ -22,8 +22,7 @@ export function SignalMark({
           className="w-[2.5px] rounded-full"
           style={{
             height: `${h * 100}%`,
-            background:
-              "linear-gradient(180deg, var(--color-accent-deep), var(--color-accent))",
+            background: i % 2 === 0 ? "var(--color-accent)" : "var(--color-ink)",
             transformOrigin: "center",
             animation: live
               ? `wave ${820 + i * 90}ms ${i * 70}ms var(--ease-in-out) infinite alternate`
@@ -39,12 +38,8 @@ export function Wordmark({ className = "" }: { className?: string }) {
   return (
     <span className={`inline-flex items-center gap-2.5 ${className}`}>
       <SignalMark size={20} />
-      <span className="font-display text-[16px] font-bold tracking-tight text-ink">
-        GlaciaNav
-        <span className="font-mono text-[13px] font-normal text-faint">
-          {" "}
-          / notes
-        </span>
+      <span className="font-mono text-[14px] font-bold tracking-[0.08em] text-ink">
+        GLACIA<span className="text-accent">NAV</span>
       </span>
     </span>
   );

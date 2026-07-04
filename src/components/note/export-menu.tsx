@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import {
   Export,
   FilePdf,
@@ -9,20 +9,16 @@ import {
   WaveSawtooth,
   CaretDown,
   CheckCircle,
+  SlackLogo,
 } from "@phosphor-icons/react";
+import { DropMenu } from "@/components/ui/drop-menu";
 
 export function ExportMenu({ recordingId }: { recordingId: string }) {
   const [open, setOpen] = useState(false);
   const [copied, setCopied] = useState(false);
   const [copying, setCopying] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!open) return;
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false);
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [open]);
+  const [sending, setSending] = useState(false);
+  const btnRef = useRef<HTMLButtonElement>(null);
 
   function download(path: string) {
     window.location.href = path;
@@ -44,9 +40,24 @@ export function ExportMenu({ recordingId }: { recordingId: string }) {
     }
   }
 
+  async function sendSlack() {
+    setSending(true);
+    try {
+      const res = await fetch(`/api/recordings/${recordingId}/export/slack`, { method: "POST" });
+      if (!res.ok) {
+        const d = await res.json().catch(() => ({}));
+        alert(d.error ?? "Couldn't send to Slack.");
+      }
+    } finally {
+      setSending(false);
+      setOpen(false);
+    }
+  }
+
   return (
-    <div className="relative" ref={ref}>
+    <>
       <button
+        ref={btnRef}
         onClick={() => setOpen((o) => !o)}
         aria-haspopup="menu"
         aria-expanded={open}
@@ -57,39 +68,36 @@ export function ExportMenu({ recordingId }: { recordingId: string }) {
         <CaretDown size={13} className={`transition-transform duration-200 ${open ? "rotate-180" : ""}`} />
       </button>
 
-      {open && (
-        <>
-          <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
-          <div
-            role="menu"
-            className="glass-menu pop-in absolute right-0 top-full z-50 mt-2 w-60 origin-top-right overflow-hidden rounded-card p-1.5"
-          >
-            <MenuItem
-              icon={<FilePdf size={18} weight="duotone" />}
-              label="Download PDF"
-              hint="Designed"
-              onClick={() => download(`/api/recordings/${recordingId}/export/pdf`)}
-            />
-            <MenuItem
-              icon={<MarkdownLogo size={18} weight="duotone" />}
-              label="Download Markdown"
-              onClick={() => download(`/api/recordings/${recordingId}/export/markdown`)}
-            />
-            <MenuItem
-              icon={<Copy size={17} />}
-              label={copying ? "Copying…" : "Copy to clipboard"}
-              onClick={copyMarkdown}
-            />
-            <div className="my-1.5 h-px bg-hairline" />
-            <MenuItem
-              icon={<WaveSawtooth size={17} weight="duotone" />}
-              label="Download audio"
-              onClick={() => download(`/api/recordings/${recordingId}/audio?download=1`)}
-            />
-          </div>
-        </>
-      )}
-    </div>
+      <DropMenu open={open} onClose={() => setOpen(false)} anchor={btnRef} align="end" width={240}>
+        <MenuItem
+          icon={<FilePdf size={18} weight="duotone" />}
+          label="Download PDF"
+          hint="Designed"
+          onClick={() => download(`/api/recordings/${recordingId}/export/pdf`)}
+        />
+        <MenuItem
+          icon={<MarkdownLogo size={18} weight="duotone" />}
+          label="Download Markdown"
+          onClick={() => download(`/api/recordings/${recordingId}/export/markdown`)}
+        />
+        <MenuItem
+          icon={<Copy size={17} />}
+          label={copying ? "Copying…" : "Copy to clipboard"}
+          onClick={copyMarkdown}
+        />
+        <div className="my-1.5 h-px bg-hairline" />
+        <MenuItem
+          icon={<SlackLogo size={17} weight="duotone" />}
+          label={sending ? "Sending…" : "Send to Slack"}
+          onClick={sendSlack}
+        />
+        <MenuItem
+          icon={<WaveSawtooth size={17} weight="duotone" />}
+          label="Download audio"
+          onClick={() => download(`/api/recordings/${recordingId}/audio?download=1`)}
+        />
+      </DropMenu>
+    </>
   );
 }
 
