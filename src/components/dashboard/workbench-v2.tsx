@@ -127,14 +127,16 @@ function cleanText(value: string | null | undefined) {
 
 export function WorkbenchV2({
   userName,
-  recordings,
+  recordings: initialRecordings,
   projects,
   stats,
+  initialHasMore,
 }: {
   userName: string;
   recordings: WorkbenchRecording[];
   projects: WorkbenchProject[];
   stats: WorkbenchStats;
+  initialHasMore: boolean;
 }) {
   const router = useRouter();
   const [query, setQuery] = useState("");
@@ -145,6 +147,39 @@ export function WorkbenchV2({
   const [projectColorKey, setProjectColorKey] = useState<ProjectColor>("sky");
   const [projectBusy, setProjectBusy] = useState(false);
   const commandInputRef = useRef<HTMLInputElement>(null);
+
+  // Pagination: the server sends the first page; "Load more" appends the rest.
+  const [extra, setExtra] = useState<WorkbenchRecording[]>([]);
+  const [hasMore, setHasMore] = useState(initialHasMore);
+  const [loadingMore, setLoadingMore] = useState(false);
+
+  const recordings = useMemo(() => {
+    const seen = new Set<string>();
+    return [...initialRecordings, ...extra].filter((r) =>
+      seen.has(r.id) ? false : (seen.add(r.id), true)
+    );
+  }, [initialRecordings, extra]);
+
+  useEffect(() => {
+    setExtra([]);
+    setHasMore(initialHasMore);
+  }, [initialRecordings, initialHasMore]);
+
+  async function loadMore() {
+    setLoadingMore(true);
+    try {
+      const res = await fetch(`/api/recordings?offset=${recordings.length}&limit=50`, {
+        cache: "no-store",
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setExtra((prev) => [...prev, ...(data.items ?? [])]);
+        setHasMore(!!data.hasMore);
+      }
+    } finally {
+      setLoadingMore(false);
+    }
+  }
 
   const actionItems = useMemo(
     () =>
@@ -413,6 +448,17 @@ export function WorkbenchV2({
               <ActionDesk items={filteredActions} />
             ) : (
               <RecordingLibrary items={filteredRecordings} query={query} />
+            )}
+            {hasMore && (
+              <div className="border-t border-hairline p-3 text-center">
+                <button
+                  onClick={loadMore}
+                  disabled={loadingMore}
+                  className="inline-flex h-9 items-center gap-2 rounded-btn border border-hairline bg-bg px-4 text-[13px] font-medium text-ink-soft transition-colors duration-150 [transition-timing-function:var(--ease-out)] hover:border-hairline-strong hover:text-ink disabled:opacity-60 cursor-pointer"
+                >
+                  {loadingMore ? "Loading…" : "Load more captures"}
+                </button>
+              </div>
             )}
           </section>
 

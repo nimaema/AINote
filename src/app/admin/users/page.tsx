@@ -6,6 +6,7 @@ import { users, recordings } from "@/db/schema";
 import { relativeTime, humanTotalTime, humanBytes } from "@/lib/format";
 import { AppShell } from "@/components/shell/app-shell";
 import { UsersAdmin, type UserRow } from "@/components/admin/users-admin";
+import { QueueHealth } from "@/components/admin/queue-health";
 
 export default async function AdminUsersPage() {
   const session = await auth();
@@ -71,6 +72,8 @@ export default async function AdminUsersPage() {
           <Stat label="Total time" value={humanTotalTime(totals.duration)} />
           <Stat label="Storage" value={humanBytes(totals.bytes)} />
         </div>
+
+        <QueueHealth />
 
         <UsersAdmin users={enriched} meId={session.user.id} />
       </main>
