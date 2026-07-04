@@ -27,7 +27,7 @@ const ACCEPT = ["audio/webm", "audio/ogg", "audio/mpeg", "audio/mp3", "audio/mp4
 function fmt(sec: number) {
   const m = Math.floor(sec / 60);
   const s = Math.floor(sec % 60);
-  return `${m}:${s.toString().padStart(2, "0")}`;
+  return `${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
 }
 function humanSize(bytes: number) {
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`;
@@ -394,7 +394,7 @@ export function Recorder({ initialMode }: { initialMode: Mode }) {
             <button
               onClick={save}
               disabled={!canSave}
-              className="mt-5 inline-flex h-12 w-full items-center justify-center gap-2 rounded-btn bg-accent px-6 text-[15px] font-semibold text-accent-ink shadow-[0_12px_28px_-16px_rgba(214,70,31,0.75)] transition-[transform,box-shadow] duration-150 [transition-timing-function:var(--ease-out)] hover:-translate-y-0.5 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50 cursor-pointer"
+              className="mt-5 inline-flex h-12 w-full items-center justify-center gap-2 rounded-btn bg-accent px-6 text-[15px] font-semibold text-accent-ink shadow-[0_12px_28px_-16px_rgba(255,79,0,0.75)] transition-[transform,box-shadow] duration-150 [transition-timing-function:var(--ease-out)] hover:-translate-y-0.5 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50 cursor-pointer"
             >
               <CheckCircle size={18} weight="fill" />
               Save &amp; process
@@ -450,11 +450,11 @@ function RecordStage({
       {rec === "idle" && (
         <div className="flex flex-col items-center text-center">
           <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-faint">
-            Station 01 ·{" "}
+            Base camp ·{" "}
             {source === "mic" ? "microphone" : source === "system" ? "meeting audio" : "mic + meeting"}
           </p>
-          <h2 className="mt-2 font-display text-[27px] leading-tight text-ink sm:text-[31px]">
-            Ready to listen.
+          <h2 className="mt-2 font-display text-[24px] leading-tight text-ink sm:text-[28px]">
+            Ready to chart.
           </h2>
           {canShareAudio && (
             <>
@@ -503,14 +503,14 @@ function RecordStage({
             />
             <button
               onClick={onStart}
-              className="relative grid h-20 w-20 place-items-center rounded-full bg-accent text-accent-ink shadow-[0_16px_36px_-18px_rgba(214,70,31,0.85)] transition-transform duration-150 [transition-timing-function:var(--ease-out)] hover:-translate-y-0.5 active:scale-95 cursor-pointer"
+              className="relative grid h-20 w-20 place-items-center rounded-full bg-accent text-accent-ink shadow-[0_16px_36px_-18px_rgba(255,79,0,0.85)] transition-transform duration-150 [transition-timing-function:var(--ease-out)] hover:-translate-y-0.5 active:scale-95 cursor-pointer"
               aria-label="Start recording"
             >
               <Microphone size={30} weight="fill" />
             </button>
           </div>
           <p className="mt-6 font-mono text-[11px] uppercase tracking-[0.16em] text-muted">
-            Tap to capture
+            Tap to survey
           </p>
         </div>
       )}
@@ -524,10 +524,10 @@ function RecordStage({
                   rec === "recording" ? "animate-pulse" : "opacity-40"
                 }`}
               />
-              {rec === "recording" ? "Recording" : "Paused"}
+              {rec === "recording" ? "Surveying" : "Paused"}
             </span>
-            <span className="tabular font-mono text-[40px] font-medium leading-none text-ink">
-              {fmt(elapsed)}
+            <span className="tabular font-mono text-[38px] font-medium leading-none text-ink">
+              T+{fmt(elapsed)}
             </span>
             {source !== "mic" && (
               <span className="mt-1 rounded-pill bg-accent-wash px-2.5 py-0.5 font-mono text-[10.5px] uppercase tracking-[0.12em] text-accent-deep">

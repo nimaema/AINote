@@ -87,7 +87,7 @@ export function AudioPlayer({
       <button
         onClick={toggle}
         aria-label={playing ? "Pause" : "Play"}
-        className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-accent text-accent-ink shadow-[0_10px_24px_-14px_rgba(214,70,31,0.7)] transition-transform duration-150 [transition-timing-function:var(--ease-out)] active:scale-95 cursor-pointer"
+        className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-accent text-accent-ink shadow-[0_10px_24px_-14px_rgba(255,79,0,0.7)] transition-transform duration-150 [transition-timing-function:var(--ease-out)] active:scale-95 cursor-pointer"
       >
         {playing ? <Pause size={20} weight="fill" /> : <Play size={20} weight="fill" />}
       </button>

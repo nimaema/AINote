@@ -49,7 +49,7 @@ export default async function TasksPage() {
       <main className="mx-auto max-w-3xl px-4 pb-28 pt-5 sm:px-6 md:px-8 md:pb-12 md:pt-7">
         <div className="mb-5 border-b border-hairline px-1 pb-5">
           <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-faint">Workspace · your worklist</p>
-          <h1 className="mt-1.5 font-display text-[30px] leading-none tracking-[-0.01em] text-ink">
+          <h1 className="mt-1.5 font-display text-[23px] leading-tight text-ink">
             {openCount > 0 ? `${openCount} on your plate.` : "You're all caught up."}
           </h1>
           <p className="mt-1.5 text-[13.5px] text-muted">

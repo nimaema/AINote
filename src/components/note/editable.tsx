@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { PencilSimple, Check, X, Plus, Trash, ArrowElbowDownRight } from "@phosphor-icons/react";
+import { PencilSimple, Check, X, Plus, Trash, Flag } from "@phosphor-icons/react";
 
 function fmtMs(ms: number) {
   const s = Math.max(0, Math.floor(ms / 1000));
@@ -152,7 +152,7 @@ export function EditableList({
                   onClick={() => onSeek(traces[i]!)}
                   className="ml-4 inline-flex w-fit items-center gap-1 rounded-pill border border-lock/30 px-2 py-0.5 font-mono text-[11px] text-lock hover:bg-lock-wash cursor-pointer"
                 >
-                  <ArrowElbowDownRight size={11} weight="bold" /> {fmtMs(traces[i]!)}
+                  <Flag size={11} weight="bold" /> {fmtMs(traces[i]!)}
                 </button>
               )}
             </li>

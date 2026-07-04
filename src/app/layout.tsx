@@ -1,31 +1,30 @@
 import type { Metadata, Viewport } from "next";
-import { Fraunces, Space_Grotesk, IBM_Plex_Mono } from "next/font/google";
+import { Archivo, Archivo_Black, Space_Mono } from "next/font/google";
 import { Pwa } from "@/components/pwa";
 import "./globals.css";
 
-// SIGNAL type system:
-//  - Fraunces  → editorial voice (headlines, the emotional beats)
-//  - Space Grotesk → interface (labels, body, controls)
-//  - IBM Plex Mono → the machine signal (timers, speaker tags, metadata)
-const fraunces = Fraunces({
-  subsets: ["latin"],
-  weight: ["400", "500", "600"],
-  style: ["normal", "italic"],
-  variable: "--font-fraunces",
-  display: "swap",
-});
-
-const spaceGrotesk = Space_Grotesk({
+// ATLAS type system:
+//  - Archivo Black → expedition signage (display headlines, always uppercase)
+//  - Archivo       → the working interface
+//  - Space Mono    → machine truth (T+ timestamps, coordinates, speaker tags)
+const archivo = Archivo({
   subsets: ["latin"],
   weight: ["400", "500", "600", "700"],
-  variable: "--font-space-grotesk",
+  variable: "--font-archivo",
   display: "swap",
 });
 
-const plexMono = IBM_Plex_Mono({
+const archivoBlack = Archivo_Black({
   subsets: ["latin"],
-  weight: ["400", "500"],
-  variable: "--font-plex-mono",
+  weight: "400",
+  variable: "--font-archivo-black",
+  display: "swap",
+});
+
+const spaceMono = Space_Mono({
+  subsets: ["latin"],
+  weight: ["400", "700"],
+  variable: "--font-space-mono",
   display: "swap",
 });
 
@@ -33,7 +32,7 @@ export const metadata: Metadata = {
   applicationName: "GlaciaNav Notes",
   title: "GlaciaNav Notes",
   description:
-    "Capture a conversation and watch it resolve into notes you own — transcript, summary, actions, and answers, each traceable to the moment it was said.",
+    "Survey a conversation and watch it get charted — route, waypoints, flags. Every claim traceable to the moment it was said.",
   robots: { index: false, follow: false },
   manifest: "/manifest.webmanifest",
   appleWebApp: {
@@ -51,7 +50,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#efe9dc",
+  themeColor: "#edf2f1",
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
@@ -64,7 +63,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${fraunces.variable} ${spaceGrotesk.variable} ${plexMono.variable}`}
+      className={`${archivo.variable} ${archivoBlack.variable} ${spaceMono.variable}`}
     >
       <body className="min-h-[100dvh] antialiased">
         {children}

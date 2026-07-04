@@ -41,12 +41,12 @@ export function AppShell({ user, children }: { user: ShellUser; children: React.
         <div className="px-4 pb-5 pt-1">
           <Link
             href="/record"
-            className="flex h-11 items-center justify-center gap-2 rounded-[12px] bg-accent text-[13.5px] font-semibold text-accent-ink shadow-[0_10px_24px_-14px_rgba(214,70,31,0.7)] transition-[transform,box-shadow] duration-150 [transition-timing-function:var(--ease-out)] hover:shadow-[0_14px_30px_-14px_rgba(214,70,31,0.85)] active:scale-[0.98] cursor-pointer"
+            className="flex h-11 items-center justify-center gap-2 rounded-[12px] bg-accent text-[13.5px] font-semibold text-accent-ink shadow-[0_10px_24px_-14px_rgba(255,79,0,0.7)] transition-[transform,box-shadow] duration-150 [transition-timing-function:var(--ease-out)] hover:shadow-[0_14px_30px_-14px_rgba(255,79,0,0.85)] active:scale-[0.98] cursor-pointer"
           >
             <Plus size={15} weight="bold" /> New capture
           </Link>
           <div className="mt-3 rounded-[14px] border border-hairline bg-bg px-3 py-2.5">
-            <p className="font-mono text-[10.5px] text-faint">Station</p>
+            <p className="font-mono text-[10.5px] uppercase tracking-[0.12em] text-faint">Base camp</p>
             <p className="mt-1 text-[12.5px] leading-relaxed text-muted">Local workspace</p>
           </div>
         </div>
@@ -72,8 +72,8 @@ export function AppShell({ user, children }: { user: ShellUser; children: React.
       >
         <Link href="/" className="inline-flex items-center gap-2 cursor-pointer">
           <SignalMark size={18} />
-          <span className="font-display text-[15px] font-bold tracking-tight text-ink">
-            GlaciaNav<span className="font-mono text-[12px] font-normal text-faint"> / notes</span>
+          <span className="font-mono text-[13px] font-bold tracking-[0.08em] text-ink">
+            GLACIA<span className="text-accent">NAV</span>
           </span>
         </Link>
         <div className="flex items-center gap-1">

@@ -54,7 +54,7 @@ export function VisibilityToggle({
         aria-pressed={isPublic}
         className={`inline-flex h-10 items-center gap-2 rounded-btn px-3.5 text-[13px] font-medium transition-[transform,background-color,color] duration-150 [transition-timing-function:var(--ease-out)] active:scale-[0.97] disabled:opacity-60 cursor-pointer ${
           isPublic
-            ? "bg-accent text-accent-ink shadow-[0_10px_24px_-14px_rgba(214,70,31,0.7)]"
+            ? "bg-accent text-accent-ink shadow-[0_10px_24px_-14px_rgba(255,79,0,0.7)]"
             : "glass text-ink-soft"
         }`}
         title={isPublic ? "Anyone signed in can view this" : "Only you can view this"}

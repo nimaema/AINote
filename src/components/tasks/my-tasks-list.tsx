@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Check, ArrowElbowDownRight, WaveSawtooth } from "@phosphor-icons/react";
+import { Check, Flag, WaveSawtooth } from "@phosphor-icons/react";
 
 export type TaskItem = {
   id: string;
@@ -111,7 +111,7 @@ function Row({ t, onToggle }: { t: TaskItem; onToggle: () => void }) {
               href={`/note/${t.recordingId}`}
               className="inline-flex items-center gap-1 rounded-pill border border-lock/30 px-1.5 py-0.5 text-lock hover:bg-lock-wash"
             >
-              <ArrowElbowDownRight size={10} weight="bold" /> {fmtMs(t.sourceMs)}
+              <Flag size={10} weight="bold" /> {fmtMs(t.sourceMs)}
             </Link>
           )}
         </div>

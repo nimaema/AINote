@@ -101,7 +101,7 @@ export function TeamFeed({
     <main className="mx-auto max-w-[1540px] px-3 pb-28 pt-3 sm:px-5 md:px-7 md:pb-12 md:pt-5">
       <section className="workbench-hero overflow-hidden rounded-[18px] border border-hairline p-5 sm:p-6 lg:p-7">
         <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-faint">Workspace · shared signal</p>
-        <h1 className="mt-2.5 max-w-3xl font-display text-[33px] font-normal leading-[1.0] tracking-[-0.01em] text-ink sm:text-[46px] lg:text-[54px]">
+        <h1 className="mt-2.5 max-w-3xl font-display text-[24px] font-normal leading-[1.08] text-ink sm:text-[32px] lg:text-[36px]">
           What the team is capturing.
         </h1>
         <p className="mt-4 max-w-xl text-[14.5px] leading-relaxed text-muted">

@@ -26,6 +26,7 @@ import {
 } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
 import { ProjectPicker } from "@/components/projects/project-picker";
+import { AtlasField } from "@/components/dashboard/atlas-field";
 import { PROJECT_COLORS, projectColor, type ProjectColor } from "@/lib/projects";
 
 export type WorkbenchAction = {
@@ -332,12 +333,12 @@ export function WorkbenchV2({
             <div className="bg-panel-solid p-5 sm:p-6 lg:p-7">
               <div className="flex flex-wrap items-start justify-between gap-4">
                 <div className="min-w-0">
-                  <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-faint">Workbench</p>
-                  <h1 className="mt-2.5 max-w-3xl font-display text-[33px] font-normal leading-[1.0] tracking-[-0.01em] text-ink sm:text-[46px] lg:text-[56px]">
-                    Review the room, route the work.
+                  <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-faint">The Atlas · base camp</p>
+                  <h1 className="mt-2.5 max-w-3xl font-display text-[26px] font-normal leading-[1.06] text-ink sm:text-[34px] lg:text-[40px]">
+                    Every talk, charted.
                   </h1>
                   <p className="mt-4 max-w-xl text-[14.5px] leading-relaxed text-muted">
-                    Welcome back, {userName}. Your captures now open into action, review, and project lanes.
+                    Welcome back, {userName}. The map grows as the team talks — every survey charts new ground.
                   </p>
                 </div>
                 <div className="flex shrink-0 items-center gap-2">
@@ -350,7 +351,7 @@ export function WorkbenchV2({
                   </Link>
                   <Link
                     href="/record?mode=record"
-                    className="inline-flex h-9 items-center justify-center gap-2 whitespace-nowrap rounded-btn bg-accent px-4 text-[13px] font-medium text-accent-ink shadow-[0_10px_24px_-14px_rgba(214,70,31,0.7)] transition-[transform,box-shadow] duration-150 [transition-timing-function:var(--ease-out)] hover:shadow-[0_14px_30px_-14px_rgba(214,70,31,0.85)] active:scale-[0.97] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent cursor-pointer"
+                    className="inline-flex h-9 items-center justify-center gap-2 whitespace-nowrap rounded-btn bg-accent px-4 text-[13px] font-medium text-accent-ink shadow-[0_10px_24px_-14px_rgba(255,79,0,0.7)] transition-[transform,box-shadow] duration-150 [transition-timing-function:var(--ease-out)] hover:shadow-[0_14px_30px_-14px_rgba(255,79,0,0.85)] active:scale-[0.97] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent cursor-pointer"
                   >
                     <Microphone size={15} weight="fill" />
                     Record
@@ -358,11 +359,18 @@ export function WorkbenchV2({
                 </div>
               </div>
 
-              <div className="mt-7 grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
-                <WorkbenchMetric label="Ready notes" value={String(stats.ready)} detail={`${stats.total} total`} />
-                <WorkbenchMetric label="Open actions" value={String(stats.actionCount)} detail="From processed notes" />
-                <WorkbenchMetric label="Queue health" value={`${stats.active}/${stats.failed}`} detail="Active / failed" tone={stats.failed > 0 ? "warn" : "ok"} />
-                <WorkbenchMetric label="Recorded time" value={stats.totalDurationLabel} detail={`${stats.publicCount} shared`} />
+              <div className="mt-6">
+                <AtlasField
+                  territories={projects.map((p) => ({ id: p.id, name: p.name, color: p.color, count: p.count }))}
+                  unfiled={stats.unfiled}
+                />
+              </div>
+
+              <div className="mt-4 grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
+                <WorkbenchMetric label="Charted" value={String(stats.ready)} detail={`${stats.total} surveys total`} />
+                <WorkbenchMetric label="Flags open" value={String(stats.actionCount)} detail="Across all routes" />
+                <WorkbenchMetric label="In the field" value={`${stats.active}/${stats.failed}`} detail="Charting / failed" tone={stats.failed > 0 ? "warn" : "ok"} />
+                <WorkbenchMetric label="Ground covered" value={stats.totalDurationLabel} detail={`${stats.publicCount} shared`} />
               </div>
             </div>
 
@@ -477,7 +485,7 @@ export function WorkbenchV2({
 
             <section className="rounded-[18px] border border-hairline bg-panel-solid p-4">
               <div className="flex items-center justify-between gap-3">
-                <PanelTitle icon={<FolderSimple size={17} weight="duotone" />} title="Project lanes" />
+                <PanelTitle icon={<FolderSimple size={17} weight="duotone" />} title="Territories" />
                 {!creatingProject && (
                   <button
                     onClick={() => setCreatingProject(true)}

@@ -57,7 +57,7 @@ export default async function SharePage({
         <div className="mx-auto flex max-w-3xl items-center justify-between px-5 py-3.5">
           <span className="inline-flex items-center gap-2.5">
             <SignalMark size={20} />
-            <span className="font-display text-[16px] font-semibold tracking-tight text-ink">GlaciaNav</span>
+            <span className="font-mono text-[13px] font-bold tracking-[0.08em] text-ink">GLACIA<span className="text-accent">NAV</span></span>
           </span>
           <span className="rounded-pill bg-lock-wash px-2.5 py-1 font-mono text-[10.5px] uppercase tracking-[0.14em] text-lock">
             Shared · read-only
@@ -67,7 +67,7 @@ export default async function SharePage({
 
       <main className="mx-auto max-w-3xl px-5 pb-24 pt-8">
         <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-faint">Shared note</p>
-        <h1 className="mt-2 font-display text-[32px] font-normal leading-[1.05] tracking-[-0.01em] text-ink sm:text-[42px]">
+        <h1 className="mt-2 font-display text-[22px] font-normal leading-[1.1] text-ink sm:text-[28px]">
           {rec.title ?? "Untitled recording"}
         </h1>
         <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1.5 font-mono text-[12px] text-faint">
@@ -79,7 +79,7 @@ export default async function SharePage({
         {res?.summary && (
           <section className="mt-8">
             <SectionLabel>Summary</SectionLabel>
-            <p className="mt-2 font-display text-[19px] leading-[1.55] text-ink-soft">{res.summary}</p>
+            <p className="mt-2 text-[16px] leading-[1.6] text-ink-soft">{res.summary}</p>
           </section>
         )}
 

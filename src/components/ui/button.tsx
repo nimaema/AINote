@@ -16,7 +16,7 @@ const base =
 const variants: Record<Variant, string> = {
   // Vermilion fill: the primary action and the app's signal color.
   primary:
-    "bg-accent text-accent-ink shadow-[0_10px_24px_-14px_rgba(214,70,31,0.7)] hover:shadow-[0_14px_30px_-14px_rgba(214,70,31,0.85)]",
+    "bg-accent text-accent-ink shadow-[0_10px_24px_-14px_rgba(255,79,0,0.7)] hover:shadow-[0_14px_30px_-14px_rgba(255,79,0,0.85)]",
   // Ink fill for secondary committed actions.
   accent:
     "bg-ink text-bg-2 hover:bg-ink-soft",

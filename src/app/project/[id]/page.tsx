@@ -118,7 +118,7 @@ export default async function ProjectPage({
                 </span>
                 <div className="min-w-0">
                   <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-faint">Project workspace</p>
-                  <h1 className="mt-1 truncate font-display text-[32px] font-normal leading-none tracking-[-0.01em] text-ink sm:text-[44px]">
+                  <h1 className="mt-1 truncate font-display text-[22px] font-normal leading-tight text-ink sm:text-[28px]">
                     {project.name}
                   </h1>
                 </div>

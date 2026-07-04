@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Check, ArrowElbowDownRight, UserPlus, X } from "@phosphor-icons/react";
+import { Check, Flag, UserPlus, X } from "@phosphor-icons/react";
 import { useNoteAudio } from "@/components/note/note-audio";
 import { UserPicker, type PickUser } from "@/components/team/user-picker";
 
@@ -109,7 +109,7 @@ export function ActionBoard({ actions, canManage }: { actions: ActionRow[]; canM
                   className="inline-flex items-center gap-1 rounded-pill border border-lock/30 px-2 py-0.5 font-mono text-[11px] text-lock transition-colors duration-150 hover:border-lock/60 hover:bg-lock-wash cursor-pointer"
                   title="Play the moment this came from"
                 >
-                  <ArrowElbowDownRight size={11} weight="bold" />
+                  <Flag size={11} weight="bold" />
                   {fmtMs(a.sourceMs)}
                 </button>
               )}

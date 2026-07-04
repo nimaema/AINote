@@ -133,9 +133,9 @@ export default async function NotePage({
           <div className="grid gap-px bg-hairline lg:grid-cols-[minmax(0,1fr)_auto]">
             <div className="bg-panel-solid p-5 sm:p-6">
               <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-faint">
-                {done ? "Signal locked" : "Resolving"}
+                {done ? "Charted · sheet 01" : "Charting"}
               </p>
-              <h1 className="mt-2 max-w-5xl font-display text-[30px] font-normal leading-[1.03] tracking-[-0.01em] text-ink sm:text-[42px]">
+              <h1 className="mt-2 max-w-5xl font-display text-[22px] font-normal leading-[1.1] text-ink sm:text-[30px]">
                 {rec.title ?? "Untitled recording"}
               </h1>
               <div className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-1.5 font-mono text-[12px] text-faint">

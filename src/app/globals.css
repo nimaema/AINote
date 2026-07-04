@@ -1,50 +1,50 @@
 @import "tailwindcss";
 
 /*
-  GlaciaNav Notes — SIGNAL.
-  A warm-daylight field instrument: bone-paper field, warm ink, a vermilion
-  signal light, and pine green for the moment a capture resolves and becomes
-  yours. Editorial serif for the voice, grotesque for the interface, mono for
-  the machine. Class names are kept so existing usage re-skins in place.
+  GlaciaNav Notes — ATLAS.
+  Expedition cartography: an ice-field ground, crevasse ink, a flare-orange
+  action color, and glacial cyan for anything charted and earned. Display type
+  is summit-marker signage (always uppercase); machine truth is mono. Token and
+  class names are kept from prior systems so existing usage re-skins in place.
 */
 
 @theme {
-  /* Field — warm bone paper, never cold white */
-  --color-bg: #efe9dc;
-  --color-bg-2: #f5f1e8;
-  --color-ink: #221d15;
-  --color-ink-soft: #433c2d;
-  --color-muted: #6b6353;
-  --color-faint: #948b77;
+  /* Ground — ice field, cold and bright */
+  --color-bg: #edf2f1;
+  --color-bg-2: #f5f9f8;
+  --color-ink: #0b1e24;
+  --color-ink-soft: #263b41;
+  --color-muted: #53686e;
+  --color-faint: #84979b;
 
-  /* Surfaces — near-white faces that sit on the paper */
-  --color-panel: #f2ede1;
-  --color-panel-solid: #fcfaf5;
-  --color-panel-lift: #e8e1d2;
-  --color-hairline: rgba(34, 29, 21, 0.1);
-  --color-hairline-strong: rgba(34, 29, 21, 0.17);
+  /* Surfaces — near-white map sheets on the ice */
+  --color-panel: #f1f5f4;
+  --color-panel-solid: #fbfdfc;
+  --color-panel-lift: #e2eae9;
+  --color-hairline: rgba(11, 30, 36, 0.11);
+  --color-hairline-strong: rgba(11, 30, 36, 0.18);
 
-  /* Accent — vermilion signal light */
-  --color-accent: #d6461f;
-  --color-accent-deep: #a5350f; /* text-on-paper, AA */
-  --color-accent-ink: #fff6ee; /* text on the vermilion fill */
-  --color-accent-wash: rgba(214, 70, 31, 0.1);
+  /* Accent — flare orange: live, action, recording */
+  --color-accent: #ff4f00;
+  --color-accent-deep: #bc3c00; /* text-on-ice, AA */
+  --color-accent-ink: #fff6f0; /* text on the flare fill */
+  --color-accent-wash: rgba(255, 79, 0, 0.1);
 
-  /* Lock — pine green, the earned "resolved / yours" color */
-  --color-lock: #1e6b47;
-  --color-lock-wash: rgba(30, 107, 71, 0.12);
+  /* Lock — glacial cyan: the earned "charted / yours" color */
+  --color-lock: #0a7d95;
+  --color-lock-wash: rgba(10, 125, 149, 0.12);
 
-  /* Secondary signal colors — speakers and projects only */
-  --color-aurora-teal: #2e7d74;
-  --color-aurora-violet: #4f5d9e;
-  --color-aurora-rose: #b14a5a;
-  --color-aurora-amber: #b5730f;
+  /* Secondary signal colors — speakers and territories (alpine palette) */
+  --color-aurora-teal: #0a7e8c;
+  --color-aurora-violet: #4a5f8a;
+  --color-aurora-rose: #a65b41;
+  --color-aurora-amber: #8f7a2e;
 
   /* Semantic */
-  --color-ok: #1e6b47;
-  --color-warn: #b5730f;
+  --color-ok: #0a7d95;
+  --color-warn: #a87516;
   --color-err: #c0392b;
-  --color-rec: #d6461f;
+  --color-rec: #ff4f00;
 
   /* Shape: compact product radii. Inputs 8, buttons/cards 10, panels 12.
      Pills reserved for status dots/avatars via --radius-pill. */
@@ -59,9 +59,9 @@
   --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
   --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
 
-  --font-sans: var(--font-space-grotesk), ui-sans-serif, system-ui, sans-serif;
-  --font-display: var(--font-fraunces), Georgia, "Times New Roman", serif;
-  --font-mono: var(--font-plex-mono), ui-monospace, "SF Mono", monospace;
+  --font-sans: var(--font-archivo), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-archivo-black), var(--font-archivo), sans-serif;
+  --font-mono: var(--font-space-mono), ui-monospace, "SF Mono", monospace;
 }
 
 html {
@@ -70,9 +70,9 @@ html {
 }
 
 body {
-  /* Paper field with a calibrated vermilion signal wash at the top edge. */
+  /* Ice field with a faint glacial wash at the top edge. */
   background:
-    radial-gradient(920px 380px at 86% -16%, rgba(214, 70, 31, 0.05), transparent 60%),
+    radial-gradient(920px 380px at 82% -16%, rgba(10, 125, 149, 0.07), transparent 60%),
     var(--color-bg);
   color: var(--color-ink-soft);
   font-family: var(--font-sans);
@@ -80,9 +80,11 @@ body {
   text-rendering: optimizeLegibility;
 }
 
+/* Expedition signage: single-weight black, always uppercase. */
 .font-display {
   font-family: var(--font-display);
-  letter-spacing: -0.015em;
+  text-transform: uppercase;
+  letter-spacing: 0.015em;
 }
 
 .tabular {
@@ -91,14 +93,14 @@ body {
 }
 
 /* ─── Surfaces ────────────────────────────────────────────────────────
-   Product panels: near-white faces, hairline edges, soft daylight lift.
+   Map sheets: near-white faces, hairline edges, soft cold lift.
    Old class names kept so existing usage re-skins in place. */
 .glass {
   background: var(--color-panel-solid);
   border: 1px solid var(--color-hairline);
   box-shadow:
-    0 1px 2px rgba(34, 29, 21, 0.04),
-    0 16px 40px -30px rgba(34, 29, 21, 0.28);
+    0 1px 2px rgba(11, 30, 36, 0.04),
+    0 16px 40px -30px rgba(11, 30, 36, 0.3);
 }
 
 .glass-soft {
@@ -111,26 +113,27 @@ body {
   background: #ffffff;
   border: 1px solid var(--color-hairline-strong);
   box-shadow:
-    0 1px 2px rgba(34, 29, 21, 0.06),
-    0 24px 60px -22px rgba(34, 29, 21, 0.34);
+    0 1px 2px rgba(11, 30, 36, 0.06),
+    0 24px 60px -22px rgba(11, 30, 36, 0.35);
 }
 
 .workbench-hero {
   position: relative;
   isolation: isolate;
   background:
-    linear-gradient(135deg, rgba(214, 70, 31, 0.06), transparent 30%),
+    linear-gradient(135deg, rgba(10, 125, 149, 0.06), transparent 32%),
     var(--color-panel-solid);
 }
 
+/* Survey-sheet grid behind hero surfaces. */
 .workbench-hero::before {
   content: "";
   position: absolute;
   inset: 0;
   z-index: -1;
   background-image:
-    linear-gradient(rgba(34, 29, 21, 0.045) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(34, 29, 21, 0.04) 1px, transparent 1px);
+    linear-gradient(rgba(11, 30, 36, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(11, 30, 36, 0.045) 1px, transparent 1px);
   background-size: 46px 46px;
   mask-image: linear-gradient(120deg, black, transparent 70%);
   pointer-events: none;
@@ -139,8 +142,8 @@ body {
 /* Measurement grid for capture / instrument surfaces. */
 .signal-grid {
   background-image:
-    linear-gradient(rgba(34, 29, 21, 0.05) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(34, 29, 21, 0.045) 1px, transparent 1px);
+    linear-gradient(rgba(11, 30, 36, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(11, 30, 36, 0.045) 1px, transparent 1px);
   background-size: 30px 30px;
 }
 
@@ -192,7 +195,7 @@ body {
   animation: rise 220ms var(--ease-out) both;
 }
 
-/* Resolve: blur → sharp, the signal locking into focus. */
+/* Resolve/chart: blur → sharp, the route locking onto the map. */
 @keyframes resolveIn {
   from {
     opacity: 0;
@@ -208,6 +211,17 @@ body {
 
 .resolve-in {
   animation: resolveIn 620ms var(--ease-out) both;
+}
+
+/* Route lines draw themselves — the ATLAS motion signature. */
+@keyframes routeDraw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+.route-draw {
+  animation: routeDraw 900ms var(--ease-out) forwards;
 }
 
 /* Menu and popover entrance — scales up from near-full, never from nothing. */
@@ -226,7 +240,7 @@ body {
   animation: popIn 150ms var(--ease-out) both;
 }
 
-/* Recording pulse for the capture dial. */
+/* Sonar ping for the survey dial. */
 @keyframes signal-ping {
   0% {
     transform: scale(1);

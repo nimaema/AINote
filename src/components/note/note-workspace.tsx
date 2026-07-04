@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Play,
   Pause,
@@ -168,12 +168,7 @@ export function NoteWorkspace({
       />
 
       <div className="resolve-in flex flex-col gap-5">
-        <Scrubber
-          utterances={utterances}
-          speakerColors={speakerColors}
-          markers={markers}
-          chapterMarks={chapters.map((c) => c.startMs)}
-        />
+        <Scrubber markers={markers} chapterMarks={chapters.map((c) => c.startMs)} />
 
         <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_410px]">
           <div className="flex flex-col gap-5">
@@ -229,7 +224,7 @@ export function NoteWorkspace({
                     value={summary ?? ""}
                     canEdit={canEdit}
                     onSave={(v) => saveResults({ summary: v })}
-                    className="font-display text-[19px] leading-[1.5] text-ink-soft"
+                    className="text-[16px] leading-[1.6] text-ink-soft"
                   />
                 </div>
               </section>
@@ -330,46 +325,54 @@ export function NoteWorkspace({
   );
 }
 
-// ─── Waveform scrubber (navigation, not decoration) ───────────────────
+// ─── The Route (navigation, not decoration) ───────────────────────────
+// The recording rendered as a drawn path: playback inks the route in glacial
+// cyan, chapters are waypoints, action anchors are flags. Click anywhere on
+// the route to travel to that moment. The path's x is monotonic, so time maps
+// linearly to arc length and clicks map back by nearest sampled x.
 
-const SCRUB_BARS = 84;
+const ROUTE_D =
+  "M12 84 C 120 22, 235 112, 360 62 C 470 18, 590 24, 700 72 C 800 112, 900 38, 988 56";
+const ROUTE_SAMPLES = 240;
 
-function Scrubber({
-  utterances,
-  speakerColors,
-  markers,
-  chapterMarks,
-}: {
-  utterances: Utterance[];
-  speakerColors: Record<string, string>;
-  markers: number[];
-  chapterMarks: number[];
-}) {
+function Scrubber({ markers, chapterMarks }: { markers: number[]; chapterMarks: number[] }) {
   const { seekTo, currentMs, durationMs, playing, toggle } = useNoteAudio();
-  const trackRef = useRef<HTMLDivElement>(null);
+  const svgRef = useRef<SVGSVGElement>(null);
+  const pathRef = useRef<SVGPathElement>(null);
+  const [geom, setGeom] = useState<{ len: number; pts: { x: number; y: number }[] } | null>(null);
 
-  const bars = useMemo(() => {
-    return Array.from({ length: SCRUB_BARS }, (_, i) => {
-      const a = Math.sin(i * 0.5) * 0.5 + 0.5;
-      const b = Math.sin(i * 0.21 + 1.1) * 0.5 + 0.5;
-      const env = Math.sin((i / SCRUB_BARS) * Math.PI);
-      const h = (0.22 + Math.max(a * 0.7, b) * 0.78 * (0.5 + env * 0.7)) * 100;
-      const frac = i / SCRUB_BARS;
-      const ms = frac * durationMs;
-      const u = utterances.find((x) => ms >= x.start && ms < x.end);
-      const color = u ? speakerColors[u.speaker] : "var(--color-hairline-strong)";
-      return { h: h.toFixed(2), color };
+  useEffect(() => {
+    const p = pathRef.current;
+    if (!p) return;
+    const len = p.getTotalLength();
+    const pts = Array.from({ length: ROUTE_SAMPLES + 1 }, (_, i) => {
+      const pt = p.getPointAtLength((len * i) / ROUTE_SAMPLES);
+      return { x: pt.x, y: pt.y };
     });
-  }, [durationMs, utterances, speakerColors]);
+    setGeom({ len, pts });
+  }, []);
 
   const progress = durationMs > 0 ? Math.min(currentMs / durationMs, 1) : 0;
+  const at = (frac: number) =>
+    geom?.pts[Math.max(0, Math.min(ROUTE_SAMPLES, Math.round(frac * ROUTE_SAMPLES)))];
+  const head = at(progress);
 
   function seekAt(clientX: number) {
-    const track = trackRef.current;
-    if (!track || !durationMs) return;
-    const rect = track.getBoundingClientRect();
-    const frac = Math.min(Math.max((clientX - rect.left) / rect.width, 0), 1);
-    seekTo(frac * durationMs);
+    const svg = svgRef.current;
+    if (!svg || !durationMs || !geom) return;
+    const rect = svg.getBoundingClientRect();
+    const xView = ((clientX - rect.left) / rect.width) * 1000;
+    // Nearest sample by x (path is monotonic in x).
+    let best = 0;
+    let bestDist = Infinity;
+    for (let i = 0; i <= ROUTE_SAMPLES; i++) {
+      const d = Math.abs(geom.pts[i].x - xView);
+      if (d < bestDist) {
+        bestDist = d;
+        best = i;
+      }
+    }
+    seekTo((best / ROUTE_SAMPLES) * durationMs);
   }
 
   return (
@@ -377,69 +380,106 @@ function Scrubber({
       <button
         onClick={toggle}
         aria-label={playing ? "Pause" : "Play"}
-        className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-accent text-accent-ink shadow-[0_10px_24px_-14px_rgba(214,70,31,0.7)] transition-transform duration-150 [transition-timing-function:var(--ease-out)] active:scale-95 cursor-pointer"
+        className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-accent text-accent-ink shadow-[0_10px_24px_-14px_rgba(255,79,0,0.7)] transition-transform duration-150 [transition-timing-function:var(--ease-out)] active:scale-95 cursor-pointer"
       >
         {playing ? <Pause size={20} weight="fill" /> : <Play size={20} weight="fill" />}
       </button>
 
-      <div
-        ref={trackRef}
+      <svg
+        ref={svgRef}
+        viewBox="0 0 1000 120"
         onClick={(e) => seekAt(e.clientX)}
-        className="relative h-14 flex-1 cursor-pointer"
+        onKeyDown={(e) => {
+          if (e.key === "ArrowRight") seekTo(Math.min(durationMs, currentMs + 5000));
+          if (e.key === "ArrowLeft") seekTo(Math.max(0, currentMs - 5000));
+        }}
+        className="h-auto min-w-0 flex-1 cursor-pointer"
         role="slider"
-        aria-label="Seek recording"
+        aria-label="Travel the route"
         aria-valuemin={0}
         aria-valuemax={Math.round(durationMs / 1000)}
         aria-valuenow={Math.round(currentMs / 1000)}
         tabIndex={0}
       >
-        {/* Chapter starts (vermilion) + source-trace markers (pine). */}
-        {durationMs > 0 &&
-          chapterMarks.map((m, i) => (
-            <span
-              key={`ch${i}`}
-              aria-hidden
-              className="absolute top-0 h-3.5 w-[1.5px] -translate-x-1/2 rounded-full bg-accent"
-              style={{ left: `${(m / durationMs) * 100}%` }}
-            />
-          ))}
-        {durationMs > 0 &&
-          markers.map((m, i) => (
-            <span
-              key={i}
-              aria-hidden
-              className="absolute top-0 h-2 w-px -translate-x-1/2 bg-lock/70"
-              style={{ left: `${(m / durationMs) * 100}%` }}
-            />
-          ))}
-
-        <div className="flex h-full w-full items-end gap-[2px] pt-3">
-          {bars.map((bar, i) => {
-            const played = i / SCRUB_BARS <= progress;
+        {/* Base route — the uncharted line */}
+        <path
+          ref={pathRef}
+          d={ROUTE_D}
+          fill="none"
+          stroke="var(--color-hairline-strong)"
+          strokeWidth={3}
+          strokeLinecap="round"
+        />
+        {/* Progress — the route inked in as you travel */}
+        {geom && (
+          <path
+            d={ROUTE_D}
+            fill="none"
+            stroke="var(--color-lock)"
+            strokeWidth={3.5}
+            strokeLinecap="round"
+            strokeDasharray={geom.len}
+            strokeDashoffset={geom.len * (1 - progress)}
+            style={{ transition: "stroke-dashoffset 120ms linear" }}
+          />
+        )}
+        {/* Waypoints — chapter starts */}
+        {geom &&
+          durationMs > 0 &&
+          chapterMarks.map((m, i) => {
+            const pt = at(m / durationMs);
+            if (!pt) return null;
             return (
-              <span
-                key={i}
-                className="flex-1 rounded-full transition-opacity"
-                style={{
-                  height: `${bar.h}%`,
-                  background: bar.color,
-                  opacity: played ? 1 : 0.28,
-                }}
+              <circle
+                key={`wp${i}`}
+                cx={pt.x}
+                cy={pt.y}
+                r={7}
+                fill="var(--color-lock)"
+                stroke="var(--color-panel-solid)"
+                strokeWidth={2.5}
               />
             );
           })}
-        </div>
-
-        {/* Playhead */}
-        <span
-          aria-hidden
-          className="pointer-events-none absolute bottom-0 top-3 w-px bg-ink"
-          style={{ left: `${progress * 100}%` }}
-        />
-      </div>
+        {/* Flags — where the notes came from */}
+        {geom &&
+          durationMs > 0 &&
+          markers.map((m, i) => {
+            const pt = at(m / durationMs);
+            if (!pt) return null;
+            return (
+              <g key={`fl${i}`} aria-hidden>
+                <line
+                  x1={pt.x}
+                  y1={pt.y}
+                  x2={pt.x}
+                  y2={pt.y - 26}
+                  stroke="var(--color-ink)"
+                  strokeWidth={1.5}
+                />
+                <polygon
+                  points={`${pt.x},${pt.y - 26} ${pt.x + 15},${pt.y - 21.5} ${pt.x},${pt.y - 17}`}
+                  fill="var(--color-accent)"
+                />
+                <circle cx={pt.x} cy={pt.y} r={4} fill="var(--color-accent)" />
+              </g>
+            );
+          })}
+        {/* Playhead — you are here */}
+        {geom && head && (
+          <circle
+            cx={head.x}
+            cy={head.y}
+            r={8}
+            fill="var(--color-ink)"
+            stroke="#fff"
+            strokeWidth={2.5}
+          />
+        )}
+      </svg>
 
       <span className="tabular shrink-0 font-mono text-[12px] text-muted">
-        {fmtMs(currentMs)} / {fmtMs(durationMs)}
+        T+{fmtMs(currentMs)} / {fmtMs(durationMs)}
       </span>
     </div>
   );
