@@ -572,7 +572,12 @@ export function WorkbenchV2({
 
       {commandOpen && (
         <div className="fixed inset-0 z-50 grid place-items-start bg-bg/72 px-3 py-16 backdrop-blur-md sm:px-6">
-          <div className="mx-auto w-full max-w-2xl overflow-hidden rounded-[18px] border border-hairline-strong bg-panel-solid shadow-[0_30px_90px_-28px_rgba(0,0,0,0.85)]">
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-label="Search everything"
+            className="mx-auto w-full max-w-2xl overflow-hidden rounded-[18px] border border-hairline-strong bg-panel-solid shadow-[0_30px_90px_-28px_rgba(0,0,0,0.85)]"
+          >
             <div className="flex items-center gap-3 border-b border-hairline px-4 py-3">
               <MagnifyingGlass size={18} className="text-faint" />
               <input

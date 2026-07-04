@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { Readable } from "node:stream";
-import { desc, eq } from "drizzle-orm";
+import { desc, eq, sql } from "drizzle-orm";
 import { auth } from "@/lib/auth";
 import { db } from "@/db";
 import { recordings, results, transcripts, projects } from "@/db/schema";
@@ -67,6 +67,21 @@ export async function POST(req: Request) {
   }
   if (sizeBytes != null && sizeBytes > MAX_BYTES) {
     return NextResponse.json({ error: "File is too large (max 300 MB)." }, { status: 413 });
+  }
+
+  // Optional per-user storage quota (opt-in via env).
+  const quotaMb = Number(process.env.USER_STORAGE_QUOTA_MB);
+  if (quotaMb > 0 && sizeBytes != null) {
+    const [{ used }] = await db
+      .select({ used: sql<number>`coalesce(sum(${recordings.sizeBytes}), 0)::bigint` })
+      .from(recordings)
+      .where(eq(recordings.userId, session.user.id));
+    if (Number(used) + sizeBytes > quotaMb * 1024 * 1024) {
+      return NextResponse.json(
+        { error: `Storage quota reached (${quotaMb} MB). Delete some recordings and try again.` },
+        { status: 413 }
+      );
+    }
   }
 
   const rawTitle = params.get("title")?.trim();

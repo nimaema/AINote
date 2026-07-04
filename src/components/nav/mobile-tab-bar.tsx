@@ -30,6 +30,7 @@ export function MobileTabBar({ isAdmin }: { isAdmin: boolean }) {
           <Link
             key={href}
             href={href}
+            aria-current={active ? "page" : undefined}
             className={`flex min-w-[64px] flex-col items-center gap-0.5 rounded-input py-1.5 text-[11px] font-medium transition-[background-color,color,transform] duration-150 [transition-timing-function:var(--ease-out)] active:scale-[0.97] ${
               active ? "bg-accent-wash text-accent-deep" : "text-muted"
             }`}

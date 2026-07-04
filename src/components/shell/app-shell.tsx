@@ -20,6 +20,12 @@ export function AppShell({ user, children }: { user: ShellUser; children: React.
 
   return (
     <div className="min-h-[100dvh]">
+      <a
+        href="#content"
+        className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-[60] focus:rounded-btn focus:bg-accent focus:px-3 focus:py-2 focus:text-[13px] focus:font-semibold focus:text-accent-ink"
+      >
+        Skip to content
+      </a>
       {/* Desktop sidebar */}
       <aside
         className="fixed inset-y-0 left-0 z-40 hidden w-72 flex-col border-r border-hairline bg-bg-2 md:flex"
@@ -82,7 +88,9 @@ export function AppShell({ user, children }: { user: ShellUser; children: React.
         </div>
       </header>
 
-      <div className="md:pl-72">{children}</div>
+      <div id="content" tabIndex={-1} className="md:pl-72">
+        {children}
+      </div>
 
       <MobileTabBar isAdmin={isAdmin} />
     </div>
