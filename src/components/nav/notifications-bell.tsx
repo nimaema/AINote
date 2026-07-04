@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { Bell, UserCirclePlus, ChatCircleText, ListChecks, At, FolderSimple } from "@phosphor-icons/react";
+import { DropMenu } from "@/components/ui/drop-menu";
 
 type Item = {
   id: string;
@@ -39,7 +40,7 @@ export function NotificationsBell({ align = "left" }: { align?: "left" | "right"
   const [items, setItems] = useState<Item[]>([]);
   const [unread, setUnread] = useState(0);
   const [open, setOpen] = useState(false);
-  const wrapRef = useRef<HTMLDivElement>(null);
+  const btnRef = useRef<HTMLButtonElement>(null);
 
   const load = useCallback(async () => {
     try {
@@ -59,14 +60,6 @@ export function NotificationsBell({ align = "left" }: { align?: "left" | "right"
     return () => clearInterval(t);
   }, [load]);
 
-  useEffect(() => {
-    function onDown(e: MouseEvent) {
-      if (open && wrapRef.current && !wrapRef.current.contains(e.target as Node)) setOpen(false);
-    }
-    document.addEventListener("mousedown", onDown);
-    return () => document.removeEventListener("mousedown", onDown);
-  }, [open]);
-
   async function toggle() {
     const next = !open;
     setOpen(next);
@@ -81,10 +74,13 @@ export function NotificationsBell({ align = "left" }: { align?: "left" | "right"
     i.recordingId ? `/note/${i.recordingId}` : i.projectId ? `/project/${i.projectId}` : "/";
 
   return (
-    <div ref={wrapRef} className="relative">
+    <>
       <button
+        ref={btnRef}
         onClick={toggle}
         aria-label="Notifications"
+        aria-haspopup="menu"
+        aria-expanded={open}
         className="relative grid h-8 w-8 place-items-center rounded-input text-muted transition-colors duration-150 [transition-timing-function:var(--ease-out)] hover:bg-panel-lift hover:text-ink cursor-pointer"
       >
         <Bell size={17} weight={unread > 0 ? "fill" : "regular"} />
@@ -95,12 +91,15 @@ export function NotificationsBell({ align = "left" }: { align?: "left" | "right"
         )}
       </button>
 
-      {open && (
-        <div
-          className={`glass-menu pop-in absolute top-full z-50 mt-2 w-80 overflow-hidden rounded-panel ${
-            align === "right" ? "right-0" : "left-0"
-          }`}
-        >
+      <DropMenu
+        open={open}
+        onClose={() => setOpen(false)}
+        anchor={btnRef}
+        align={align === "right" ? "end" : "start"}
+        width={320}
+        className="overflow-hidden p-0"
+      >
+        <div>
           <div className="flex items-center justify-between border-b border-hairline px-3.5 py-2.5">
             <p className="text-[13px] font-semibold text-ink">Notifications</p>
             <span className="font-mono text-[10.5px] uppercase tracking-[0.14em] text-faint">Inbox</span>
@@ -136,7 +135,7 @@ export function NotificationsBell({ align = "left" }: { align?: "left" | "right"
             )}
           </div>
         </div>
-      )}
-    </div>
+      </DropMenu>
+    </>
   );
 }

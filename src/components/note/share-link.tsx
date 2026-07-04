@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { LinkSimple, Copy, Check, Trash, CaretDown } from "@phosphor-icons/react";
+import { DropMenu } from "@/components/ui/drop-menu";
 
 // Owner control for a public, read-only external link (no sign-in required).
 export function ShareLink({
@@ -15,17 +16,11 @@ export function ShareLink({
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [copied, setCopied] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
+  const btnRef = useRef<HTMLButtonElement>(null);
 
-  useEffect(() => {
-    function onDown(e: MouseEvent) {
-      if (open && ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
-    }
-    document.addEventListener("mousedown", onDown);
-    return () => document.removeEventListener("mousedown", onDown);
-  }, [open]);
-
-  const url = token ? `${typeof window !== "undefined" ? window.location.origin : ""}/share/${token}` : "";
+  const url = token
+    ? `${typeof window !== "undefined" ? window.location.origin : ""}/share/${token}`
+    : "";
 
   async function create() {
     setBusy(true);
@@ -57,8 +52,9 @@ export function ShareLink({
   }
 
   return (
-    <div className="relative" ref={ref}>
+    <>
       <button
+        ref={btnRef}
         onClick={() => setOpen((o) => !o)}
         aria-haspopup="menu"
         aria-expanded={open}
@@ -72,49 +68,47 @@ export function ShareLink({
         <CaretDown size={12} className={`transition-transform duration-200 ${open ? "rotate-180" : ""}`} />
       </button>
 
-      {open && (
-        <div className="glass-menu pop-in absolute right-0 top-full z-50 mt-2 w-80 rounded-card p-3">
-          <p className="text-[12.5px] font-semibold text-ink">Public read-only link</p>
-          <p className="mt-1 text-[12px] leading-relaxed text-muted">
-            Anyone with this link can read the notes and transcript — no sign-in. It doesn&apos;t expose the audio.
-          </p>
+      <DropMenu open={open} onClose={() => setOpen(false)} anchor={btnRef} align="end" width={320} className="p-3">
+        <p className="text-[12.5px] font-semibold text-ink">Public read-only link</p>
+        <p className="mt-1 text-[12px] leading-relaxed text-muted">
+          Anyone with this link can read the notes and transcript — no sign-in. It doesn&apos;t expose the audio.
+        </p>
 
-          {token ? (
-            <>
-              <div className="mt-3 flex items-center gap-1.5">
-                <input
-                  readOnly
-                  value={url}
-                  onFocus={(e) => e.currentTarget.select()}
-                  className="h-9 min-w-0 flex-1 rounded-input border border-hairline bg-bg px-2.5 font-mono text-[11.5px] text-ink-soft focus:outline-none"
-                />
-                <button
-                  onClick={copy}
-                  aria-label="Copy link"
-                  className="grid h-9 w-9 shrink-0 place-items-center rounded-input bg-accent text-accent-ink transition-transform duration-150 active:scale-95 cursor-pointer"
-                >
-                  {copied ? <Check size={15} weight="bold" /> : <Copy size={15} />}
-                </button>
-              </div>
+        {token ? (
+          <>
+            <div className="mt-3 flex items-center gap-1.5">
+              <input
+                readOnly
+                value={url}
+                onFocus={(e) => e.currentTarget.select()}
+                className="h-9 min-w-0 flex-1 rounded-input border border-hairline bg-bg px-2.5 font-mono text-[11.5px] text-ink-soft focus:outline-none"
+              />
               <button
-                onClick={revoke}
-                disabled={busy}
-                className="mt-2.5 inline-flex items-center gap-1.5 text-[12.5px] text-err transition-opacity hover:opacity-80 disabled:opacity-50 cursor-pointer"
+                onClick={copy}
+                aria-label="Copy link"
+                className="grid h-9 w-9 shrink-0 place-items-center rounded-input bg-accent text-accent-ink transition-transform duration-150 active:scale-95 cursor-pointer"
               >
-                <Trash size={13} /> Revoke link
+                {copied ? <Check size={15} weight="bold" /> : <Copy size={15} />}
               </button>
-            </>
-          ) : (
+            </div>
             <button
-              onClick={create}
+              onClick={revoke}
               disabled={busy}
-              className="mt-3 inline-flex h-9 items-center gap-1.5 rounded-btn bg-accent px-3.5 text-[13px] font-semibold text-accent-ink transition-transform duration-150 active:scale-95 disabled:opacity-60 cursor-pointer"
+              className="mt-2.5 inline-flex items-center gap-1.5 text-[12.5px] text-err transition-opacity hover:opacity-80 disabled:opacity-50 cursor-pointer"
             >
-              <LinkSimple size={14} weight="bold" /> {busy ? "Creating…" : "Create link"}
+              <Trash size={13} /> Revoke link
             </button>
-          )}
-        </div>
-      )}
-    </div>
+          </>
+        ) : (
+          <button
+            onClick={create}
+            disabled={busy}
+            className="mt-3 inline-flex h-9 items-center gap-1.5 rounded-btn bg-accent px-3.5 text-[13px] font-semibold text-accent-ink transition-transform duration-150 active:scale-95 disabled:opacity-60 cursor-pointer"
+          >
+            <LinkSimple size={14} weight="bold" /> {busy ? "Creating…" : "Create link"}
+          </button>
+        )}
+      </DropMenu>
+    </>
   );
 }

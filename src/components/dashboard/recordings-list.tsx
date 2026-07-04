@@ -18,6 +18,7 @@ import {
 } from "@phosphor-icons/react";
 import { ProjectPicker } from "@/components/projects/project-picker";
 import { projectColor } from "@/lib/projects";
+import { DropMenu } from "@/components/ui/drop-menu";
 
 export type RecItem = {
   id: string;
@@ -185,6 +186,7 @@ function RecordingRow({
   const [editing, setEditing] = useState(false);
   const [title, setTitle] = useState(rec.title);
   const inputRef = useRef<HTMLInputElement>(null);
+  const kebabRef = useRef<HTMLButtonElement>(null);
   const s = STATUS[rec.status] ?? STATUS.uploaded;
 
   function saveRename() {
@@ -278,33 +280,29 @@ function RecordingRow({
 
           <div className="flex items-center gap-0.5 md:opacity-0 md:transition-opacity md:duration-150 md:group-hover:opacity-100 md:group-focus-within:opacity-100">
             <ProjectPicker recordingId={rec.id} currentProjectId={rec.projectId} variant="icon" />
-            <div className="relative">
-              <button
-                onClick={() => setMenu((m) => !m)}
-                disabled={busy}
-                className="grid h-8 w-8 place-items-center rounded-input text-muted transition-colors duration-150 hover:bg-panel-lift hover:text-ink disabled:opacity-50 cursor-pointer"
-                aria-label="More actions"
-              >
-                <DotsThreeVertical size={17} weight="bold" />
-              </button>
-              {menu && (
-                <>
-                  <div className="fixed inset-0 z-30" onClick={() => setMenu(false)} />
-                  <div className="glass-menu pop-in absolute right-0 top-full z-50 mt-1 w-40 overflow-hidden rounded-card p-1">
-                    <MenuItem icon={<PencilSimple size={15} />} label="Rename" onClick={() => { setMenu(false); setEditing(true); }} />
-                    {rec.status === "failed" && (
-                      <MenuItem icon={<ArrowClockwise size={15} />} label="Retry" onClick={() => { setMenu(false); onRetry(); }} />
-                    )}
-                    <MenuItem
-                      icon={<Trash size={15} />}
-                      label="Delete"
-                      danger
-                      onClick={() => { setMenu(false); if (confirm(`Delete "${rec.title}"? This can't be undone.`)) onDelete(); }}
-                    />
-                  </div>
-                </>
+            <button
+              ref={kebabRef}
+              onClick={() => setMenu((m) => !m)}
+              disabled={busy}
+              className="grid h-8 w-8 place-items-center rounded-input text-muted transition-colors duration-150 hover:bg-panel-lift hover:text-ink disabled:opacity-50 cursor-pointer"
+              aria-label="More actions"
+              aria-haspopup="menu"
+              aria-expanded={menu}
+            >
+              <DotsThreeVertical size={17} weight="bold" />
+            </button>
+            <DropMenu open={menu} onClose={() => setMenu(false)} anchor={kebabRef} align="end" width={168} className="p-1">
+              <MenuItem icon={<PencilSimple size={15} />} label="Rename" onClick={() => { setMenu(false); setEditing(true); }} />
+              {rec.status === "failed" && (
+                <MenuItem icon={<ArrowClockwise size={15} />} label="Retry" onClick={() => { setMenu(false); onRetry(); }} />
               )}
-            </div>
+              <MenuItem
+                icon={<Trash size={15} />}
+                label="Delete"
+                danger
+                onClick={() => { setMenu(false); if (confirm(`Delete "${rec.title}"? This can't be undone.`)) onDelete(); }}
+              />
+            </DropMenu>
           </div>
         </div>
       )}

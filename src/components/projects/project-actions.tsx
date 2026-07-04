@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { DotsThreeVertical, PencilSimple, Palette, Trash, Check, X } from "@phosphor-icons/react";
 import { PROJECT_COLORS, type ProjectColor } from "@/lib/projects";
+import { DropMenu } from "@/components/ui/drop-menu";
 
 export function ProjectActions({
   id,
@@ -19,6 +20,7 @@ export function ProjectActions({
   const [renaming, setRenaming] = useState(false);
   const [value, setValue] = useState(name);
   const [busy, setBusy] = useState(false);
+  const btnRef = useRef<HTMLButtonElement>(null);
 
   async function patch(body: Record<string, unknown>) {
     setBusy(true);
@@ -51,91 +53,93 @@ export function ProjectActions({
   }
 
   return (
-    <div className="relative">
+    <>
       <button
+        ref={btnRef}
         onClick={() => setMenu((m) => !m)}
         disabled={busy}
         className="glass grid h-10 w-10 place-items-center rounded-btn text-ink transition-transform duration-150 [transition-timing-function:var(--ease-out)] active:scale-95 disabled:opacity-50 cursor-pointer"
         aria-label="Project actions"
+        aria-haspopup="menu"
+        aria-expanded={menu}
       >
         <DotsThreeVertical size={18} weight="bold" />
       </button>
 
-      {menu && !renaming && (
-        <>
-          <div className="fixed inset-0 z-40" onClick={() => setMenu(false)} />
-          <div className="glass-menu pop-in absolute right-0 top-full z-50 mt-2 w-56 rounded-card p-1.5">
-            <button
-              onClick={() => { setRenaming(true); setValue(name); }}
-              className="flex w-full items-center gap-2.5 rounded-input px-3 py-2.5 text-left text-[14px] text-ink-soft transition-colors hover:bg-panel-lift cursor-pointer"
-            >
-              <PencilSimple size={16} /> Rename
-            </button>
+      <DropMenu open={menu && !renaming} onClose={() => setMenu(false)} anchor={btnRef} align="end" width={224}>
+        <button
+          onClick={() => { setRenaming(true); setValue(name); }}
+          className="flex w-full items-center gap-2.5 rounded-input px-3 py-2.5 text-left text-[14px] text-ink-soft transition-colors hover:bg-panel-lift cursor-pointer"
+        >
+          <PencilSimple size={16} /> Rename
+        </button>
 
-            <div className="px-3 pb-1 pt-2">
-              <p className="mb-2 flex items-center gap-1.5 text-[12px] font-medium text-muted">
-                <Palette size={14} /> Color
-              </p>
-              <div className="flex items-center gap-1.5">
-                {(Object.keys(PROJECT_COLORS) as ProjectColor[]).map((c) => (
-                  <button
-                    key={c}
-                    onClick={() => patch({ color: c })}
-                    aria-label={c}
-                    className={`grid h-6 w-6 place-items-center rounded-full transition-transform duration-150 ${
-                      c === color ? "ring-2 ring-accent ring-offset-2 ring-offset-panel" : "hover:scale-110"
-                    }`}
-                    style={{ background: PROJECT_COLORS[c] }}
-                  >
-                    {c === color && <Check size={12} weight="bold" className="text-bg" />}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div className="my-1 h-px bg-hairline" />
-            <button
-              onClick={() => { setMenu(false); remove(); }}
-              className="flex w-full items-center gap-2.5 rounded-input px-3 py-2.5 text-left text-[14px] text-err transition-colors hover:bg-panel-lift cursor-pointer"
-            >
-              <Trash size={16} /> Delete project
-            </button>
+        <div className="px-3 pb-1 pt-2">
+          <p className="mb-2 flex items-center gap-1.5 text-[12px] font-medium text-muted">
+            <Palette size={14} /> Color
+          </p>
+          <div className="flex items-center gap-1.5">
+            {(Object.keys(PROJECT_COLORS) as ProjectColor[]).map((c) => (
+              <button
+                key={c}
+                onClick={() => patch({ color: c })}
+                aria-label={c}
+                className={`grid h-6 w-6 place-items-center rounded-full transition-transform duration-150 cursor-pointer ${
+                  c === color ? "ring-2 ring-accent ring-offset-2 ring-offset-panel" : "hover:scale-110"
+                }`}
+                style={{ background: PROJECT_COLORS[c] }}
+              >
+                {c === color && <Check size={12} weight="bold" className="text-bg" />}
+              </button>
+            ))}
           </div>
-        </>
-      )}
+        </div>
 
-      {renaming && (
-        <>
-          <div className="fixed inset-0 z-40" onClick={() => { setRenaming(false); setMenu(false); }} />
-          <div className="glass-menu pop-in absolute right-0 top-full z-50 mt-2 flex w-72 items-center gap-2 rounded-card p-2">
-            <input
-              autoFocus
-              value={value}
-              onChange={(e) => setValue(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") saveName();
-                if (e.key === "Escape") { setRenaming(false); setMenu(false); setValue(name); }
-              }}
-              className="h-9 flex-1 rounded-input border border-hairline bg-bg px-3 text-[14px] text-ink focus:border-accent focus:outline-none"
-            />
-            <button
-              onClick={saveName}
-              disabled={busy}
-              className="grid h-9 w-9 shrink-0 place-items-center rounded-input bg-accent text-accent-ink disabled:opacity-50 cursor-pointer"
-              aria-label="Save name"
-            >
-              <Check size={16} weight="bold" />
-            </button>
-            <button
-              onClick={() => { setRenaming(false); setMenu(false); setValue(name); }}
-              className="grid h-9 w-9 shrink-0 place-items-center rounded-input text-muted hover:bg-panel-lift cursor-pointer"
-              aria-label="Cancel"
-            >
-              <X size={16} />
-            </button>
-          </div>
-        </>
-      )}
-    </div>
+        <div className="my-1 h-px bg-hairline" />
+        <button
+          onClick={() => { setMenu(false); remove(); }}
+          className="flex w-full items-center gap-2.5 rounded-input px-3 py-2.5 text-left text-[14px] text-err transition-colors hover:bg-panel-lift cursor-pointer"
+        >
+          <Trash size={16} /> Delete project
+        </button>
+      </DropMenu>
+
+      <DropMenu
+        open={renaming}
+        onClose={() => { setRenaming(false); setMenu(false); setValue(name); }}
+        anchor={btnRef}
+        align="end"
+        width={288}
+        className="p-2"
+      >
+        <div className="flex items-center gap-2">
+          <input
+            autoFocus
+            value={value}
+            onChange={(e) => setValue(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") saveName();
+              if (e.key === "Escape") { setRenaming(false); setMenu(false); setValue(name); }
+            }}
+            className="h-9 min-w-0 flex-1 rounded-input border border-hairline bg-bg px-3 text-[14px] text-ink focus:border-accent focus:outline-none"
+          />
+          <button
+            onClick={saveName}
+            disabled={busy}
+            className="grid h-9 w-9 shrink-0 place-items-center rounded-input bg-accent text-accent-ink disabled:opacity-50 cursor-pointer"
+            aria-label="Save name"
+          >
+            <Check size={16} weight="bold" />
+          </button>
+          <button
+            onClick={() => { setRenaming(false); setMenu(false); setValue(name); }}
+            className="grid h-9 w-9 shrink-0 place-items-center rounded-input text-muted hover:bg-panel-lift cursor-pointer"
+            aria-label="Cancel"
+          >
+            <X size={16} />
+          </button>
+        </div>
+      </DropMenu>
+    </>
   );
 }
