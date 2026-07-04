@@ -3,7 +3,8 @@ import { z } from "zod";
 import { auth } from "@/lib/auth";
 import { db } from "@/db";
 import { workspaceQaMessages } from "@/db/schema";
-import { answerWorkspaceQuestion } from "@/lib/qa";
+import { retrieveWorkspace } from "@/lib/qa";
+import { streamingAnswer, streamText } from "@/lib/stream";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -17,25 +18,16 @@ export async function POST(req: Request) {
   const userId = session.user.id;
 
   const parsed = bodySchema.safeParse(await req.json().catch(() => null));
-  if (!parsed.success) {
-    return NextResponse.json({ error: "A question is required" }, { status: 400 });
-  }
+  if (!parsed.success) return NextResponse.json({ error: "A question is required" }, { status: 400 });
   const question = parsed.data.question.trim();
 
+  const { context, citations, message } = await retrieveWorkspace(userId, question);
   await db.insert(workspaceQaMessages).values({ userId, role: "user", content: question });
+  const persist = async (full: string) => {
+    await db.insert(workspaceQaMessages).values({ userId, role: "assistant", content: full, citations });
+  };
 
-  try {
-    const { answer, citations } = await answerWorkspaceQuestion(userId, question);
-    const [msg] = await db
-      .insert(workspaceQaMessages)
-      .values({ userId, role: "assistant", content: answer, citations })
-      .returning();
-    return NextResponse.json({ answer, citations, id: msg.id, createdAt: msg.createdAt });
-  } catch (err) {
-    console.error("workspace ask failed", err);
-    return NextResponse.json(
-      { error: "Couldn't answer that right now. Please try again." },
-      { status: 500 }
-    );
-  }
+  return message
+    ? streamText(message, citations, persist)
+    : streamingAnswer(question, context, citations, persist);
 }

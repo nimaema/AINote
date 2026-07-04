@@ -222,6 +222,70 @@ export async function answerQuestion(
   );
 }
 
+// Streaming variant: yields answer text deltas. The mock chunks its extractive
+// answer so the UI streams uniformly whether or not a real key is configured.
+export async function* answerQuestionStream(
+  question: string,
+  context: string
+): AsyncGenerator<string> {
+  if (useMock()) {
+    const full = mockAnswer(question, context);
+    for (const chunk of full.match(/\S+\s*/g) ?? [full]) {
+      await new Promise((r) => setTimeout(r, 12)); // make the dev mock visibly stream
+      yield chunk;
+    }
+    return;
+  }
+
+  const res = await fetch(`${BASE}/chat/completions`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${apiKey()}`,
+    },
+    body: JSON.stringify({
+      model: MODEL,
+      temperature: 0.3,
+      stream: true,
+      messages: [
+        { role: "system", content: QA_SYSTEM },
+        {
+          role: "user",
+          content: `Transcript context:\n"""\n${context}\n"""\n\nQuestion: ${question}`,
+        },
+      ],
+    }),
+  });
+  if (!res.ok || !res.body) {
+    const body = await res.text().catch(() => "");
+    throw new Error(`DeepSeek ${res.status}: ${body.slice(0, 200)}`);
+  }
+
+  const reader = res.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = "";
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buffer += decoder.decode(value, { stream: true });
+    const lines = buffer.split("\n");
+    buffer = lines.pop() ?? "";
+    for (const line of lines) {
+      const trimmed = line.trim();
+      if (!trimmed.startsWith("data:")) continue;
+      const payload = trimmed.slice(5).trim();
+      if (payload === "[DONE]") return;
+      try {
+        const json = JSON.parse(payload);
+        const delta = json.choices?.[0]?.delta?.content;
+        if (delta) yield delta as string;
+      } catch {
+        /* ignore partial frames */
+      }
+    }
+  }
+}
+
 // Extractive stand-in for local dev: returns the transcript lines that overlap
 // most with the question. Good enough to exercise the UI without a real key.
 function mockAnswer(question: string, context: string): string {

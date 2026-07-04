@@ -44,11 +44,25 @@ export function QAPanel({
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "auto" });
   }, [messages, pending]);
 
+  function patchLastAssistant(update: (m: Msg) => Msg) {
+    setMessages((prev) => {
+      const copy = prev.slice();
+      for (let i = copy.length - 1; i >= 0; i--) {
+        if (copy[i].role === "assistant") {
+          copy[i] = update(copy[i]);
+          break;
+        }
+      }
+      return copy;
+    });
+  }
+
   async function ask(question: string) {
     const q = question.trim();
     if (!q || pending) return;
     setInput("");
-    setMessages((m) => [...m, { role: "user", content: q }]);
+    // Add the question and an empty assistant bubble that fills in as it streams.
+    setMessages((m) => [...m, { role: "user", content: q }, { role: "assistant", content: "" }]);
     setPending(true);
     try {
       const res = await fetch(endpoint, {
@@ -56,14 +70,44 @@ export function QAPanel({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ question: q }),
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Failed");
-      setMessages((m) => [...m, { role: "assistant", content: data.answer, citations: data.citations }]);
+      if (!res.ok || !res.body) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error ?? "Failed");
+      }
+
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let pre = "";
+      let meta = false;
+      let citations: Citation[] | null = null;
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        const chunk = decoder.decode(value, { stream: true });
+        if (!meta) {
+          // First line is JSON metadata: { citations }.
+          pre += chunk;
+          const nl = pre.indexOf("\n");
+          if (nl < 0) continue;
+          try {
+            citations = JSON.parse(pre.slice(0, nl)).citations ?? null;
+          } catch {
+            citations = null;
+          }
+          meta = true;
+          const rest = pre.slice(nl + 1);
+          patchLastAssistant((m) => ({ ...m, content: m.content + rest, citations }));
+        } else {
+          patchLastAssistant((m) => ({ ...m, content: m.content + chunk }));
+        }
+      }
+      patchLastAssistant((m) => ({ ...m, citations: citations ?? m.citations }));
     } catch (e) {
-      setMessages((m) => [
+      patchLastAssistant((m) => ({
         ...m,
-        { role: "assistant", content: e instanceof Error ? e.message : "Something went wrong. Try again." },
-      ]);
+        content: e instanceof Error ? e.message : "Something went wrong. Try again.",
+      }));
     } finally {
       setPending(false);
     }
@@ -104,7 +148,7 @@ export function QAPanel({
                   m.role === "user" ? "bg-accent text-accent-ink" : "border border-hairline bg-bg text-ink-soft"
                 }`}
               >
-                {m.content}
+                {m.content || (m.role === "assistant" ? <TypingDots /> : null)}
                 {m.citations && m.citations.length > 0 && (
                   <div className="mt-2 flex flex-wrap gap-1.5">
                     {m.citations.map((c, j) => {
@@ -145,19 +189,6 @@ export function QAPanel({
             </div>
           ))
         )}
-        {pending && (
-          <div className="flex justify-start">
-            <div className="flex items-center gap-1 rounded-card border border-hairline bg-bg px-3.5 py-3">
-              {[0, 1, 2].map((i) => (
-                <span
-                  key={i}
-                  className="h-1.5 w-1.5 rounded-full bg-faint"
-                  style={{ animation: `wave 700ms ${i * 140}ms var(--ease-in-out) infinite alternate` }}
-                />
-              ))}
-            </div>
-          </div>
-        )}
       </div>
 
       <form
@@ -183,5 +214,19 @@ export function QAPanel({
         </button>
       </form>
     </div>
+  );
+}
+
+function TypingDots() {
+  return (
+    <span className="inline-flex items-center gap-1 align-middle">
+      {[0, 1, 2].map((i) => (
+        <span
+          key={i}
+          className="h-1.5 w-1.5 rounded-full bg-faint"
+          style={{ animation: `wave 700ms ${i * 140}ms var(--ease-in-out) infinite alternate` }}
+        />
+      ))}
+    </span>
   );
 }

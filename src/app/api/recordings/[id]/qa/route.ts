@@ -4,7 +4,8 @@ import { auth } from "@/lib/auth";
 import { db } from "@/db";
 import { qaMessages } from "@/db/schema";
 import { getAccessibleRecording } from "@/lib/access";
-import { answerRecordingQuestion } from "@/lib/qa";
+import { retrieveRecording } from "@/lib/qa";
+import { streamingAnswer, streamText } from "@/lib/stream";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -28,25 +29,13 @@ export async function POST(
   }
   const question = parsed.data.question.trim();
 
+  const { context, citations, message } = await retrieveRecording(id, question);
   await db.insert(qaMessages).values({ recordingId: id, role: "user", content: question });
+  const persist = async (full: string) => {
+    await db.insert(qaMessages).values({ recordingId: id, role: "assistant", content: full, citations });
+  };
 
-  try {
-    const { answer, citations } = await answerRecordingQuestion(id, question);
-    const [msg] = await db
-      .insert(qaMessages)
-      .values({ recordingId: id, role: "assistant", content: answer, citations })
-      .returning();
-    return NextResponse.json({
-      answer,
-      citations,
-      id: msg.id,
-      createdAt: msg.createdAt,
-    });
-  } catch (err) {
-    console.error("qa failed", err);
-    return NextResponse.json(
-      { error: "Couldn't answer that right now. Please try again." },
-      { status: 500 }
-    );
-  }
+  return message
+    ? streamText(message, citations, persist)
+    : streamingAnswer(question, context, citations, persist);
 }
