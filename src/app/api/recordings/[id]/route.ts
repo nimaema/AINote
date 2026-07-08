@@ -4,7 +4,7 @@ import { z } from "zod";
 import { auth } from "@/lib/auth";
 import { db } from "@/db";
 import { recordings } from "@/db/schema";
-import { getOwnedProject } from "@/lib/projects-server";
+import { getAccessibleProject, roleAtLeast } from "@/lib/projects-server";
 import { removeObject } from "@/lib/storage";
 
 export const runtime = "nodejs";
@@ -42,10 +42,13 @@ export async function PATCH(
   const parsed = patchSchema.safeParse(await req.json().catch(() => null));
   if (!parsed.success) return NextResponse.json({ error: "Nothing to update" }, { status: 400 });
 
-  // Assigning to a project requires owning that project.
+  // Assigning to a project requires write access to it: the owner, or a member
+  // with editor/owner rights on a project shared with them.
   if (parsed.data.projectId) {
-    const project = await getOwnedProject(parsed.data.projectId, session.user.id);
-    if (!project) return NextResponse.json({ error: "Project not found" }, { status: 400 });
+    const access = await getAccessibleProject(parsed.data.projectId, session.user.id);
+    if (!access || !roleAtLeast(access.role, "editor")) {
+      return NextResponse.json({ error: "Project not found" }, { status: 400 });
+    }
   }
 
   const fields: { title?: string; isPublic?: boolean; projectId?: string | null } = {};

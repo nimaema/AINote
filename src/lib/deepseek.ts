@@ -19,7 +19,7 @@ export class DeepSeekJsonError extends Error {
 }
 
 const BASE = process.env.DEEPSEEK_BASE_URL ?? "https://api.deepseek.com";
-export const MODEL = process.env.DEEPSEEK_MODEL ?? "deepseek-v4-flash";
+export const MODEL = process.env.DEEPSEEK_MODEL ?? "deepseek-v4-pro";
 
 function apiKey() {
   return process.env.DEEPSEEK_API_KEY ?? "";
@@ -32,7 +32,7 @@ function useMock() {
 // Low-level chat helper (also used by Q&A in the note view).
 export async function deepseekChat(
   messages: { role: "system" | "user" | "assistant"; content: string }[],
-  opts: { json?: boolean; temperature?: number } = {}
+  opts: { json?: boolean; temperature?: number; maxTokens?: number } = {}
 ): Promise<string> {
   const res = await fetch(`${BASE}/chat/completions`, {
     method: "POST",
@@ -43,6 +43,7 @@ export async function deepseekChat(
     body: JSON.stringify({
       model: MODEL,
       temperature: opts.temperature ?? 0.3,
+      ...(opts.maxTokens ? { max_tokens: opts.maxTokens } : {}),
       ...(opts.json ? { response_format: { type: "json_object" } } : {}),
       messages,
     }),
@@ -55,16 +56,24 @@ export async function deepseekChat(
   return data.choices?.[0]?.message?.content ?? "";
 }
 
-const SYSTEM = `You are a meticulous meeting-notes analyst. You read a transcript and return a compact, accurate JSON object. Never invent facts that aren't supported by the transcript. Output ONLY valid JSON with this exact shape:
+const SYSTEM = `You are a meticulous meeting-notes analyst. Read the ENTIRE transcript from beginning to end before writing anything — do not stop early, skim, or focus only on the opening. Be thorough and comprehensive: cover the whole conversation, and never invent facts that aren't supported by the transcript.
+
+Output ONLY valid JSON with this exact shape:
 {
-  "summary": "2-4 sentence plain-English summary of what was discussed and decided",
-  "action_items": [{"task": "what needs doing", "owner": "person or null", "due": "when or null"}],
-  "decisions": ["each concrete decision made"],
-  "topics": ["short topic labels covered"],
-  "follow_ups": ["open questions or things to revisit"],
+  "summary": "a thorough 5-8 sentence plain-English summary covering the full arc of the conversation: the context, the main points raised under each topic, any disagreements or trade-offs, and everything that was decided",
+  "action_items": [{"task": "what needs doing, specific and self-contained", "owner": "person or null", "due": "when or null"}],
+  "decisions": ["every concrete decision or conclusion reached, however small"],
+  "topics": ["a short label for each distinct topic covered, in the order it came up"],
+  "follow_ups": ["every open question, unresolved issue, or thing to revisit"],
   "chapters": [{"title": "short section title (2-4 words)", "summary": "one-line description of the section", "quote": "a short exact phrase (4-8 words) copied verbatim from the transcript where this section begins"}]
 }
-Keep arrays tight. Omit filler. Use names exactly as they appear. If a field has nothing, use an empty array. Chapters should cover the conversation in order; each quote MUST be copied word-for-word from the transcript so it can be located.`;
+
+Rules:
+- Extract EVERY action item, decision, and follow-up mentioned anywhere in the transcript, including ones raised briefly or in passing. Do not merge distinct items or silently drop minor ones.
+- Cover the whole timeline with chapters, in order — enough chapters to represent the entire conversation end to end, not just the first few minutes.
+- Use names exactly as they appear. Attribute an owner or due date only when the transcript makes it clear; otherwise use null.
+- Each chapter quote MUST be copied word-for-word from the transcript so it can be located.
+- If a field genuinely has nothing, use an empty array. Prefer completeness over brevity, but never pad with invented content.`;
 
 // Models sometimes wrap JSON in ```json fences or add a sentence of prose even
 // in JSON mode. Pull the JSON object out before parsing.
@@ -148,9 +157,9 @@ export async function analyzeTranscript(text: string): Promise<Analysis> {
   const raw = await deepseekChat(
     [
       { role: "system", content: SYSTEM },
-      { role: "user", content: `Transcript:\n\n${text}` },
+      { role: "user", content: `Read this full transcript and produce the thorough analysis described.\n\nTranscript:\n\n${text}` },
     ],
-    { json: true, temperature: 0.2 }
+    { json: true, temperature: 0.2, maxTokens: 4000 }
   );
 
   let parsed = tryParseJson(raw);

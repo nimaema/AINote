@@ -1,22 +1,20 @@
 import { NextResponse } from "next/server";
-import { desc, eq } from "drizzle-orm";
 import { z } from "zod";
 import { auth } from "@/lib/auth";
 import { db } from "@/db";
 import { projects } from "@/db/schema";
 import { isProjectColor } from "@/lib/projects";
+import { listAccessibleProjects } from "@/lib/projects-server";
 
 export const runtime = "nodejs";
 
-// List the current user's projects.
+// List projects the user can file a recording into: ones they own plus ones
+// shared with them where they have editor (or owner) rights.
 export async function GET() {
   const session = await auth();
   if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const rows = await db.query.projects.findMany({
-    where: eq(projects.userId, session.user.id),
-    orderBy: [desc(projects.createdAt)],
-  });
+  const rows = await listAccessibleProjects(session.user.id, "editor");
   return NextResponse.json({ projects: rows });
 }
 
