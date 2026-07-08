@@ -126,14 +126,14 @@ export default async function NotePage({
           href="/"
           className="inline-flex items-center gap-1.5 text-[13px] text-muted transition-colors duration-150 [transition-timing-function:var(--ease-out)] hover:text-ink"
         >
-          <ArrowLeft size={15} /> All captures
+          <ArrowLeft size={15} /> All notes
         </Link>
 
         <div className="mt-3 mb-5 overflow-hidden rounded-[18px] border border-hairline bg-panel-solid">
           <div className="grid gap-px bg-hairline lg:grid-cols-[minmax(0,1fr)_auto]">
             <div className="bg-panel-solid p-5 sm:p-6">
               <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-faint">
-                {done ? "Charted · sheet 01" : "Charting"}
+                {done ? "Recording" : "Processing"}
               </p>
               <h1 className="mt-2 max-w-5xl font-display text-[22px] font-normal leading-[1.1] text-ink sm:text-[30px]">
                 {rec.title ?? "Untitled recording"}

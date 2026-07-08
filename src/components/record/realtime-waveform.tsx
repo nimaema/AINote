@@ -52,7 +52,7 @@ export function RealtimeWaveform({
       ctx.clearRect(0, 0, w, h);
 
       // Reference line — the flat calm the trace disturbs.
-      ctx.strokeStyle = "rgba(11, 30, 36, 0.14)";
+      ctx.strokeStyle = "rgba(26, 28, 30, 0.14)";
       ctx.lineWidth = 1 * dpr;
       ctx.setLineDash([2 * dpr, 5 * dpr]);
       ctx.beginPath();
@@ -61,8 +61,8 @@ export function RealtimeWaveform({
       ctx.stroke();
       ctx.setLineDash([]);
 
-      // The trace itself: flare orange, amplified for presence.
-      ctx.strokeStyle = "#ff4f00";
+      // The trace itself: the accent green, amplified for presence.
+      ctx.strokeStyle = "#0b7a5c";
       ctx.lineWidth = 1.8 * dpr;
       ctx.lineJoin = "round";
       ctx.beginPath();

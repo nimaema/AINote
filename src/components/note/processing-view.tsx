@@ -6,10 +6,10 @@ import { CircleNotch, Check, WarningCircle, ArrowClockwise } from "@phosphor-ico
 import { Waveform } from "@/components/waveform";
 
 const STEPS = [
-  { key: "uploaded", label: "Survey received" },
-  { key: "transcribing", label: "Tracing the route" },
-  { key: "processing", label: "Plotting waypoints" },
-  { key: "done", label: "Charted" },
+  { key: "uploaded", label: "Received" },
+  { key: "transcribing", label: "Transcribing" },
+  { key: "processing", label: "Writing notes" },
+  { key: "done", label: "Ready" },
 ];
 
 export function ProcessingView({
@@ -83,15 +83,15 @@ export function ProcessingView({
   return (
     <div className="glass rounded-panel p-8 sm:p-12">
       <p className="text-center font-mono text-[11px] uppercase tracking-[0.22em] text-accent-deep">
-        <span className="mr-1.5 inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-accent align-middle" />
-        Charting in progress
+        <span className="mr-1.5 inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-mint align-middle" />
+        Processing
       </p>
       <h2 className="mt-3 text-center font-display text-[22px] font-normal leading-tight text-ink sm:text-[26px]">
-        Charting your conversation.
+        Turning your conversation into notes.
       </h2>
       <p className="mx-auto mt-2 max-w-md text-center text-[13.5px] text-muted">
-        Sound becomes territory — route, waypoints, flags. This page updates
-        itself the moment the map is drawn.
+        We transcribe the audio, then write the summary, decisions, and action
+        items. This page updates itself the moment it is ready.
       </p>
 
       <div className="mx-auto mt-9 w-full max-w-md rounded-card border border-hairline bg-bg px-5 py-5">

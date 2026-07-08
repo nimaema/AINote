@@ -173,64 +173,75 @@ export function TeamFeed({
             </p>
           </div>
         ) : (
-          <ul className="divide-y divide-hairline">
+          <div className="grid grid-cols-1 gap-3 p-3 sm:grid-cols-2 sm:p-4 xl:grid-cols-3">
             {filtered.map((r) => {
               const s = STATUS[r.status] ?? STATUS.uploaded;
+              const active = ["transcribing", "processing"].includes(r.status);
               return (
-                <li
+                <article
                   key={r.id}
-                  className="group relative flex items-start gap-3 px-4 py-3 transition-colors duration-150 [transition-timing-function:var(--ease-out)] first:rounded-t-[11px] last:rounded-b-[11px] hover:bg-panel"
+                  className="group relative flex min-w-0 flex-col overflow-hidden rounded-card border border-hairline bg-panel-solid transition-[border-color,box-shadow,transform] duration-150 [transition-timing-function:var(--ease-out)] hover:-translate-y-0.5 hover:border-hairline-strong hover:shadow-[0_22px_48px_-30px_rgba(26,28,30,0.4)]"
                 >
-                  <Link href={`/note/${r.id}`} className="absolute inset-0 z-0" aria-label={`Open ${r.title}`} />
                   <span
-                    className="pointer-events-none relative z-10 mt-0.5 grid h-9 w-9 shrink-0 place-items-center rounded-full text-[13px] font-semibold text-accent-ink"
+                    className="h-[3px] w-full shrink-0"
                     style={{ background: colorFor(r.authorId) }}
-                    title={r.authorName}
-                  >
-                    {initialOf(r.authorName)}
-                  </span>
+                    aria-hidden
+                  />
+                  <Link href={`/note/${r.id}`} className="absolute inset-0 z-0" aria-label={`Open ${r.title}`} />
 
-                  <div className="pointer-events-none relative z-10 min-w-0 flex-1">
-                    <div className="flex items-center gap-1.5">
-                      <p className="truncate text-[14px] font-medium text-ink">{r.title}</p>
+                  <div className="pointer-events-none relative z-10 flex min-w-0 flex-1 flex-col p-3.5">
+                    <div className="flex items-center gap-2">
+                      <span
+                        className="grid h-8 w-8 shrink-0 place-items-center rounded-full text-[12.5px] font-semibold text-accent-ink"
+                        style={{ background: colorFor(r.authorId) }}
+                        title={r.authorName}
+                      >
+                        {initialOf(r.authorName)}
+                      </span>
+                      <div className="min-w-0 flex-1 leading-tight">
+                        <p className="truncate text-[12.5px] font-medium text-ink-soft">{r.authorName}</p>
+                        <p className="font-mono text-[10px] text-faint">{r.dateLabel}</p>
+                      </div>
                       {r.isMine && (
-                        <span className="inline-flex shrink-0 items-center rounded-[6px] bg-accent-wash px-1.5 py-0.5 text-[11px] font-medium text-accent-deep">
+                        <span className="shrink-0 rounded-pill bg-accent-wash px-2 py-0.5 text-[10.5px] font-medium text-accent-deep">
                           You
                         </span>
                       )}
                     </div>
+
+                    <h3 className="mt-3 line-clamp-1 text-[15px] font-semibold tracking-[-0.01em] text-ink">
+                      {r.title}
+                    </h3>
                     {(r.summary || s.note) && (
-                      <p className={`mt-0.5 line-clamp-1 text-[12.5px] ${r.summary ? "text-muted" : "text-faint"}`}>
+                      <p className={`mt-1 line-clamp-2 text-[12.5px] leading-relaxed ${r.summary ? "text-muted" : "text-faint"}`}>
                         {r.summary || s.note}
                       </p>
                     )}
-                    <p className="mt-1 flex flex-wrap items-center gap-x-2.5 gap-y-0.5 font-mono text-[10.5px] text-faint">
-                      <span className="text-ink-soft">{r.authorName}</span>
-                      <span>{r.dateLabel}</span>
-                      <span>{r.durationLabel}</span>
-                      {r.language && (
-                        <span className="inline-flex items-center gap-1">
-                          <Translate size={10.5} weight="bold" /> {r.language}
-                        </span>
-                      )}
-                      {r.actionCount > 0 && (
-                        <span className="inline-flex items-center gap-1">
-                          <ListChecks size={10.5} /> {r.actionCount}
-                        </span>
-                      )}
-                    </p>
-                  </div>
 
-                  <div className="pointer-events-none relative z-10 hidden shrink-0 items-center gap-1.5 self-center sm:flex">
-                    <span className={`flex items-center gap-1.5 ${s.text}`}>
-                      <span className={`h-1.5 w-1.5 rounded-full ${s.dot} ${["transcribing", "processing"].includes(r.status) ? "animate-pulse" : ""}`} />
-                      <span className="font-mono text-[10px] uppercase tracking-[0.1em]">{s.label}</span>
-                    </span>
+                    <div className="mt-3.5 flex items-center gap-x-3 border-t border-hairline pt-2.5 font-mono text-[10.5px] text-faint">
+                      <span className={`inline-flex items-center gap-1.5 ${s.text}`}>
+                        <span className={`h-1.5 w-1.5 rounded-full ${s.dot} ${active ? "animate-pulse" : ""}`} />
+                        <span className="uppercase tracking-[0.1em]">{s.label}</span>
+                      </span>
+                      <span className="ml-auto flex items-center gap-x-3">
+                        <span>{r.durationLabel}</span>
+                        {r.language && (
+                          <span className="inline-flex items-center gap-1">
+                            <Translate size={10.5} weight="bold" /> {r.language}
+                          </span>
+                        )}
+                        {r.actionCount > 0 && (
+                          <span className="inline-flex items-center gap-1">
+                            <ListChecks size={10.5} /> {r.actionCount}
+                          </span>
+                        )}
+                      </span>
+                    </div>
                   </div>
-                </li>
+                </article>
               );
             })}
-          </ul>
+          </div>
         )}
       </section>
     </main>

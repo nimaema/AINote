@@ -3,8 +3,9 @@
 import { useRouter } from "next/navigation";
 import { projectColor } from "@/lib/projects";
 
-// The Atlas: projects plotted as charted territories on the ice field, with
-// unmapped fog inviting the next capture. Clicking a territory travels to it.
+// The Insight Hub: projects arranged as concentric architectural frames drawn
+// inward toward a central "Insight Hub". Each project sits on a frame edge with
+// its own colored marker; clicking one travels to that project.
 export type Territory = {
   id: string;
   name: string;
@@ -12,16 +13,15 @@ export type Territory = {
   count: number;
 };
 
-// Hand-placed survey slots (viewBox 1000×300) — stable, no overlap for ≤8.
-const SLOTS: [number, number][] = [
-  [190, 150],
-  [450, 205],
-  [700, 120],
-  [320, 80],
-  [590, 60],
-  [860, 210],
-  [90, 245],
-  [980, 70],
+// Hand-placed anchor points around the nested frames (viewBox 640×300).
+// Each: [x, y, textAnchor]. Ordered so the first few read cleanly.
+const ANCHORS: [number, number, "start" | "middle" | "end"][] = [
+  [96, 58, "start"],
+  [544, 150, "end"],
+  [110, 248, "start"],
+  [512, 58, "end"],
+  [96, 150, "start"],
+  [536, 248, "end"],
 ];
 
 export function AtlasField({
@@ -32,120 +32,144 @@ export function AtlasField({
   unfiled: number;
 }) {
   const router = useRouter();
-  const shown = territories.slice(0, 7);
+  const shown = territories.slice(0, 6);
+
+  // Concentric frames — as many as we can justify, min 3 for the architecture.
+  const frameCount = Math.max(3, Math.min(4, shown.length));
+  const frames = Array.from({ length: frameCount }, (_, i) => {
+    const inset = i * 34;
+    return {
+      x: 60 + inset,
+      y: 30 + inset,
+      w: 520 - inset * 2,
+      h: 240 - inset * 2,
+      opacity: 0.5 - i * 0.1,
+    };
+  });
 
   return (
-    <div className="relative overflow-hidden rounded-[14px] border border-hairline bg-bg">
+    <div className="relative overflow-hidden rounded-card border border-hairline bg-bg">
       <svg
-        viewBox="0 0 1000 300"
+        viewBox="0 0 640 300"
         className="h-auto w-full"
         preserveAspectRatio="xMidYMid meet"
         role="img"
-        aria-label={`Atlas of ${shown.length} territories`}
+        aria-label={`Insight hub of ${shown.length} projects`}
       >
-        {/* Contours — the terrain itself */}
-        <g fill="none" stroke="var(--color-lock)" strokeWidth="1" opacity="0.1">
-          <path d="M-40 70 C 180 20, 380 120, 580 60 S 900 10, 1040 60" />
-          <path d="M-40 120 C 190 70, 400 170, 600 110 S 910 60, 1040 110" />
-          <path d="M-40 230 C 200 290, 420 190, 640 250 S 920 300, 1040 250" />
-          <path d="M-40 280 C 210 340, 440 240, 660 300" />
+        {/* Faint architect's grid */}
+        <g stroke="var(--color-hairline)" strokeWidth="1" opacity="0.7">
+          {[110, 220, 330, 440, 530].map((x) => (
+            <line key={`v${x}`} x1={x} y1="20" x2={x} y2="280" />
+          ))}
+          {[80, 150, 220].map((y) => (
+            <line key={`h${y}`} x1="40" y1={y} x2="600" y2={y} />
+          ))}
         </g>
 
-        {/* Territories */}
+        {/* Concentric frames drawing inward */}
+        {frames.map((f, i) => (
+          <rect
+            key={i}
+            x={f.x}
+            y={f.y}
+            width={f.w}
+            height={f.h}
+            rx="10"
+            fill="none"
+            stroke="var(--color-mint)"
+            strokeWidth="1.5"
+            opacity={f.opacity}
+          />
+        ))}
+
+        {/* Central label */}
+        <g>
+          <rect
+            x="248"
+            y="126"
+            width="144"
+            height="48"
+            rx="8"
+            fill="var(--color-panel-solid)"
+            stroke="var(--color-hairline-strong)"
+            strokeWidth="1"
+          />
+          <text
+            x="320"
+            y="156"
+            textAnchor="middle"
+            className="font-display"
+            fontSize="19"
+            fill="var(--color-ink)"
+          >
+            Insight Hub
+          </text>
+        </g>
+
+        {/* Projects on the frame edges */}
         {shown.map((t, i) => {
-          const [cx, cy] = SLOTS[i % SLOTS.length];
-          const r = Math.min(72, 34 + t.count * 7);
+          const [x, y, anchor] = ANCHORS[i % ANCHORS.length];
           const c = projectColor(t.color);
+          const dotX = anchor === "end" ? x + 12 : x - 12;
+          const label = t.name.length > 18 ? `${t.name.slice(0, 17)}…` : t.name;
           return (
             <g
               key={t.id}
               onClick={() => router.push(`/project/${t.id}`)}
-              className="cursor-pointer transition-opacity hover:opacity-80"
+              className="cursor-pointer transition-opacity hover:opacity-70"
               role="link"
               aria-label={`Open ${t.name}`}
             >
-              <circle cx={cx} cy={cy} r={r} fill={c} fillOpacity="0.13" stroke={c} strokeWidth="1.5" />
-              <circle
-                cx={cx}
-                cy={cy}
-                r={Math.max(12, r - 11)}
-                fill="none"
-                stroke={c}
-                strokeWidth="1"
-                strokeDasharray="3 5"
-                opacity="0.5"
-              />
+              <circle cx={dotX} cy={y - 4} r="4" fill={c} />
               <text
-                x={cx}
-                y={cy - 2}
-                textAnchor="middle"
-                className="font-mono"
-                fontSize="13"
-                fontWeight="700"
+                x={x}
+                y={y}
+                textAnchor={anchor}
+                fontSize="12.5"
+                fontWeight="600"
                 fill="var(--color-ink)"
-                style={{ textTransform: "uppercase", letterSpacing: "0.08em" }}
+                fontFamily="var(--font-hanken)"
               >
-                {t.name.length > 14 ? `${t.name.slice(0, 13)}…` : t.name}
+                {label}
               </text>
               <text
-                x={cx}
-                y={cy + 16}
-                textAnchor="middle"
+                x={x}
+                y={y + 15}
+                textAnchor={anchor}
                 className="font-mono"
-                fontSize="10.5"
-                fill="var(--color-muted)"
-                style={{ letterSpacing: "0.12em" }}
+                fontSize="10"
+                fill="var(--color-faint)"
+                style={{ letterSpacing: "0.08em" }}
               >
-                {t.count} {t.count === 1 ? "SURVEY" : "SURVEYS"}
+                {t.count} {t.count === 1 ? "note" : "notes"}
               </text>
             </g>
           );
         })}
 
-        {/* Unfiled captures — plotted but unclaimed ground */}
+        {/* Unfiled — an unplaced marker */}
         {unfiled > 0 && (
-          <g opacity="0.75">
-            <circle
-              cx={SLOTS[shown.length % SLOTS.length][0]}
-              cy={SLOTS[shown.length % SLOTS.length][1]}
-              r={30}
-              fill="none"
-              stroke="var(--color-faint)"
-              strokeWidth="1.2"
-              strokeDasharray="4 5"
-            />
+          <g opacity="0.85">
+            <circle cx="596" cy="40" r="4" fill="none" stroke="var(--color-faint)" strokeWidth="1.2" strokeDasharray="2 3" />
             <text
-              x={SLOTS[shown.length % SLOTS.length][0]}
-              y={SLOTS[shown.length % SLOTS.length][1] + 4}
-              textAnchor="middle"
+              x="586"
+              y="44"
+              textAnchor="end"
               className="font-mono"
-              fontSize="10.5"
-              fill="var(--color-muted)"
-              style={{ letterSpacing: "0.1em" }}
+              fontSize="10"
+              fill="var(--color-faint)"
+              style={{ letterSpacing: "0.08em" }}
             >
-              UNFILED · {unfiled}
+              Unfiled · {unfiled}
             </text>
           </g>
         )}
-
-        {/* The unmapped edge */}
-        <text
-          x="985"
-          y="288"
-          textAnchor="end"
-          className="font-mono"
-          fontSize="10.5"
-          fill="var(--color-faint)"
-          style={{ letterSpacing: "0.18em" }}
-        >
-          UNCHARTED →
-        </text>
       </svg>
 
       {territories.length === 0 && unfiled === 0 && (
         <div className="absolute inset-0 grid place-items-center">
-          <p className="rounded-pill border border-hairline bg-panel-solid px-4 py-2 font-mono text-[11px] uppercase tracking-[0.16em] text-muted">
-            Unmapped territory — start a survey
+          <p className="rounded-pill border border-hairline bg-panel-solid px-4 py-2 text-[12px] text-muted">
+            No projects yet — record a note to begin
           </p>
         </div>
       )}

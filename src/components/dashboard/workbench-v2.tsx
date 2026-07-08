@@ -332,10 +332,8 @@ export function WorkbenchV2({
       <main className="mx-auto flex max-w-[1540px] flex-col gap-5 px-3 pb-28 pt-3 sm:px-5 md:px-7 md:pb-12 md:pt-5">
         <header className="flex flex-wrap items-center gap-2.5">
           <div className="mr-auto min-w-0">
-            <p className="font-mono text-[10.5px] uppercase tracking-[0.18em] text-faint">
-              The Atlas · welcome back, {userName}
-            </p>
-            <h1 className="mt-1 font-display text-[19px] leading-none text-ink">Base camp</h1>
+            <p className="text-[12.5px] text-muted">Welcome back, {userName}</p>
+            <h1 className="mt-0.5 font-display text-[27px] leading-none text-ink">Overview</h1>
           </div>
           <div className="relative order-last w-full sm:order-none sm:w-72">
             <MagnifyingGlass
@@ -345,8 +343,8 @@ export function WorkbenchV2({
             <input
               value={query}
               onChange={(event) => setQuery(event.target.value)}
-              placeholder="Search captures, topics, flags"
-              className="h-10 w-full rounded-[12px] border border-hairline bg-panel-solid pl-9 pr-3 text-[14px] text-ink placeholder:text-faint transition-[border-color,box-shadow] duration-150 [transition-timing-function:var(--ease-out)] focus:border-accent focus:outline-none focus:shadow-[0_0_0_4px_var(--color-accent-wash)]"
+              placeholder="Search notes, topics, tasks"
+              className="h-10 w-full rounded-input border border-hairline bg-panel-solid pl-9 pr-3 text-[14px] text-ink placeholder:text-faint transition-[border-color,box-shadow] duration-150 [transition-timing-function:var(--ease-out)] focus:border-accent focus:outline-none focus:shadow-[0_0_0_4px_var(--color-accent-wash)]"
             />
           </div>
           <button
@@ -365,7 +363,7 @@ export function WorkbenchV2({
           </Link>
           <Link
             href="/record?mode=record"
-            className="inline-flex h-10 shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-btn bg-accent px-4 text-[13px] font-medium text-accent-ink shadow-[0_10px_24px_-14px_rgba(255,79,0,0.7)] transition-[transform,box-shadow] duration-150 [transition-timing-function:var(--ease-out)] hover:shadow-[0_14px_30px_-14px_rgba(255,79,0,0.85)] active:scale-[0.97] cursor-pointer"
+            className="inline-flex h-10 shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-btn bg-ink px-4 text-[13px] font-medium text-bg transition-[transform,background-color] duration-150 [transition-timing-function:var(--ease-out)] hover:bg-ink-soft active:scale-[0.97] cursor-pointer"
           >
             <Microphone size={15} weight="fill" />
             Record
@@ -413,11 +411,11 @@ export function WorkbenchV2({
             )}
           </section>
 
-          <section className="rounded-[18px] border border-hairline bg-panel-solid p-4">
+          <section className="rounded-panel border border-hairline bg-panel-solid p-4">
             <div className="flex items-center justify-between gap-3">
-              <PanelTitle icon={<MapTrifold size={17} weight="duotone" />} title="The map" />
+              <PanelTitle icon={<MapTrifold size={17} weight="duotone" />} title="Insight hub" />
               <span className="font-mono text-[10.5px] uppercase tracking-[0.14em] text-faint">
-                {projects.length} {projects.length === 1 ? "territory" : "territories"}
+                {projects.length} {projects.length === 1 ? "project" : "projects"}
               </span>
             </div>
             <div className="mt-3">
@@ -431,10 +429,10 @@ export function WorkbenchV2({
 
           <aside className="flex min-w-0 flex-col gap-4">
             <div className="grid grid-cols-2 gap-2">
-              <WorkbenchMetric label="Charted" value={String(stats.ready)} detail={`${stats.total} surveys`} />
-              <WorkbenchMetric label="Flags open" value={String(stats.actionCount)} detail="All routes" />
-              <WorkbenchMetric label="In the field" value={`${stats.active}/${stats.failed}`} detail="Charting / failed" tone={stats.failed > 0 ? "warn" : "ok"} />
-              <WorkbenchMetric label="Ground covered" value={stats.totalDurationLabel} detail={`${stats.publicCount} shared`} />
+              <WorkbenchMetric label="Ready" value={String(stats.ready)} detail={`of ${stats.total} notes`} />
+              <WorkbenchMetric label="Actions open" value={String(stats.actionCount)} detail="across notes" />
+              <WorkbenchMetric label="In progress" value={`${stats.active}/${stats.failed}`} detail="active / failed" tone={stats.failed > 0 ? "warn" : "ok"} />
+              <WorkbenchMetric label="Total time" value={stats.totalDurationLabel} detail={`${stats.publicCount} shared`} />
             </div>
 
             <section id="queue" className="rounded-[18px] border border-hairline bg-panel-solid p-4">
@@ -451,7 +449,7 @@ export function WorkbenchV2({
 
             <section className="rounded-[18px] border border-hairline bg-panel-solid p-4">
               <div className="flex items-center justify-between gap-3">
-                <PanelTitle icon={<FolderSimple size={17} weight="duotone" />} title="Territories" />
+                <PanelTitle icon={<FolderSimple size={17} weight="duotone" />} title="Projects" />
                 {!creatingProject && (
                   <button
                     onClick={() => setCreatingProject(true)}
@@ -536,7 +534,7 @@ export function WorkbenchV2({
                   </Link>
                 ))}
                 {projects.length === 0 && !creatingProject && (
-                  <EmptyInline title="No project lanes yet" body="Create a lane, then route related captures into it from the library." />
+                  <EmptyInline title="No projects yet" body="Create a project, then file related notes into it from the library." />
                 )}
               </div>
             </section>
@@ -664,15 +662,15 @@ function RecordingLibrary({ items, query }: { items: WorkbenchRecording[]; query
   }
 
   return (
-    <div className="divide-y divide-hairline">
+    <div className="grid grid-cols-1 gap-3 p-3 sm:p-4 lg:grid-cols-2">
       {items.map((rec) => (
-        <WorkbenchRow key={rec.id} rec={rec} />
+        <WorkbenchCard key={rec.id} rec={rec} />
       ))}
     </div>
   );
 }
 
-function WorkbenchRow({ rec }: { rec: WorkbenchRecording }) {
+function WorkbenchCard({ rec }: { rec: WorkbenchRecording }) {
   const router = useRouter();
   const [menu, setMenu] = useState(false);
   const [editing, setEditing] = useState(false);
@@ -708,132 +706,149 @@ function WorkbenchRow({ rec }: { rec: WorkbenchRecording }) {
     }
   }
 
-  return (
-    <article className="group relative grid gap-3 px-3 py-3 transition-colors duration-150 [transition-timing-function:var(--ease-out)] hover:bg-panel sm:grid-cols-[8px_minmax(0,1fr)_auto] sm:px-4">
-      <span className={`hidden rounded-full sm:block ${meta.rail}`} aria-hidden />
-      {!editing && <Link href={`/note/${rec.id}`} className="absolute inset-0 z-0" aria-label={`Open ${rec.title}`} />}
+  const active = isActive(rec.status);
 
-      <div className="relative z-10 min-w-0">
-        <div className="flex min-w-0 flex-wrap items-center gap-2">
-          {editing ? (
-            <div className="pointer-events-auto flex min-w-0 flex-1 items-center gap-1.5">
-              <input
-                ref={inputRef}
-                autoFocus
-                value={title}
-                onChange={(event) => setTitle(event.target.value)}
-                onKeyDown={(event) => {
-                  if (event.key === "Enter") saveRename();
-                  if (event.key === "Escape") {
-                    setTitle(rec.title);
-                    setEditing(false);
-                  }
-                }}
-                className="h-9 min-w-0 flex-1 rounded-input border border-accent bg-bg px-3 text-[14px] text-ink focus:outline-none focus:shadow-[0_0_0_4px_var(--color-accent-wash)]"
-              />
-              <button onClick={saveRename} className="grid h-9 w-9 place-items-center rounded-input text-ok hover:bg-panel-lift cursor-pointer" aria-label="Save name">
-                <Check size={15} weight="bold" />
-              </button>
+  return (
+    <article className="group relative flex min-w-0 flex-col overflow-hidden rounded-card border border-hairline bg-panel-solid transition-[border-color,box-shadow,transform] duration-150 [transition-timing-function:var(--ease-out)] hover:-translate-y-0.5 hover:border-hairline-strong hover:shadow-[0_22px_48px_-30px_rgba(26,28,30,0.4)]">
+      {/* Status hairline along the top edge. */}
+      <span className={`h-[3px] w-full shrink-0 ${meta.rail} ${active ? "animate-pulse" : ""}`} aria-hidden />
+      {!editing && (
+        <Link href={`/note/${rec.id}`} className="absolute inset-0 z-0" aria-label={`Open ${rec.title}`} />
+      )}
+
+      <div className="pointer-events-none relative z-10 flex min-w-0 flex-1 flex-col p-3.5">
+        {/* Header: status + kebab */}
+        <div className="flex items-start gap-2">
+          <span className={`inline-flex shrink-0 items-center gap-1.5 rounded-pill bg-bg px-2 py-0.5 font-mono text-[10px] uppercase tracking-[0.1em] ${meta.tone}`}>
+            <span className={`h-1.5 w-1.5 rounded-full ${meta.rail} ${active ? "animate-pulse" : ""}`} />
+            {meta.label}
+          </span>
+          {rec.isPublic && (
+            <span className="inline-flex shrink-0 items-center gap-1 rounded-pill bg-accent-wash px-2 py-0.5 text-[10.5px] font-medium text-accent-deep">
+              <Globe size={10} weight="bold" /> Shared
+            </span>
+          )}
+          <span className="ml-auto shrink-0 font-mono text-[10.5px] text-faint" title={rec.createdAtLabel}>
+            {rec.dateLabel}
+          </span>
+          {!editing && (
+            <div className="pointer-events-auto -mr-1 -mt-1 shrink-0">
               <button
-                onClick={() => {
-                  setTitle(rec.title);
-                  setEditing(false);
-                }}
-                className="grid h-9 w-9 place-items-center rounded-input text-muted hover:bg-panel-lift cursor-pointer"
-                aria-label="Cancel rename"
+                ref={kebabRef}
+                onClick={() => setMenu((open) => !open)}
+                disabled={busy}
+                className="grid h-7 w-7 place-items-center rounded-input text-faint transition-colors duration-150 hover:bg-panel-lift hover:text-ink disabled:opacity-50 cursor-pointer"
+                aria-label="Recording actions"
+                aria-haspopup="menu"
+                aria-expanded={menu}
               >
-                <X size={15} />
+                <DotsThreeVertical size={17} weight="bold" />
               </button>
+              <DropMenu open={menu} onClose={() => setMenu(false)} anchor={kebabRef} align="end" width={176} className="p-1">
+                <RowMenuItem icon={<PencilSimple size={15} />} label="Rename" onClick={() => { setMenu(false); setEditing(true); }} />
+                {rec.status === "failed" && (
+                  <RowMenuItem
+                    icon={<ArrowClockwise size={15} />}
+                    label="Retry"
+                    onClick={() => {
+                      setMenu(false);
+                      void mutate(() => fetch(`/api/recordings/${rec.id}/retry`, { method: "POST" }));
+                    }}
+                  />
+                )}
+                <RowMenuItem
+                  icon={<Trash size={15} />}
+                  label="Delete"
+                  danger
+                  onClick={() => {
+                    setMenu(false);
+                    if (confirm(`Delete "${rec.title}"? This can't be undone.`)) {
+                      void mutate(() => fetch(`/api/recordings/${rec.id}`, { method: "DELETE" }));
+                    }
+                  }}
+                />
+              </DropMenu>
             </div>
-          ) : (
-            <>
-              <h2 className="min-w-0 truncate text-[15px] font-semibold tracking-[-0.01em] text-ink">{rec.title}</h2>
-              <span className={`inline-flex items-center rounded-[7px] bg-bg px-2 py-0.5 font-mono text-[10.5px] ${meta.tone}`}>
-                {meta.label}
-              </span>
-              {rec.isPublic && (
-                <span className="inline-flex items-center gap-1 rounded-[7px] bg-accent-wash px-2 py-0.5 text-[11px] font-medium text-accent-deep">
-                  <Globe size={10} weight="bold" />
-                  Shared
-                </span>
-              )}
-            </>
           )}
         </div>
-        {!editing && (
+
+        {/* Title / rename */}
+        {editing ? (
+          <div className="pointer-events-auto mt-2.5 flex items-center gap-1.5">
+            <input
+              ref={inputRef}
+              autoFocus
+              value={title}
+              onChange={(event) => setTitle(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === "Enter") saveRename();
+                if (event.key === "Escape") {
+                  setTitle(rec.title);
+                  setEditing(false);
+                }
+              }}
+              className="h-9 min-w-0 flex-1 rounded-input border border-accent bg-bg px-3 text-[14px] text-ink focus:outline-none focus:shadow-[0_0_0_4px_var(--color-accent-wash)]"
+            />
+            <button onClick={saveRename} className="grid h-9 w-9 shrink-0 place-items-center rounded-input text-ok hover:bg-panel-lift cursor-pointer" aria-label="Save name">
+              <Check size={15} weight="bold" />
+            </button>
+            <button
+              onClick={() => {
+                setTitle(rec.title);
+                setEditing(false);
+              }}
+              className="grid h-9 w-9 shrink-0 place-items-center rounded-input text-muted hover:bg-panel-lift cursor-pointer"
+              aria-label="Cancel rename"
+            >
+              <X size={15} />
+            </button>
+          </div>
+        ) : (
           <>
-            <p className="mt-1 line-clamp-2 max-w-4xl text-[13px] leading-relaxed text-muted">
+            <h2 className="mt-2.5 line-clamp-1 text-[15.5px] font-semibold tracking-[-0.01em] text-ink">
+              {rec.title}
+            </h2>
+            <p className="mt-1 line-clamp-2 text-[13px] leading-relaxed text-muted">
               {rec.summary || rec.error || meta.help}
             </p>
-            <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 font-mono text-[11px] text-faint">
-              <span title={rec.createdAtLabel}>{rec.dateLabel}</span>
-              <span>{rec.durationLabel}</span>
-              <span>{rec.source === "record" ? "recorded" : "uploaded"}</span>
-              {rec.language && <span>{rec.language}</span>}
-              {rec.sizeLabel !== "0 MB" && <span>{rec.sizeLabel}</span>}
-              {rec.projectId && rec.projectName ? (
-                <span className="inline-flex items-center gap-1.5 text-ink-soft">
-                  <span className="h-1.5 w-1.5 rounded-full" style={{ background: projectColor(rec.projectColor) }} />
-                  {rec.projectName}
-                </span>
-              ) : (
-                <span className="text-warn">unfiled</span>
-              )}
-            </div>
+
             {(rec.actionItems.length > 0 || rec.decisions.length > 0 || rec.followUps.length > 0 || rec.topics.length > 0) && (
-              <div className="mt-2 flex flex-wrap gap-1.5">
+              <div className="mt-2.5 flex flex-wrap gap-1.5">
                 {rec.actionItems.length > 0 && <MiniChip icon={<ListChecks size={11} />} label={`${rec.actionItems.length} actions`} />}
                 {rec.decisions.length > 0 && <MiniChip icon={<CheckCircle size={11} />} label={`${rec.decisions.length} decisions`} />}
                 {rec.followUps.length > 0 && <MiniChip icon={<ClockCounterClockwise size={11} />} label={`${rec.followUps.length} follow-ups`} />}
-                {rec.topics.slice(0, 3).map((topic) => (
+                {rec.topics.slice(0, 2).map((topic) => (
                   <MiniChip key={topic} label={topic} />
                 ))}
               </div>
             )}
+
+            {/* Footer: expedition meta + the territory assignment control */}
+            <div className="mt-3.5 flex items-center gap-2 border-t border-hairline pt-2.5">
+              <span className="flex min-w-0 items-center gap-x-2.5 font-mono text-[10.5px] text-faint">
+                <span>{rec.durationLabel}</span>
+                <span aria-hidden>·</span>
+                <span>{rec.source === "record" ? "recorded" : "uploaded"}</span>
+                {rec.language && (
+                  <>
+                    <span aria-hidden>·</span>
+                    <span className="truncate">{rec.language}</span>
+                  </>
+                )}
+              </span>
+              <div className="ml-auto shrink-0">
+                <ProjectPicker
+                  recordingId={rec.id}
+                  currentProjectId={rec.projectId}
+                  currentProjectName={rec.projectName}
+                  currentProjectColor={rec.projectColor}
+                  variant="territory"
+                />
+              </div>
+            </div>
           </>
         )}
       </div>
-
-      {!editing && (
-        <div className="pointer-events-auto relative z-10 flex items-center gap-1 sm:self-center">
-          <ProjectPicker recordingId={rec.id} currentProjectId={rec.projectId} variant="icon" />
-          <button
-            ref={kebabRef}
-            onClick={() => setMenu((open) => !open)}
-            disabled={busy}
-            className="grid h-9 w-9 place-items-center rounded-input text-muted transition-colors duration-150 hover:bg-panel-lift hover:text-ink disabled:opacity-50 cursor-pointer"
-            aria-label="Recording actions"
-            aria-haspopup="menu"
-            aria-expanded={menu}
-          >
-            <DotsThreeVertical size={18} weight="bold" />
-          </button>
-          <DropMenu open={menu} onClose={() => setMenu(false)} anchor={kebabRef} align="end" width={176} className="p-1">
-            <RowMenuItem icon={<PencilSimple size={15} />} label="Rename" onClick={() => { setMenu(false); setEditing(true); }} />
-            {rec.status === "failed" && (
-              <RowMenuItem
-                icon={<ArrowClockwise size={15} />}
-                label="Retry"
-                onClick={() => {
-                  setMenu(false);
-                  void mutate(() => fetch(`/api/recordings/${rec.id}/retry`, { method: "POST" }));
-                }}
-              />
-            )}
-            <RowMenuItem
-              icon={<Trash size={15} />}
-              label="Delete"
-              danger
-              onClick={() => {
-                setMenu(false);
-                if (confirm(`Delete "${rec.title}"? This can't be undone.`)) {
-                  void mutate(() => fetch(`/api/recordings/${rec.id}`, { method: "DELETE" }));
-                }
-              }}
-            />
-          </DropMenu>
-        </div>
-      )}
     </article>
   );
 }

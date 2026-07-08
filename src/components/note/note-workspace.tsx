@@ -376,11 +376,17 @@ function Scrubber({ markers, chapterMarks }: { markers: number[]; chapterMarks: 
   }
 
   return (
-    <div className="glass flex items-center gap-4 rounded-panel p-4 sm:p-5">
+    <div
+      className="flex items-center gap-4 rounded-panel border p-4 sm:p-5"
+      style={{
+        background: "linear-gradient(180deg, rgba(118,215,182,0.30), rgba(199,238,222,0.50))",
+        borderColor: "rgba(118,215,182,0.65)",
+      }}
+    >
       <button
         onClick={toggle}
         aria-label={playing ? "Pause" : "Play"}
-        className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-accent text-accent-ink shadow-[0_10px_24px_-14px_rgba(255,79,0,0.7)] transition-transform duration-150 [transition-timing-function:var(--ease-out)] active:scale-95 cursor-pointer"
+        className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-ink text-bg transition-transform duration-150 [transition-timing-function:var(--ease-out)] active:scale-95 cursor-pointer"
       >
         {playing ? <Pause size={20} weight="fill" /> : <Play size={20} weight="fill" />}
       </button>
@@ -401,12 +407,12 @@ function Scrubber({ markers, chapterMarks }: { markers: number[]; chapterMarks: 
         aria-valuenow={Math.round(currentMs / 1000)}
         tabIndex={0}
       >
-        {/* Base route — the uncharted line */}
+        {/* Base line — the unplayed waveform trace */}
         <path
           ref={pathRef}
           d={ROUTE_D}
           fill="none"
-          stroke="var(--color-hairline-strong)"
+          stroke="rgba(5,81,62,0.24)"
           strokeWidth={3}
           strokeLinecap="round"
         />
@@ -415,7 +421,7 @@ function Scrubber({ markers, chapterMarks }: { markers: number[]; chapterMarks: 
           <path
             d={ROUTE_D}
             fill="none"
-            stroke="var(--color-lock)"
+            stroke="var(--color-accent-deep)"
             strokeWidth={3.5}
             strokeLinecap="round"
             strokeDasharray={geom.len}
@@ -478,8 +484,8 @@ function Scrubber({ markers, chapterMarks }: { markers: number[]; chapterMarks: 
         )}
       </svg>
 
-      <span className="tabular shrink-0 font-mono text-[12px] text-muted">
-        T+{fmtMs(currentMs)} / {fmtMs(durationMs)}
+      <span className="tabular shrink-0 font-mono text-[12px] text-ink-soft">
+        {fmtMs(currentMs)} / {fmtMs(durationMs)}
       </span>
     </div>
   );

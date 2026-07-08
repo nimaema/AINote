@@ -14,14 +14,15 @@ const base =
   "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent";
 
 const variants: Record<Variant, string> = {
-  // Vermilion fill: the primary action and the app's signal color.
+  // Charcoal fill: the primary action. Solid, authoritative, no shadow.
   primary:
-    "bg-accent text-accent-ink shadow-[0_10px_24px_-14px_rgba(255,79,0,0.7)] hover:shadow-[0_14px_30px_-14px_rgba(255,79,0,0.85)]",
-  // Ink fill for secondary committed actions.
+    "bg-ink text-bg hover:bg-ink-soft",
+  // Intelligence / AI action: soft-mint tint with deep-green text and a mint edge.
   accent:
-    "bg-ink text-bg-2 hover:bg-ink-soft",
+    "bg-accent-wash text-accent-deep border border-[color:var(--color-mint)] hover:bg-[color:var(--color-mint)]/25",
+  // A white architectural tile that behaves like a button.
   glass:
-    "glass text-ink hover:bg-panel-lift",
+    "glass text-ink hover:bg-panel",
   ghost: "text-muted hover:text-ink hover:bg-panel",
 };
 

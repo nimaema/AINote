@@ -1,56 +1,60 @@
 @import "tailwindcss";
 
 /*
-  GlaciaNav Notes — ATLAS.
-  Expedition cartography: an ice-field ground, crevasse ink, a flare-orange
-  action color, and glacial cyan for anything charted and earned. Display type
-  is summit-marker signage (always uppercase); machine truth is mono. Token and
-  class names are kept from prior systems so existing usage re-skins in place.
+  GlaciaNav Notes — ARCHITECTURAL LIGHT.
+  A digital sanctuary: warm alabaster ground, charcoal authority, editorial
+  serif headlines over a Swiss sans, and soft mint reserved with restraint for
+  intelligence (AI insight, live capture, resolved state). Depth comes from
+  stacked white "architectural tiles" and ambient shadow, never heavy fills.
+  Token and class names are kept from prior systems so existing usage re-skins
+  in place.
 */
 
 @theme {
-  /* Ground — ice field, cold and bright */
-  --color-bg: #edf2f1;
-  --color-bg-2: #f5f9f8;
-  --color-ink: #0b1e24;
-  --color-ink-soft: #263b41;
-  --color-muted: #53686e;
-  --color-faint: #84979b;
+  /* Ground — alabaster and mist */
+  --color-bg: #f8f8f6;          /* alabaster: warm off-white, easy on the eyes */
+  --color-bg-2: #f2f2f0;        /* mist: sidebar and secondary surfaces */
+  --color-ink: #1a1c1e;         /* charcoal: primary text + primary buttons */
+  --color-ink-soft: #33363a;    /* body prose */
+  --color-muted: #565a5f;       /* AA secondary text on alabaster */
+  --color-faint: #83878c;       /* metadata, tertiary labels */
 
-  /* Surfaces — near-white map sheets on the ice */
-  --color-panel: #f1f5f4;
-  --color-panel-solid: #fbfdfc;
-  --color-panel-lift: #e2eae9;
-  --color-hairline: rgba(11, 30, 36, 0.11);
-  --color-hairline-strong: rgba(11, 30, 36, 0.18);
+  /* Surfaces — architectural tiles stacked over the ground */
+  --color-panel: #f1f1ef;       /* hover wash / low container */
+  --color-panel-solid: #ffffff; /* the tile face */
+  --color-panel-lift: #ebebe8;  /* active / inset */
+  --color-hairline: #e5e5e4;    /* 1px tile border */
+  --color-hairline-strong: #d6d6d3;
 
-  /* Accent — flare orange: live, action, recording */
-  --color-accent: #ff4f00;
-  --color-accent-deep: #bc3c00; /* text-on-ice, AA */
-  --color-accent-ink: #fff6f0; /* text on the flare fill */
-  --color-accent-wash: rgba(255, 79, 0, 0.1);
+  /* Accent — the green family (readable) + soft mint (ambient only) */
+  --color-accent: #0b7a5c;      /* deep green: text, icons, active states — AA on alabaster */
+  --color-accent-deep: #05513e; /* darker green: strong text, links */
+  --color-accent-ink: #f2faf6;  /* text on a solid green fill */
+  --color-accent-wash: rgba(118, 215, 182, 0.22); /* soft-mint tint: chips, halos, active nav */
+  --color-mint: #76d7b6;        /* soft mint: halo glow, live pulse, waveform band */
+  --color-mint-soft: #c7eede;
 
-  /* Lock — glacial cyan: the earned "charted / yours" color */
-  --color-lock: #0a7d95;
-  --color-lock-wash: rgba(10, 125, 149, 0.12);
+  /* Lock — resolved / earned (a deeper green sibling) */
+  --color-lock: #00695a;
+  --color-lock-wash: rgba(0, 105, 90, 0.1);
 
-  /* Secondary signal colors — speakers and territories (alpine palette) */
-  --color-aurora-teal: #0a7e8c;
-  --color-aurora-violet: #4a5f8a;
-  --color-aurora-rose: #a65b41;
-  --color-aurora-amber: #8f7a2e;
+  /* Speaker diarization — muted architectural palette on alabaster */
+  --color-aurora-teal: #0b7a5c;
+  --color-aurora-violet: #4b5a86;
+  --color-aurora-rose: #9c5a44;
+  --color-aurora-amber: #857021;
 
   /* Semantic */
-  --color-ok: #0a7d95;
-  --color-warn: #a87516;
-  --color-err: #c0392b;
-  --color-rec: #ff4f00;
+  --color-ok: #0b7a5c;
+  --color-warn: #9a6a0c;
+  --color-err: #ba1a1a;
+  --color-rec: #0b7a5c;         /* recording indicator dot (mint halo pulses around it) */
 
-  /* Shape: compact product radii. Inputs 8, buttons/cards 10, panels 12.
-     Pills reserved for status dots/avatars via --radius-pill. */
+  /* Shape — 8px architectural standard, 4px for small chips */
+  --radius-chip: 4px;
   --radius-input: 8px;
-  --radius-btn: 10px;
-  --radius-card: 10px;
+  --radius-btn: 8px;
+  --radius-card: 8px;
   --radius-panel: 12px;
   --radius-pill: 999px;
 
@@ -59,9 +63,10 @@
   --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
   --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
 
-  --font-sans: var(--font-archivo), ui-sans-serif, system-ui, sans-serif;
-  --font-display: var(--font-archivo-black), var(--font-archivo), sans-serif;
-  --font-mono: var(--font-space-mono), ui-monospace, "SF Mono", monospace;
+  /* Type: editorial serif display, Swiss sans UI, clean mono for machine truth */
+  --font-sans: var(--font-hanken), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-caslon), Georgia, "Times New Roman", serif;
+  --font-mono: var(--font-plex-mono), ui-monospace, "SF Mono", monospace;
 }
 
 html {
@@ -70,9 +75,9 @@ html {
 }
 
 body {
-  /* Ice field with a faint glacial wash at the top edge. */
+  /* Alabaster with the faintest breath of mint at the top edge. */
   background:
-    radial-gradient(920px 380px at 82% -16%, rgba(10, 125, 149, 0.07), transparent 60%),
+    radial-gradient(1100px 460px at 84% -18%, rgba(118, 215, 182, 0.1), transparent 62%),
     var(--color-bg);
   color: var(--color-ink-soft);
   font-family: var(--font-sans);
@@ -80,11 +85,11 @@ body {
   text-rendering: optimizeLegibility;
 }
 
-/* Expedition signage: single-weight black, always uppercase. */
+/* Editorial serif voice — headlines set in natural case, tightened. */
 .font-display {
   font-family: var(--font-display);
-  text-transform: uppercase;
-  letter-spacing: 0.015em;
+  font-weight: 400;
+  letter-spacing: -0.011em;
 }
 
 .tabular {
@@ -93,14 +98,15 @@ body {
 }
 
 /* ─── Surfaces ────────────────────────────────────────────────────────
-   Map sheets: near-white faces, hairline edges, soft cold lift.
+   Architectural tiles: pure-white faces, a 1px hairline, and a soft,
+   highly-diffused ambient shadow (never a hard black drop).
    Old class names kept so existing usage re-skins in place. */
 .glass {
   background: var(--color-panel-solid);
   border: 1px solid var(--color-hairline);
   box-shadow:
-    0 1px 2px rgba(11, 30, 36, 0.04),
-    0 16px 40px -30px rgba(11, 30, 36, 0.3);
+    0 1px 2px rgba(26, 28, 30, 0.04),
+    0 12px 32px -18px rgba(26, 28, 30, 0.16);
 }
 
 .glass-soft {
@@ -108,43 +114,70 @@ body {
   border: 1px solid var(--color-hairline);
 }
 
-/* Floating menus and popovers — the only truly elevated layer. */
+/* Floating menus and popovers — the most elevated layer (Level 2). */
 .glass-menu {
   background: #ffffff;
   border: 1px solid var(--color-hairline-strong);
   box-shadow:
-    0 1px 2px rgba(11, 30, 36, 0.06),
-    0 24px 60px -22px rgba(11, 30, 36, 0.35);
+    0 1px 2px rgba(26, 28, 30, 0.05),
+    0 24px 56px -20px rgba(26, 28, 30, 0.28);
+}
+
+/* Tiles that respond to the pointer lift toward the reader. */
+.tile-lift {
+  transition:
+    transform 200ms var(--ease-out),
+    box-shadow 200ms var(--ease-out);
+}
+.tile-lift:hover {
+  transform: translateY(-2px);
+  box-shadow:
+    0 2px 4px rgba(26, 28, 30, 0.05),
+    0 26px 52px -24px rgba(26, 28, 30, 0.26);
+}
+
+/* Contextual Halo — a soft radial mint glow behind AI / intelligence surfaces. */
+.halo {
+  position: relative;
+  isolation: isolate;
+}
+.halo::before {
+  content: "";
+  position: absolute;
+  inset: -30%;
+  z-index: -1;
+  background: radial-gradient(circle at 50% 40%, rgba(118, 215, 182, 0.35) 0%, rgba(118, 215, 182, 0) 68%);
+  pointer-events: none;
 }
 
 .workbench-hero {
   position: relative;
   isolation: isolate;
   background:
-    linear-gradient(135deg, rgba(10, 125, 149, 0.06), transparent 32%),
+    linear-gradient(150deg, rgba(118, 215, 182, 0.08), transparent 36%),
     var(--color-panel-solid);
 }
 
-/* Survey-sheet grid behind hero surfaces. */
+/* A faint architect's grid behind hero surfaces. */
 .workbench-hero::before {
   content: "";
   position: absolute;
   inset: 0;
   z-index: -1;
   background-image:
-    linear-gradient(rgba(11, 30, 36, 0.05) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(11, 30, 36, 0.045) 1px, transparent 1px);
-  background-size: 46px 46px;
-  mask-image: linear-gradient(120deg, black, transparent 70%);
+    linear-gradient(rgba(26, 28, 30, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(26, 28, 30, 0.035) 1px, transparent 1px);
+  background-size: 48px 48px;
+  mask-image: linear-gradient(125deg, black, transparent 72%);
   pointer-events: none;
 }
 
 /* Measurement grid for capture / instrument surfaces. */
 .signal-grid {
   background-image:
-    linear-gradient(rgba(11, 30, 36, 0.05) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(11, 30, 36, 0.045) 1px, transparent 1px);
-  background-size: 30px 30px;
+    linear-gradient(rgba(26, 28, 30, 0.045) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(26, 28, 30, 0.04) 1px, transparent 1px);
+  background-size: 32px 32px;
 }
 
 ::selection {
@@ -164,7 +197,7 @@ body {
     transform: translate3d(0, 0, 0) scale(1);
   }
   50% {
-    transform: translate3d(4%, -3%, 0) scale(1.15);
+    transform: translate3d(4%, -3%, 0) scale(1.12);
   }
   100% {
     transform: translate3d(0, 0, 0) scale(1);
@@ -192,10 +225,10 @@ body {
 }
 
 .rise {
-  animation: rise 220ms var(--ease-out) both;
+  animation: rise 240ms var(--ease-out) both;
 }
 
-/* Resolve/chart: blur → sharp, the route locking onto the map. */
+/* Resolve: blur → sharp, an insight coming into focus. */
 @keyframes resolveIn {
   from {
     opacity: 0;
@@ -213,7 +246,7 @@ body {
   animation: resolveIn 620ms var(--ease-out) both;
 }
 
-/* Route lines draw themselves — the ATLAS motion signature. */
+/* SVG lines drawing themselves in — the Insight Hub / scrubber signature. */
 @keyframes routeDraw {
   to {
     stroke-dashoffset: 0;
@@ -240,7 +273,7 @@ body {
   animation: popIn 150ms var(--ease-out) both;
 }
 
-/* Sonar ping for the survey dial. */
+/* Soft mint pulse — live capture and intelligence indicators. */
 @keyframes signal-ping {
   0% {
     transform: scale(1);
@@ -248,7 +281,7 @@ body {
   }
   70%,
   100% {
-    transform: scale(1.6);
+    transform: scale(1.9);
     opacity: 0;
   }
 }

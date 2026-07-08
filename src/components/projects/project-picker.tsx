@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { FolderSimple, Plus, Check, X } from "@phosphor-icons/react";
+import { FolderSimple, Plus, Check, X, MapPinSimpleArea, CaretDown } from "@phosphor-icons/react";
 import { projectColor } from "@/lib/projects";
 import { DropMenu } from "@/components/ui/drop-menu";
 
@@ -11,11 +11,15 @@ type Project = { id: string; name: string; color: string };
 export function ProjectPicker({
   recordingId,
   currentProjectId,
+  currentProjectName,
+  currentProjectColor,
   variant = "menu",
 }: {
   recordingId: string;
   currentProjectId: string | null;
-  variant?: "menu" | "chip" | "icon";
+  currentProjectName?: string | null;
+  currentProjectColor?: string | null;
+  variant?: "menu" | "chip" | "icon" | "territory";
 }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -70,7 +74,35 @@ export function ProjectPicker({
   const btnRef = useRef<HTMLButtonElement>(null);
 
   const trigger =
-    variant === "icon" ? (
+    variant === "territory" ? (
+      <button
+        ref={btnRef}
+        onClick={() => setOpen((o) => !o)}
+        aria-label={currentProjectId ? `Project: ${currentProjectName}` : "Assign to a project"}
+        title={currentProjectId ? "Change project" : "Assign to a project"}
+        className={`pointer-events-auto inline-flex h-7 max-w-[11rem] items-center gap-1.5 rounded-pill border px-2.5 text-[11.5px] font-medium transition-[background-color,border-color,color] duration-150 [transition-timing-function:var(--ease-out)] active:scale-[0.97] cursor-pointer ${
+          currentProjectId
+            ? "border-transparent bg-lock-wash text-lock hover:bg-lock/15"
+            : "border-dashed border-hairline-strong text-muted hover:border-lock hover:text-lock"
+        }`}
+      >
+        {currentProjectId ? (
+          <>
+            <span
+              className="h-2 w-2 shrink-0 rounded-full"
+              style={{ background: projectColor(currentProjectColor) }}
+            />
+            <span className="truncate">{currentProjectName}</span>
+            <CaretDown size={11} weight="bold" className="shrink-0 opacity-70" />
+          </>
+        ) : (
+          <>
+            <MapPinSimpleArea size={13} weight="bold" className="shrink-0" />
+            Assign project
+          </>
+        )}
+      </button>
+    ) : variant === "icon" ? (
       <button
         ref={btnRef}
         onClick={() => setOpen((o) => !o)}

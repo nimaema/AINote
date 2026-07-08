@@ -22,7 +22,7 @@ export function SignalMark({
           className="w-[2.5px] rounded-full"
           style={{
             height: `${h * 100}%`,
-            background: i % 2 === 0 ? "var(--color-accent)" : "var(--color-ink)",
+            background: i % 2 === 0 ? "var(--color-ink)" : "var(--color-mint)",
             transformOrigin: "center",
             animation: live
               ? `wave ${820 + i * 90}ms ${i * 70}ms var(--ease-in-out) infinite alternate`
@@ -34,12 +34,14 @@ export function SignalMark({
   );
 }
 
+// The wordmark: editorial serif, natural case. The dot over the "i" is set in
+// mint as a quiet nod to the intelligence layer.
 export function Wordmark({ className = "" }: { className?: string }) {
   return (
     <span className={`inline-flex items-center gap-2.5 ${className}`}>
       <SignalMark size={20} />
-      <span className="font-mono text-[14px] font-bold tracking-[0.08em] text-ink">
-        GLACIA<span className="text-accent">NAV</span>
+      <span className="font-display text-[21px] leading-none text-ink">
+        Glacianav
       </span>
     </span>
   );

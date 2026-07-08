@@ -1,30 +1,31 @@
 import type { Metadata, Viewport } from "next";
-import { Archivo, Archivo_Black, Space_Mono } from "next/font/google";
+import { Libre_Caslon_Text, Hanken_Grotesk, IBM_Plex_Mono } from "next/font/google";
 import { Pwa } from "@/components/pwa";
 import "./globals.css";
 
-// ATLAS type system:
-//  - Archivo Black → expedition signage (display headlines, always uppercase)
-//  - Archivo       → the working interface
-//  - Space Mono    → machine truth (T+ timestamps, coordinates, speaker tags)
-const archivo = Archivo({
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
-  variable: "--font-archivo",
-  display: "swap",
-});
-
-const archivoBlack = Archivo_Black({
-  subsets: ["latin"],
-  weight: "400",
-  variable: "--font-archivo-black",
-  display: "swap",
-});
-
-const spaceMono = Space_Mono({
+// ARCHITECTURAL LIGHT type system:
+//  - Libre Caslon Text → editorial serif voice (headlines, wordmark, brief)
+//  - Hanken Grotesk    → the Swiss sans workhorse (UI + body)
+//  - IBM Plex Mono     → machine truth (timers, coordinates, speaker tags)
+const caslon = Libre_Caslon_Text({
   subsets: ["latin"],
   weight: ["400", "700"],
-  variable: "--font-space-mono",
+  style: ["normal", "italic"],
+  variable: "--font-caslon",
+  display: "swap",
+});
+
+const hanken = Hanken_Grotesk({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+  variable: "--font-hanken",
+  display: "swap",
+});
+
+const plexMono = IBM_Plex_Mono({
+  subsets: ["latin"],
+  weight: ["400", "500", "600"],
+  variable: "--font-plex-mono",
   display: "swap",
 });
 
@@ -32,7 +33,7 @@ export const metadata: Metadata = {
   applicationName: "GlaciaNav Notes",
   title: "GlaciaNav Notes",
   description:
-    "Survey a conversation and watch it get charted — route, waypoints, flags. Every claim traceable to the moment it was said.",
+    "Record a conversation and get a clean summary, decisions, and action items. Every note stays traceable to the moment it was said.",
   robots: { index: false, follow: false },
   manifest: "/manifest.webmanifest",
   appleWebApp: {
@@ -50,7 +51,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#edf2f1",
+  themeColor: "#f8f8f6",
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
@@ -63,7 +64,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${archivo.variable} ${archivoBlack.variable} ${spaceMono.variable}`}
+      className={`${caslon.variable} ${hanken.variable} ${plexMono.variable}`}
     >
       <body className="min-h-[100dvh] antialiased">
         {children}
