@@ -28,6 +28,7 @@ export type UserRow = {
   recordings: number;
   timeLabel: string;
   storageLabel: string;
+  costLabel: string;
   lastActiveLabel: string;
 };
 
@@ -168,6 +169,7 @@ export function UsersAdmin({ users, meId }: { users: UserRow[]; meId: string }) 
                   <span>{u.recordings} rec</span>
                   <span>{u.timeLabel}</span>
                   <span>{u.storageLabel}</span>
+                  <span className="text-accent-deep" title="Rough estimated AssemblyAI + DeepSeek cost">~{u.costLabel}</span>
                   <span>active {u.lastActiveLabel}</span>
                 </p>
               </div>
