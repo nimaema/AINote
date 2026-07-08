@@ -111,6 +111,8 @@ async function handleProcess(job: Job<PipelineJob>) {
           ownerLabel: a.owner ?? null,
           dueLabel: a.due ?? null,
           assigneeId: kept?.assigneeId ?? null,
+          assigneeIds: kept?.assigneeIds ?? [],
+          assignAll: kept?.assignAll ?? false,
           status: kept?.status ?? "open",
           sourceMs: traceMatch(a.task, utts),
           orderIdx: i,

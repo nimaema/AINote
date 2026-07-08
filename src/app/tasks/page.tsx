@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { asc, desc, eq } from "drizzle-orm";
+import { asc, desc, eq, or, sql } from "drizzle-orm";
 import { auth } from "@/lib/auth";
 import { db } from "@/db";
 import { actionItems, recordings } from "@/db/schema";
@@ -20,13 +20,20 @@ export default async function TasksPage() {
       status: actionItems.status,
       dueLabel: actionItems.dueLabel,
       sourceMs: actionItems.sourceMs,
+      assignAll: actionItems.assignAll,
       recordingId: actionItems.recordingId,
       recTitle: recordings.title,
       recCreatedAt: recordings.createdAt,
     })
     .from(actionItems)
     .innerJoin(recordings, eq(recordings.id, actionItems.recordingId))
-    .where(eq(actionItems.assigneeId, userId))
+    // Assigned directly to me, or handed to the whole team.
+    .where(
+      or(
+        eq(actionItems.assignAll, true),
+        sql`${actionItems.assigneeIds} @> ${JSON.stringify([userId])}::jsonb`
+      )
+    )
     .orderBy(asc(actionItems.status), desc(recordings.createdAt));
 
   const now = new Date();
@@ -36,6 +43,7 @@ export default async function TasksPage() {
     status: r.status,
     dueLabel: r.dueLabel,
     sourceMs: r.sourceMs,
+    viaTeam: r.assignAll,
     recordingId: r.recordingId,
     recTitle: r.recTitle ?? "Untitled recording",
     dateLabel: relativeTime(r.recCreatedAt, now),

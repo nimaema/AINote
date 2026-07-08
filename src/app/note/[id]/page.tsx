@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { redirect, notFound } from "next/navigation";
-import { eq, asc } from "drizzle-orm";
+import { eq, asc, inArray } from "drizzle-orm";
 import { auth } from "@/lib/auth";
 import { db } from "@/db";
 import { transcripts, results, qaMessages, users, actionItems } from "@/db/schema";
@@ -87,37 +87,48 @@ export default async function NotePage({
   const colorFor = makeColorFor(speakerOrder);
   const speakerColors = Object.fromEntries(speakerOrder.map((sp) => [sp, colorFor(sp)]));
 
-  const actionRows: ActionRow[] = done
-    ? (
-        await db
-          .select({
-            id: actionItems.id,
-            task: actionItems.task,
-            ownerLabel: actionItems.ownerLabel,
-            dueLabel: actionItems.dueLabel,
-            assigneeId: actionItems.assigneeId,
-            assigneeName: users.name,
-            assigneeEmail: users.email,
-            status: actionItems.status,
-            sourceMs: actionItems.sourceMs,
-          })
-          .from(actionItems)
-          .leftJoin(users, eq(users.id, actionItems.assigneeId))
-          .where(eq(actionItems.recordingId, id))
-          .orderBy(asc(actionItems.orderIdx))
-      ).map((r) => ({
-        id: r.id,
-        task: r.task,
-        ownerLabel: r.ownerLabel,
-        dueLabel: r.dueLabel,
-        assigneeId: r.assigneeId,
-        assigneeName: r.assigneeId
-          ? r.assigneeName ?? r.assigneeEmail?.split("@")[0] ?? "Teammate"
-          : null,
-        status: r.status,
-        sourceMs: r.sourceMs,
-      }))
+  const rawActions = done
+    ? await db
+        .select({
+          id: actionItems.id,
+          task: actionItems.task,
+          ownerLabel: actionItems.ownerLabel,
+          dueLabel: actionItems.dueLabel,
+          assigneeIds: actionItems.assigneeIds,
+          assignAll: actionItems.assignAll,
+          status: actionItems.status,
+          sourceMs: actionItems.sourceMs,
+        })
+        .from(actionItems)
+        .where(eq(actionItems.recordingId, id))
+        .orderBy(asc(actionItems.orderIdx))
     : [];
+
+  // Resolve display names for everyone assigned across this recording's tasks.
+  const assigneeIdSet = [...new Set(rawActions.flatMap((a) => a.assigneeIds ?? []))];
+  const assigneeUsers = assigneeIdSet.length
+    ? await db
+        .select({ id: users.id, name: users.name, email: users.email })
+        .from(users)
+        .where(inArray(users.id, assigneeIdSet))
+    : [];
+  const assigneeNameById = new Map(
+    assigneeUsers.map((u) => [u.id, u.name ?? u.email?.split("@")[0] ?? "Teammate"])
+  );
+
+  const actionRows: ActionRow[] = rawActions.map((r) => ({
+    id: r.id,
+    task: r.task,
+    ownerLabel: r.ownerLabel,
+    dueLabel: r.dueLabel,
+    assignees: (r.assigneeIds ?? []).map((uid) => ({
+      id: uid,
+      name: assigneeNameById.get(uid) ?? "Teammate",
+    })),
+    assignAll: r.assignAll,
+    status: r.status,
+    sourceMs: r.sourceMs,
+  }));
 
   return (
     <AppShell user={session.user}>

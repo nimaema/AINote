@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Check, Flag, WaveSawtooth } from "@phosphor-icons/react";
+import { Check, Flag, UsersThree, WaveSawtooth } from "@phosphor-icons/react";
 
 export type TaskItem = {
   id: string;
@@ -10,6 +10,7 @@ export type TaskItem = {
   status: "open" | "done";
   dueLabel: string | null;
   sourceMs: number | null;
+  viaTeam?: boolean;
   recordingId: string;
   recTitle: string;
   dateLabel: string;
@@ -105,6 +106,11 @@ function Row({ t, onToggle }: { t: TaskItem; onToggle: () => void }) {
             {t.recTitle}
           </Link>
           <span>{t.dateLabel}</span>
+          {t.viaTeam && (
+            <span className="inline-flex items-center gap-1 rounded-pill bg-accent-wash px-1.5 py-0.5 text-accent-deep">
+              <UsersThree size={10} weight="fill" /> team
+            </span>
+          )}
           {t.dueLabel && <span className="text-warn">due {t.dueLabel}</span>}
           {t.sourceMs != null && (
             <Link

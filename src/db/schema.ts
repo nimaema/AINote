@@ -1,3 +1,4 @@
+import { sql } from "drizzle-orm";
 import {
   pgTable,
   text,
@@ -336,7 +337,9 @@ export const actionItems = pgTable(
     ownerLabel: text("owner_label"), // raw name the model extracted
     assigneeId: text("assignee_id").references(() => users.id, {
       onDelete: "set null",
-    }),
+    }), // legacy single assignee; superseded by assigneeIds
+    assigneeIds: jsonb("assignee_ids").$type<string[]>().notNull().default(sql`'[]'::jsonb`),
+    assignAll: boolean("assign_all").notNull().default(false), // assigned to the whole team
     dueLabel: text("due_label"),
     status: actionStatusEnum("status").notNull().default("open"),
     sourceMs: integer("source_ms"), // precomputed source-trace anchor

@@ -1,17 +1,19 @@
 "use client";
 
 import { useState } from "react";
-import { Check, Flag, UserPlus, X } from "@phosphor-icons/react";
+import { Check, Flag, UsersThree, UserPlus, X } from "@phosphor-icons/react";
 import { useNoteAudio } from "@/components/note/note-audio";
 import { UserPicker, type PickUser } from "@/components/team/user-picker";
+
+export type Assignee = { id: string; name: string };
 
 export type ActionRow = {
   id: string;
   task: string;
   ownerLabel: string | null;
   dueLabel: string | null;
-  assigneeId: string | null;
-  assigneeName: string | null;
+  assignees: Assignee[];
+  assignAll: boolean;
   status: "open" | "done";
   sourceMs: number | null;
 };
@@ -46,20 +48,39 @@ export function ActionBoard({ actions, canManage }: { actions: ActionRow[]; canM
       status: x.status === "done" ? "open" : "done",
     }));
 
-  const assign = (id: string, u: PickUser) => {
-    setAssignFor(null);
-    patch(id, { assigneeId: u.id }, (x) => ({ ...x, assigneeId: u.id, assigneeName: u.name }));
+  const addAssignee = (row: ActionRow, u: PickUser) => {
+    if (row.assignees.some((a) => a.id === u.id)) return;
+    const next = [...row.assignees, { id: u.id, name: u.name }];
+    patch(row.id, { assigneeIds: next.map((a) => a.id), assignAll: false }, (x) => ({
+      ...x,
+      assignees: next,
+      assignAll: false,
+    }));
   };
 
-  const unassign = (id: string) =>
-    patch(id, { assigneeId: null }, (x) => ({ ...x, assigneeId: null, assigneeName: null }));
+  const removeAssignee = (row: ActionRow, uid: string) => {
+    const next = row.assignees.filter((a) => a.id !== uid);
+    patch(row.id, { assigneeIds: next.map((a) => a.id), assignAll: false }, (x) => ({
+      ...x,
+      assignees: next,
+    }));
+  };
+
+  const assignTeam = (row: ActionRow) => {
+    setAssignFor(null);
+    patch(row.id, { assignAll: true, assigneeIds: [] }, (x) => ({ ...x, assignAll: true, assignees: [] }));
+  };
+
+  const clearTeam = (row: ActionRow) =>
+    patch(row.id, { assignAll: false, assigneeIds: [] }, (x) => ({ ...x, assignAll: false }));
 
   return (
     <div className="grid gap-2 lg:grid-cols-2">
       {rows.map((a) => {
         const done = a.status === "done";
+        const hasAssignment = a.assignAll || a.assignees.length > 0;
         return (
-          <div key={a.id} className="relative rounded-[14px] border border-hairline bg-bg p-3">
+          <div key={a.id} className="relative rounded-card border border-hairline bg-bg p-3">
             <div className="flex items-start gap-2.5">
               <button
                 onClick={() => toggle(a)}
@@ -77,18 +98,30 @@ export function ActionBoard({ actions, canManage }: { actions: ActionRow[]; canM
             </div>
 
             <div className="mt-2 flex flex-wrap items-center gap-1.5 pl-[26px]">
-              {a.assigneeId ? (
-                <span className="inline-flex items-center gap-1.5 rounded-pill bg-accent-wash py-0.5 pl-0.5 pr-2 text-[12px] font-medium text-accent-deep">
-                  <span className="grid h-4 w-4 place-items-center rounded-full bg-accent text-[9px] font-semibold text-accent-ink">
-                    {(a.assigneeName ?? "?").charAt(0).toUpperCase()}
-                  </span>
-                  {a.assigneeName}
+              {a.assignAll ? (
+                <span className="inline-flex items-center gap-1.5 rounded-pill bg-accent-wash py-0.5 pl-2 pr-2 text-[12px] font-medium text-accent-deep">
+                  <UsersThree size={13} weight="fill" />
+                  Whole team
                   {canManage && (
-                    <button onClick={() => unassign(a.id)} aria-label="Unassign" className="ml-0.5 text-accent-deep/70 hover:text-accent-deep cursor-pointer">
+                    <button onClick={() => clearTeam(a)} aria-label="Clear team assignment" className="ml-0.5 text-accent-deep/70 hover:text-accent-deep cursor-pointer">
                       <X size={11} weight="bold" />
                     </button>
                   )}
                 </span>
+              ) : a.assignees.length > 0 ? (
+                a.assignees.map((as) => (
+                  <span key={as.id} className="inline-flex items-center gap-1.5 rounded-pill bg-accent-wash py-0.5 pl-0.5 pr-2 text-[12px] font-medium text-accent-deep">
+                    <span className="grid h-4 w-4 place-items-center rounded-full bg-accent text-[9px] font-semibold text-accent-ink">
+                      {as.name.charAt(0).toUpperCase()}
+                    </span>
+                    {as.name}
+                    {canManage && (
+                      <button onClick={() => removeAssignee(a, as.id)} aria-label={`Unassign ${as.name}`} className="ml-0.5 text-accent-deep/70 hover:text-accent-deep cursor-pointer">
+                        <X size={11} weight="bold" />
+                      </button>
+                    )}
+                  </span>
+                ))
               ) : (
                 a.ownerLabel && <Chip>{a.ownerLabel}</Chip>
               )}
@@ -99,7 +132,7 @@ export function ActionBoard({ actions, canManage }: { actions: ActionRow[]; canM
                   onClick={() => setAssignFor(assignFor === a.id ? null : a.id)}
                   className="inline-flex items-center gap-1 rounded-pill border border-hairline px-2 py-0.5 text-[11.5px] text-muted transition-colors duration-150 hover:border-hairline-strong hover:text-ink cursor-pointer"
                 >
-                  <UserPlus size={12} /> {a.assigneeId ? "Reassign" : "Assign"}
+                  <UserPlus size={12} /> {hasAssignment ? "Edit" : "Assign"}
                 </button>
               )}
 
@@ -117,12 +150,26 @@ export function ActionBoard({ actions, canManage }: { actions: ActionRow[]; canM
 
             {assignFor === a.id && (
               <div className="glass-menu pop-in absolute left-3 right-3 top-full z-40 mt-1 rounded-card p-2">
+                <button
+                  onClick={() => assignTeam(a)}
+                  className="mb-1.5 flex w-full items-center gap-2 rounded-[8px] border border-hairline px-2.5 py-2 text-left text-[13px] font-medium text-accent-deep transition-colors duration-150 hover:bg-accent-wash cursor-pointer"
+                >
+                  <UsersThree size={16} weight="fill" /> Assign to the whole team
+                </button>
                 <UserPicker
                   autoFocus
-                  onPick={(u) => assign(a.id, u)}
-                  exclude={a.assigneeId ? [a.assigneeId] : []}
-                  placeholder="Assign to…"
+                  onPick={(u) => addAssignee(a, u)}
+                  exclude={a.assignees.map((as) => as.id)}
+                  placeholder="Add a teammate…"
                 />
+                <div className="mt-1.5 flex justify-end">
+                  <button
+                    onClick={() => setAssignFor(null)}
+                    className="rounded-[8px] px-2.5 py-1 text-[12.5px] font-medium text-muted hover:bg-panel-lift hover:text-ink cursor-pointer"
+                  >
+                    Done
+                  </button>
+                </div>
               </div>
             )}
           </div>
