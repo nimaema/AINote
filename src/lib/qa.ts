@@ -69,7 +69,7 @@ export async function retrieveProject(
     return {
       context: "",
       citations: [],
-      message: "There are no transcribed recordings in this project yet. Add a few recordings and try again.",
+      message: "There are no transcribed recordings in this topic yet. Add a few recordings and try again.",
     };
   }
 

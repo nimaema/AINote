@@ -3,26 +3,25 @@
 import { useRouter } from "next/navigation";
 import { projectColor } from "@/lib/projects";
 
-// The Insight Hub: projects arranged as concentric architectural frames drawn
-// inward toward a central "Insight Hub". Each project sits on a frame edge with
-// its own colored marker; clicking one travels to that project.
+// The Insight Hub: topics as a constellation around a central workspace node.
+// Each topic is sized by how many notes it holds, connected back to the hub,
+// and labelled with its note and action counts. Clicking a node opens it.
 export type Territory = {
   id: string;
   name: string;
   color: string;
   count: number;
+  actionCount?: number;
 };
 
-// Hand-placed anchor points around the nested frames (viewBox 640×300).
-// Each: [x, y, textAnchor]. Ordered so the first few read cleanly.
-const ANCHORS: [number, number, "start" | "middle" | "end"][] = [
-  [96, 58, "start"],
-  [544, 150, "end"],
-  [110, 248, "start"],
-  [512, 58, "end"],
-  [96, 150, "start"],
-  [536, 248, "end"],
-];
+const CX = 380;
+const CY = 168;
+const RX = 250; // ellipse radii for node placement
+const RY = 116;
+
+function nodeRadius(count: number) {
+  return 15 + Math.min(count, 14) * 1.6; // 15–37px
+}
 
 export function AtlasField({
   territories,
@@ -32,99 +31,88 @@ export function AtlasField({
   unfiled: number;
 }) {
   const router = useRouter();
-  const shown = territories.slice(0, 6);
+  const shown = territories.slice(0, 7);
+  const total = territories.reduce((sum, t) => sum + t.count, 0);
 
-  // Concentric frames — as many as we can justify, min 3 for the architecture.
-  const frameCount = Math.max(3, Math.min(4, shown.length));
-  const frames = Array.from({ length: frameCount }, (_, i) => {
-    const inset = i * 34;
-    return {
-      x: 60 + inset,
-      y: 30 + inset,
-      w: 520 - inset * 2,
-      h: 240 - inset * 2,
-      opacity: 0.5 - i * 0.1,
-    };
+  // Place nodes evenly around the ellipse, starting at the top.
+  const nodes = shown.map((t, i) => {
+    const angle = -Math.PI / 2 + (i * 2 * Math.PI) / Math.max(1, shown.length);
+    const x = CX + RX * Math.cos(angle);
+    const y = CY + RY * Math.sin(angle);
+    const anchorEnd = x < CX - 8;
+    return { t, x, y, r: nodeRadius(t.count), anchorEnd };
   });
 
   return (
     <div className="relative overflow-hidden rounded-card border border-hairline bg-bg">
       <svg
-        viewBox="0 0 640 300"
+        viewBox="0 0 760 336"
         className="h-auto w-full"
         preserveAspectRatio="xMidYMid meet"
         role="img"
-        aria-label={`Insight hub of ${shown.length} projects`}
+        aria-label={`Insight hub of ${shown.length} topics`}
       >
-        {/* Faint architect's grid */}
-        <g stroke="var(--color-hairline)" strokeWidth="1" opacity="0.7">
-          {[110, 220, 330, 440, 530].map((x) => (
-            <line key={`v${x}`} x1={x} y1="20" x2={x} y2="280" />
-          ))}
-          {[80, 150, 220].map((y) => (
-            <line key={`h${y}`} x1="40" y1={y} x2="600" y2={y} />
-          ))}
-        </g>
+        <defs>
+          <radialGradient id="hubGlow" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stopColor="var(--color-mint)" stopOpacity="0.35" />
+            <stop offset="100%" stopColor="var(--color-mint)" stopOpacity="0" />
+          </radialGradient>
+        </defs>
 
-        {/* Concentric frames drawing inward */}
-        {frames.map((f, i) => (
-          <rect
-            key={i}
-            x={f.x}
-            y={f.y}
-            width={f.w}
-            height={f.h}
-            rx="10"
-            fill="none"
-            stroke="var(--color-mint)"
-            strokeWidth="1.5"
-            opacity={f.opacity}
-          />
-        ))}
+        {/* Soft mint halo behind the hub */}
+        <circle cx={CX} cy={CY} r={92} fill="url(#hubGlow)" />
 
-        {/* Central label */}
-        <g>
-          <rect
-            x="248"
-            y="126"
-            width="144"
-            height="48"
-            rx="8"
-            fill="var(--color-panel-solid)"
-            stroke="var(--color-hairline-strong)"
-            strokeWidth="1"
-          />
-          <text
-            x="320"
-            y="156"
-            textAnchor="middle"
-            className="font-display"
-            fontSize="19"
-            fill="var(--color-ink)"
-          >
-            Insight Hub
-          </text>
-        </g>
+        {/* Connectors from hub to each node — drawn in on load */}
+        {nodes.map(({ t, x, y }, i) => {
+          const len = Math.hypot(x - CX, y - CY);
+          return (
+            <line
+              key={`c${t.id}`}
+              x1={CX}
+              y1={CY}
+              x2={x}
+              y2={y}
+              stroke={projectColor(t.color)}
+              strokeWidth={1.5}
+              strokeOpacity={0.4}
+              strokeDasharray={len}
+              strokeDashoffset={len}
+              className="route-draw"
+              style={{ animationDelay: `${i * 80}ms` }}
+            />
+          );
+        })}
 
-        {/* Projects on the frame edges */}
-        {shown.map((t, i) => {
-          const [x, y, anchor] = ANCHORS[i % ANCHORS.length];
+        {/* Central hub */}
+        <circle cx={CX} cy={CY} r={40} fill="var(--color-panel-solid)" stroke="var(--color-hairline-strong)" strokeWidth={1.5} />
+        <text x={CX} y={CY - 3} textAnchor="middle" className="tabular" fontSize="22" fontWeight="600" fill="var(--color-ink)" fontFamily="var(--font-hanken)">
+          {total}
+        </text>
+        <text x={CX} y={CY + 15} textAnchor="middle" fontSize="10" fill="var(--color-faint)" fontFamily="var(--font-mono)" style={{ letterSpacing: "0.08em" }}>
+          notes
+        </text>
+
+        {/* Topic nodes */}
+        {nodes.map(({ t, x, y, r, anchorEnd }) => {
           const c = projectColor(t.color);
-          const dotX = anchor === "end" ? x + 12 : x - 12;
-          const label = t.name.length > 18 ? `${t.name.slice(0, 17)}…` : t.name;
+          const label = t.name.length > 16 ? `${t.name.slice(0, 15)}…` : t.name;
+          const lx = anchorEnd ? x - r - 8 : x + r + 8;
           return (
             <g
               key={t.id}
               onClick={() => router.push(`/project/${t.id}`)}
-              className="cursor-pointer transition-opacity hover:opacity-70"
+              className="cursor-pointer transition-opacity hover:opacity-80"
               role="link"
               aria-label={`Open ${t.name}`}
             >
-              <circle cx={dotX} cy={y - 4} r="4" fill={c} />
+              <circle cx={x} cy={y} r={r} fill={c} fillOpacity={0.14} stroke={c} strokeWidth={2} />
+              <text x={x} y={y + 4} textAnchor="middle" className="tabular" fontSize="13" fontWeight="700" fill="var(--color-ink)" fontFamily="var(--font-hanken)">
+                {t.count}
+              </text>
               <text
-                x={x}
-                y={y}
-                textAnchor={anchor}
+                x={lx}
+                y={y - 1}
+                textAnchor={anchorEnd ? "end" : "start"}
                 fontSize="12.5"
                 fontWeight="600"
                 fill="var(--color-ink)"
@@ -133,34 +121,27 @@ export function AtlasField({
                 {label}
               </text>
               <text
-                x={x}
-                y={y + 15}
-                textAnchor={anchor}
+                x={lx}
+                y={y + 13}
+                textAnchor={anchorEnd ? "end" : "start"}
                 className="font-mono"
                 fontSize="10"
                 fill="var(--color-faint)"
-                style={{ letterSpacing: "0.08em" }}
+                style={{ letterSpacing: "0.04em" }}
               >
                 {t.count} {t.count === 1 ? "note" : "notes"}
+                {t.actionCount ? ` · ${t.actionCount} action${t.actionCount === 1 ? "" : "s"}` : ""}
               </text>
             </g>
           );
         })}
 
-        {/* Unfiled — an unplaced marker */}
+        {/* Unfiled marker */}
         {unfiled > 0 && (
-          <g opacity="0.85">
-            <circle cx="596" cy="40" r="4" fill="none" stroke="var(--color-faint)" strokeWidth="1.2" strokeDasharray="2 3" />
-            <text
-              x="586"
-              y="44"
-              textAnchor="end"
-              className="font-mono"
-              fontSize="10"
-              fill="var(--color-faint)"
-              style={{ letterSpacing: "0.08em" }}
-            >
-              Unfiled · {unfiled}
+          <g opacity={0.9}>
+            <circle cx={40} cy={30} r={5} fill="none" stroke="var(--color-faint)" strokeWidth={1.4} strokeDasharray="2 3" />
+            <text x={52} y={34} className="font-mono" fontSize="10.5" fill="var(--color-faint)" style={{ letterSpacing: "0.06em" }}>
+              {unfiled} unfiled
             </text>
           </g>
         )}
@@ -169,7 +150,7 @@ export function AtlasField({
       {territories.length === 0 && unfiled === 0 && (
         <div className="absolute inset-0 grid place-items-center">
           <p className="rounded-pill border border-hairline bg-panel-solid px-4 py-2 text-[12px] text-muted">
-            No projects yet — record a note to begin
+            No topics yet — record a note to begin
           </p>
         </div>
       )}

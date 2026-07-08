@@ -277,7 +277,7 @@ export function NoteWorkspace({
                 </div>
                 {(topics.length > 0 || canEdit) && (
                   <div className="mt-5 border-t border-hairline pt-5">
-                    <PanelHeading icon={<Hash size={16} weight="duotone" />}>Topics</PanelHeading>
+                    <PanelHeading icon={<Hash size={16} weight="duotone" />}>Tags</PanelHeading>
                     <div className="mt-3">
                       <EditableList
                         items={topics}

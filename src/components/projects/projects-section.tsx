@@ -40,7 +40,7 @@ export function ProjectsSection({ projects }: { projects: ProjectRow[] }) {
     <section className="mt-5">
       <div className="mb-2.5 flex items-center justify-between px-1">
         <h2 className="text-[14px] font-semibold text-ink">
-          Projects
+          Topics
           {projects.length > 0 && (
             <span className="tabular ml-2 font-mono text-[11.5px] font-normal text-faint">{projects.length}</span>
           )}
@@ -65,7 +65,7 @@ export function ProjectsSection({ projects }: { projects: ProjectRow[] }) {
               if (e.key === "Enter") create();
               if (e.key === "Escape") setCreating(false);
             }}
-            placeholder="Project name"
+            placeholder="Topic name"
             className="h-9 min-w-0 flex-1 rounded-input border border-hairline bg-bg px-3 text-[14px] text-ink placeholder:text-faint focus:border-accent focus:outline-none focus:shadow-[0_0_0_4px_var(--color-accent-wash)]"
           />
           <div className="flex items-center gap-1.5">

@@ -123,7 +123,7 @@ export function toMarkdown(n: NoteExport): string {
   }
 
   if (n.topics.length) {
-    L.push("## Topics", "");
+    L.push("## Tags", "");
     L.push(n.topics.map((t) => `\`${t}\``).join(" "), "");
   }
 

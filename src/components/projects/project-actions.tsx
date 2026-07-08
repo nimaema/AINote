@@ -45,7 +45,7 @@ export function ProjectActions({
   }
 
   async function remove() {
-    if (!confirm(`Delete project "${name}"? Its recordings are kept and just detached.`)) return;
+    if (!confirm(`Delete topic "${name}"? Its recordings are kept and just detached.`)) return;
     setBusy(true);
     await fetch(`/api/projects/${id}`, { method: "DELETE" });
     router.push("/");
@@ -59,7 +59,7 @@ export function ProjectActions({
         onClick={() => setMenu((m) => !m)}
         disabled={busy}
         className="glass grid h-10 w-10 place-items-center rounded-btn text-ink transition-transform duration-150 [transition-timing-function:var(--ease-out)] active:scale-95 disabled:opacity-50 cursor-pointer"
-        aria-label="Project actions"
+        aria-label="Topic actions"
         aria-haspopup="menu"
         aria-expanded={menu}
       >
@@ -100,7 +100,7 @@ export function ProjectActions({
           onClick={() => { setMenu(false); remove(); }}
           className="flex w-full items-center gap-2.5 rounded-input px-3 py-2.5 text-left text-[14px] text-err transition-colors hover:bg-panel-lift cursor-pointer"
         >
-          <Trash size={16} /> Delete project
+          <Trash size={16} /> Delete topic
         </button>
       </DropMenu>
 

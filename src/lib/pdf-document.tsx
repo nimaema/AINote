@@ -254,7 +254,7 @@ export function NotePdf({ note }: { note: NoteExport }) {
           ) : null}
 
           {note.topics.length ? (
-            <Section label="TOPICS">
+            <Section label="TAGS">
               <View style={s.topicRow}>
                 {note.topics.map((t, i) => (
                   <Text style={s.topic} key={i}>

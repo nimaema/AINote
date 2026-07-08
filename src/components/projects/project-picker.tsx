@@ -78,8 +78,8 @@ export function ProjectPicker({
       <button
         ref={btnRef}
         onClick={() => setOpen((o) => !o)}
-        aria-label={currentProjectId ? `Project: ${currentProjectName}` : "Assign to a project"}
-        title={currentProjectId ? "Change project" : "Assign to a project"}
+        aria-label={currentProjectId ? `Topic: ${currentProjectName}` : "Assign to a topic"}
+        title={currentProjectId ? "Change topic" : "Assign to a topic"}
         className={`pointer-events-auto inline-flex h-7 max-w-[11rem] items-center gap-1.5 rounded-pill border px-2.5 text-[11.5px] font-medium transition-[background-color,border-color,color] duration-150 [transition-timing-function:var(--ease-out)] active:scale-[0.97] cursor-pointer ${
           currentProjectId
             ? "border-transparent bg-lock-wash text-lock hover:bg-lock/15"
@@ -98,7 +98,7 @@ export function ProjectPicker({
         ) : (
           <>
             <MapPinSimpleArea size={13} weight="bold" className="shrink-0" />
-            Assign project
+            Assign topic
           </>
         )}
       </button>
@@ -107,8 +107,8 @@ export function ProjectPicker({
         ref={btnRef}
         onClick={() => setOpen((o) => !o)}
         className="grid h-8 w-8 place-items-center rounded-input text-muted transition-colors duration-150 hover:bg-panel-lift hover:text-ink cursor-pointer"
-        aria-label="Move to project"
-        title="Move to project"
+        aria-label="Move to topic"
+        title="Move to topic"
       >
         <FolderSimple size={16} />
       </button>
@@ -118,7 +118,7 @@ export function ProjectPicker({
         onClick={() => setOpen((o) => !o)}
         className="inline-flex h-10 items-center gap-1.5 rounded-btn glass px-3.5 text-[13px] font-medium text-ink-soft transition-transform duration-150 [transition-timing-function:var(--ease-out)] active:scale-[0.97] cursor-pointer"
       >
-        <FolderSimple size={15} /> Project
+        <FolderSimple size={15} /> Topic
       </button>
     ) : (
       <button
@@ -126,7 +126,7 @@ export function ProjectPicker({
         onClick={() => setOpen((o) => !o)}
         className="flex w-full items-center gap-2.5 rounded-input px-2.5 py-2 text-left text-[13.5px] text-ink-soft transition-colors duration-150 [transition-timing-function:var(--ease-out)] hover:bg-panel-lift cursor-pointer"
       >
-        <FolderSimple size={15} /> Move to project…
+        <FolderSimple size={15} /> Move to topic…
       </button>
     );
 
@@ -142,13 +142,13 @@ export function ProjectPicker({
                   disabled={busy}
                   className="flex w-full items-center gap-2.5 rounded-input px-2.5 py-2 text-left text-[13px] text-muted transition-colors hover:bg-panel-lift disabled:opacity-50 cursor-pointer"
                 >
-                  <X size={14} /> Remove from project
+                  <X size={14} /> Remove from topic
                 </button>
               )}
               {projects === null ? (
                 <p className="px-2.5 py-2 text-[13px] text-faint">Loading…</p>
               ) : projects.length === 0 && !creating ? (
-                <p className="px-2.5 py-2 text-[12.5px] text-muted">No projects yet.</p>
+                <p className="px-2.5 py-2 text-[12.5px] text-muted">No topics yet.</p>
               ) : (
                 projects.map((p) => (
                   <button
@@ -176,7 +176,7 @@ export function ProjectPicker({
                       if (e.key === "Enter") createAndAssign();
                       if (e.key === "Escape") setCreating(false);
                     }}
-                    placeholder="Project name"
+                    placeholder="Topic name"
                     className="h-8 flex-1 rounded-input border border-accent bg-bg px-2.5 text-[13px] text-ink focus:outline-none"
                   />
                   <button
@@ -193,7 +193,7 @@ export function ProjectPicker({
                   onClick={() => setCreating(true)}
                   className="flex w-full items-center gap-2.5 rounded-input px-2.5 py-2 text-left text-[13px] font-medium text-accent-deep transition-colors hover:bg-accent-wash cursor-pointer"
                 >
-                  <Plus size={15} weight="bold" /> New project
+                  <Plus size={15} weight="bold" /> New topic
                 </button>
               )}
             </div>

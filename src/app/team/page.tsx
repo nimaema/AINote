@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { desc, eq, sql } from "drizzle-orm";
 import { auth } from "@/lib/auth";
 import { db } from "@/db";
-import { recordings, results, transcripts, users } from "@/db/schema";
+import { recordings, results, transcripts, users, projects } from "@/db/schema";
 import { relativeTime, humanDuration, humanTotalTime } from "@/lib/format";
 import { languageName } from "@/lib/language";
 import { AppShell } from "@/components/shell/app-shell";
@@ -25,15 +25,20 @@ export default async function TeamPage() {
       summary: results.summary,
       topics: results.topics,
       actionCount: sql<number>`coalesce(jsonb_array_length(${results.actionItems}), 0)::int`,
+      decisionCount: sql<number>`coalesce(jsonb_array_length(${results.decisions}), 0)::int`,
       language: transcripts.language,
       authorId: recordings.userId,
       authorName: users.name,
       authorEmail: users.email,
+      projectId: recordings.projectId,
+      projectName: projects.name,
+      projectColor: projects.color,
     })
     .from(recordings)
     .innerJoin(users, eq(users.id, recordings.userId))
     .leftJoin(results, eq(results.recordingId, recordings.id))
     .leftJoin(transcripts, eq(transcripts.recordingId, recordings.id))
+    .leftJoin(projects, eq(projects.id, recordings.projectId))
     .where(eq(recordings.isPublic, true))
     .orderBy(desc(recordings.createdAt))
     .limit(200);
@@ -45,13 +50,19 @@ export default async function TeamPage() {
     status: r.status,
     dateLabel: relativeTime(r.createdAt, now),
     durationLabel: humanDuration(r.durationSec),
+    durationSec: r.durationSec ?? 0,
+    createdAtMs: new Date(r.createdAt).getTime(),
     summary: r.summary,
     topics: r.topics ?? [],
     language: languageName(r.language),
     actionCount: r.actionCount,
+    decisionCount: r.decisionCount,
     authorId: r.authorId,
     authorName: r.authorName ?? r.authorEmail?.split("@")[0] ?? "Teammate",
     isMine: r.authorId === userId,
+    projectId: r.projectId,
+    projectName: r.projectName,
+    projectColor: r.projectColor,
   }));
 
   const stats: TeamStats = {

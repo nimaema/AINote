@@ -47,7 +47,7 @@ export async function PATCH(
   if (parsed.data.projectId) {
     const access = await getAccessibleProject(parsed.data.projectId, session.user.id);
     if (!access || !roleAtLeast(access.role, "editor")) {
-      return NextResponse.json({ error: "Project not found" }, { status: 400 });
+      return NextResponse.json({ error: "Topic not found" }, { status: 400 });
     }
   }
 

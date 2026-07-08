@@ -10,6 +10,7 @@ import {
   ShareNetwork,
   CheckSquareOffset,
   MagnifyingGlass,
+  Stack,
   type Icon,
 } from "@phosphor-icons/react";
 
@@ -25,7 +26,13 @@ const ITEMS: Item[] = [
     href: "/",
     label: "Overview",
     icon: SquaresFour,
-    match: (p) => p === "/" || p.startsWith("/note") || p.startsWith("/project"),
+    match: (p) => p === "/" || p.startsWith("/note"),
+  },
+  {
+    href: "/projects",
+    label: "Topics",
+    icon: Stack,
+    match: (p) => p.startsWith("/projects") || p.startsWith("/project"),
   },
   { href: "/team", label: "Team", icon: ShareNetwork, match: (p) => p.startsWith("/team") },
   { href: "/tasks", label: "My tasks", icon: CheckSquareOffset, match: (p) => p.startsWith("/tasks") },

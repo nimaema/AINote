@@ -117,7 +117,7 @@ export default async function ProjectPage({
                   <FolderSimple size={24} weight="fill" />
                 </span>
                 <div className="min-w-0">
-                  <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-faint">Project workspace</p>
+                  <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-faint">Topic</p>
                   <h1 className="mt-1 truncate font-display text-[22px] font-normal leading-tight text-ink sm:text-[28px]">
                     {project.name}
                   </h1>
@@ -148,7 +148,7 @@ export default async function ProjectPage({
           <div className="min-w-0">
             {items.length === 0 ? (
               <div className="rounded-[18px] border border-hairline bg-panel-solid px-6 py-12 text-center">
-                <p className="text-[14px] font-medium text-ink">No recordings in this project yet</p>
+                <p className="text-[14px] font-medium text-ink">No recordings in this topic yet</p>
                 <p className="mt-1 text-[13px] text-muted">
                   Open a recording and use the folder icon to move it here.
                 </p>
@@ -164,7 +164,7 @@ export default async function ProjectPage({
             <section className="rounded-[18px] border border-hairline bg-panel-solid p-4">
               <div className="flex items-center gap-2 text-accent-deep">
                 <ListChecks size={17} weight="duotone" />
-                <h2 className="text-[13.5px] font-semibold text-ink">Project actions</h2>
+                <h2 className="text-[13.5px] font-semibold text-ink">Topic actions</h2>
                 {actionItems.length > 0 && (
                   <span className="rounded-[7px] bg-bg px-2 py-0.5 font-mono text-[10.5px] text-faint">
                     {actionItems.length}
@@ -188,7 +188,7 @@ export default async function ProjectPage({
                 {actionItems.length === 0 && (
                   <div className="rounded-[14px] border border-dashed border-hairline bg-bg px-4 py-5 text-center">
                     <WaveSawtooth size={22} className="mx-auto text-faint" />
-                    <p className="mt-3 text-[13px] font-semibold text-ink">No project actions yet</p>
+                    <p className="mt-3 text-[13px] font-semibold text-ink">No topic actions yet</p>
                     <p className="mt-1 text-[12.5px] leading-relaxed text-muted">
                       Process recordings in this project to collect tasks here.
                     </p>
@@ -201,7 +201,7 @@ export default async function ProjectPage({
               endpoint={`/api/projects/${id}/qa`}
               title="Ask everything"
               emptyHint="One question across every recording here — answers cite the exact meeting and moment."
-              suggestions={["Summarize this project", "What decisions were made?", "What's still open across all of these?"]}
+              suggestions={["Summarize this topic", "What decisions were made?", "What's still open across all of these?"]}
               initialMessages={history.map((m) => ({
                 id: m.id,
                 role: m.role,

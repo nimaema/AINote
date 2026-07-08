@@ -154,7 +154,7 @@ export default async function SharePage({
 
         {topics.length > 0 && (
           <section className="mt-8">
-            <SectionLabel>Topics</SectionLabel>
+            <SectionLabel>Tags</SectionLabel>
             <div className="mt-2 flex flex-wrap gap-2">
               {topics.map((t, i) => (
                 <span key={i} className="rounded-btn bg-accent-wash px-2.5 py-0.5 text-[12px] font-medium text-accent-deep">

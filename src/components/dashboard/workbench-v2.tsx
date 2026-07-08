@@ -343,7 +343,7 @@ export function WorkbenchV2({
             <input
               value={query}
               onChange={(event) => setQuery(event.target.value)}
-              placeholder="Search notes, topics, tasks"
+              placeholder="Search notes, tags, tasks"
               className="h-10 w-full rounded-input border border-hairline bg-panel-solid pl-9 pr-3 text-[14px] text-ink placeholder:text-faint transition-[border-color,box-shadow] duration-150 [transition-timing-function:var(--ease-out)] focus:border-accent focus:outline-none focus:shadow-[0_0_0_4px_var(--color-accent-wash)]"
             />
           </div>
@@ -415,12 +415,18 @@ export function WorkbenchV2({
             <div className="flex items-center justify-between gap-3">
               <PanelTitle icon={<MapTrifold size={17} weight="duotone" />} title="Insight hub" />
               <span className="font-mono text-[10.5px] uppercase tracking-[0.14em] text-faint">
-                {projects.length} {projects.length === 1 ? "project" : "projects"}
+                {projects.length} {projects.length === 1 ? "topic" : "topics"}
               </span>
             </div>
             <div className="mt-3">
               <AtlasField
-                territories={projects.map((p) => ({ id: p.id, name: p.name, color: p.color, count: p.count }))}
+                territories={projects.map((p) => ({
+                  id: p.id,
+                  name: p.name,
+                  color: p.color,
+                  count: p.count,
+                  actionCount: p.actionCount,
+                }))}
                 unfiled={stats.unfiled}
               />
             </div>
@@ -449,7 +455,7 @@ export function WorkbenchV2({
 
             <section className="rounded-[18px] border border-hairline bg-panel-solid p-4">
               <div className="flex items-center justify-between gap-3">
-                <PanelTitle icon={<FolderSimple size={17} weight="duotone" />} title="Projects" />
+                <PanelTitle icon={<FolderSimple size={17} weight="duotone" />} title="Topics" />
                 {!creatingProject && (
                   <button
                     onClick={() => setCreatingProject(true)}
@@ -471,7 +477,7 @@ export function WorkbenchV2({
                       if (event.key === "Enter") createProject();
                       if (event.key === "Escape") setCreatingProject(false);
                     }}
-                    placeholder="Project name"
+                    placeholder="Topic name"
                     className="h-10 w-full rounded-input border border-hairline bg-panel px-3 text-[14px] text-ink placeholder:text-faint transition-[border-color,box-shadow] duration-150 [transition-timing-function:var(--ease-out)] focus:border-accent focus:outline-none focus:shadow-[0_0_0_4px_var(--color-accent-wash)]"
                   />
                   <div className="mt-3 flex flex-wrap items-center gap-2">
@@ -498,7 +504,7 @@ export function WorkbenchV2({
                     <button
                       onClick={() => setCreatingProject(false)}
                       className="grid h-9 w-9 place-items-center rounded-btn text-muted transition-colors duration-150 hover:bg-panel-lift hover:text-ink cursor-pointer"
-                      aria-label="Cancel project"
+                      aria-label="Cancel topic"
                     >
                       <X size={15} />
                     </button>
@@ -523,7 +529,7 @@ export function WorkbenchV2({
                       <div className="min-w-0 flex-1">
                         <p className="truncate text-[13.5px] font-semibold text-ink">{project.name}</p>
                         <p className="mt-0.5 font-mono text-[11px] text-faint">
-                          {project.count} captures, {project.actionCount} actions, {project.lastActivityLabel}
+                          {project.count} notes, {project.actionCount} actions, {project.lastActivityLabel}
                         </p>
                       </div>
                       <ArrowRight
@@ -534,7 +540,7 @@ export function WorkbenchV2({
                   </Link>
                 ))}
                 {projects.length === 0 && !creatingProject && (
-                  <EmptyInline title="No projects yet" body="Create a project, then file related notes into it from the library." />
+                  <EmptyInline title="No topics yet" body="Create a topic, then file related notes into it from the library." />
                 )}
               </div>
             </section>
@@ -584,7 +590,7 @@ export function WorkbenchV2({
                   />
                 ))}
               </CommandGroup>
-              <CommandGroup title="Projects">
+              <CommandGroup title="Topics">
                 {commandResults.matchesProjects.map((project) => (
                   <CommandLink
                     key={project.id}
@@ -592,7 +598,7 @@ export function WorkbenchV2({
                     onChoose={() => setCommandOpen(false)}
                     icon={<FolderSimple size={16} weight="fill" />}
                     label={project.name}
-                    detail={`${project.count} captures`}
+                    detail={`${project.count} notes`}
                   />
                 ))}
               </CommandGroup>
@@ -653,7 +659,7 @@ function RecordingLibrary({ items, query }: { items: WorkbenchRecording[]; query
           </p>
           <p className="mt-1 text-[13px] leading-relaxed text-muted">
             {query.trim()
-              ? "Try a project name, topic, speaker, or action item."
+              ? "Try a topic name, tag, speaker, or action item."
               : "Record or upload audio, then this desk becomes your review queue."}
           </p>
         </div>
